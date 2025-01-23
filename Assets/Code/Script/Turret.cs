@@ -13,10 +13,12 @@ public class Turret : MonoBehaviour
     [SerializeField] private Transform firingPoint; // Punto da cui vengono sparati i proiettili
     [SerializeField] private GameObject upgradeUI; // UI per gli aggiornamenti della torretta
     [SerializeField] private Button upgradeButton; // Bottone per effettuare l'upgrade
+    [SerializeField] private SpriteRenderer turretSpriteRenderer; // Sprite Renderer for the tower
+    [SerializeField] private Sprite[] towerStates; // Array of sprites representing tower states
 
     [Header("Attributes")]
-    [SerializeField] public float targetingRange; // Raggio entro cui la torretta pu� colpire i nemici
-    [SerializeField] private float rotationSpeed; // Velocit� di rotazione della torretta
+    [SerializeField] public float targetingRange; // Raggio entro cui la torretta può colpire i nemici
+    [SerializeField] private float rotationSpeed; // Velocità di rotazione della torretta
     [SerializeField] private float bps; // Bullet per second, frequenza di fuoco
     [SerializeField] public int baseUpgradeCost; // Costo base dell'upgrade
     [SerializeField] private int bulletDamage; // Danno inflitto dai proiettili della torretta
@@ -31,9 +33,6 @@ public class Turret : MonoBehaviour
 
     private int level = 1; // Livello corrente della torretta
 
-
-    
-    
     private void Start()
     {
         // Memorizza i valori base per l'upgrade
@@ -43,23 +42,24 @@ public class Turret : MonoBehaviour
 
         // Assegna la funzione Upgrade al bottone
         upgradeButton.onClick.AddListener(Upgrade);
-        
-        
+
+        // Set the initial sprite for the tower
+        UpdateSprite();
     }
 
     private void Update()
     {
-        // Se non c'� nessun bersaglio, cerca uno nuovo
+        // Se non c'è nessun bersaglio, cerca uno nuovo
         if (target == null)
         {
             FindTarget();
             return;
         }
 
-        // Controlla se il bersaglio � ancora nel raggio di targeting
+        // Controlla se il bersaglio è ancora nel raggio di targeting
         if (!CheckTargetIsInRange())
         {
-            target = null; // Resetta il bersaglio se � fuori portata
+            target = null; // Resetta il bersaglio se è fuori portata
         }
         else
         {
@@ -104,7 +104,7 @@ public class Turret : MonoBehaviour
         }
     }
 
-    // Controlla se il bersaglio � ancora nel raggio di targeting
+    // Controlla se il bersaglio è ancora nel raggio di targeting
     private bool CheckTargetIsInRange()
     {
         return Vector2.Distance(target.position, transform.position) <= targetingRange;
@@ -140,6 +140,9 @@ public class Turret : MonoBehaviour
         targetingRange = CalculateRange(); // Raggio di targeting
         bulletDamage = CalculateBulletDamage(); // Danno del proiettile
 
+        // Cambia il sprite in base al livello attuale
+        UpdateSprite();
+
         // Chiude l'interfaccia di upgrade dopo l'aggiornamento
         CloseUpgradeUI();
 
@@ -148,6 +151,19 @@ public class Turret : MonoBehaviour
         Debug.Log("nuovo targetingRange:" + targetingRange);
         Debug.Log("nuovo bulletDamage:" + bulletDamage);
         Debug.Log("nuovo cost:" + CalculateCost());
+    }
+
+    // Aggiorna il sprite della torretta in base al livello
+    private void UpdateSprite()
+    {
+        if (turretSpriteRenderer != null && level - 1 < towerStates.Length)
+        {
+            turretSpriteRenderer.sprite = towerStates[level - 1]; // Usa lo sprite corrispondente al livello
+        }
+        else
+        {
+            Debug.LogWarning("Sprite not updated: Check sprite array or level.");
+        }
     }
 
     // Metodo per calcolare il costo dell'upgrade basato sul livello
@@ -173,6 +189,4 @@ public class Turret : MonoBehaviour
     {
         return Mathf.RoundToInt(bulletDamageBase * Mathf.Pow(level, 0.4f));
     }
-
-
 }
