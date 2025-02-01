@@ -1,167 +1,136 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.UI;
 
-
 public class TurretSlow : MonoBehaviour
-{ 
-    
+{
     [Header("References")]
-    [SerializeField] private LayerMask enemyMask; // Mask per identificare i nemici
-    [SerializeField] private GameObject upgradeUI; // UI per gli upgrade della torretta
-    [SerializeField] private Button upgradeButton; // Bottone per effettuare l'upgrade
+    [SerializeField] private LayerMask enemyMask; // Mask to identify enemies
+    [SerializeField] private GameObject upgradeUI; // UI for turret upgrades
+    [SerializeField] private Button upgradeButton; // Button for triggering upgrades
+    [SerializeField] private SpriteRenderer turretSpriteRenderer; // Reference to the SpriteRenderer component
+    [SerializeField] private Sprite[] upgradeSprites; // Array of sprites representing turret states
 
     [Header("Attributes")]
-    [SerializeField] public float targetingRange; // Raggio entro cui la torretta pu� colpire i nemici
-    [SerializeField] private float aps; // Attacchi per secondo (Attacks per second)
-    [SerializeField] private float freezeTime; // Durata dell'effetto di rallentamento
-    [SerializeField] public int baseUpgradeCost; // Costo base dell'upgrade
+    [SerializeField] public float targetingRange; // Range within which the turret can detect enemies
+    [SerializeField] private float aps; // Attacks per second
+    [SerializeField] private float freezeTime; // Duration of the freeze effect
+    [SerializeField] public int baseUpgradeCost; // Base cost of upgrading the turret
 
-    private float apsBase; // Valore di base di attacchi per secondo, usato per i calcoli degli upgrade
-    private float timeUntilFire; // Timer per gestire il tempo tra un attacco e l'altro
-     // Valore di base del raggio di targeting
-
-    private int level = 1; // Livello corrente della torretta
-
-    // LineRenderer per visualizzare il raggio di targeting (se necessario per debugging o estetica)
-    private LineRenderer lineRenderer;
-    public int circleSegments; // Segmenti per il cerchio del raggio di targeting
+    private float apsBase; // Base value for attacks per second, used for upgrade calculations
+    private float timeUntilFire; // Timer to control the time between attacks
+    private int level = 1; // Current level of the turret
 
     private void Start()
     {
-        // Memorizza i valori base per gli upgrade
-        apsBase = aps;
-        
-
-        // Assegna la funzione di upgrade al bottone
-        upgradeButton.onClick.AddListener(Upgrade);
+        apsBase = aps; // Store the base APS for future upgrades
+        upgradeButton.onClick.AddListener(Upgrade); // Attach the Upgrade function to the button
     }
 
     private void Update()
     {
-        // Aggiorna il timer per il prossimo attacco
+        // Update the timer for the next attack
         timeUntilFire += Time.deltaTime;
 
-        // Se il timer supera il tempo tra un attacco e l'altro, applica il rallentamento (Freeze)
+        // If enough time has passed, trigger the freeze effect
         if (timeUntilFire >= 1f / aps)
         {
             Freeze();
-            timeUntilFire = 0f; // Resetta il timer
+            timeUntilFire = 0f; // Reset the timer
         }
     }
 
-    // Funzione che gestisce l'effetto di rallentamento (Freeze) sui nemici
+    // Function to apply the freeze effect to enemies in range
     private void Freeze()
     {
-        // Casts a circle to find all enemies in range and slows them down
         RaycastHit2D[] hits = Physics2D.CircleCastAll(
-            transform.position, // The center of the circle (the turret's position)
-            targetingRange,     // The radius of the circle
-            Vector2.zero,       // No movement, just detect in place
-            0f,                 // The circle does not move
+            transform.position, // Center of the detection circle
+            targetingRange,     // Radius of the detection circle
+            Vector2.zero,       // No movement, detect in place
+            0f,                 // Circle does not move
             enemyMask           // Only detect objects on the "enemy" layer
         );
-        
-// Check if any enemies were detected by the circle cast
+
+        // If there are enemies in range, apply the freeze effect
         if (hits.Length > 0)
         {
-            
-            // Step 1: Iterate through each object detected by the circle cast
-            for (int e = 0; e < hits.Length; e++) // Loops over all hits
+            for (int e = 0; e < hits.Length; e++) // Loop through all detected enemies
             {
-                // Step 2: Access the current detected object
-                RaycastHit2D hit = hits[e]; // `hits` is an array; `hits[e]` gets one element at a time
-
-                // Step 3: Try to get the "EnemyMovement" script from the detected object
-                // The script is used to manage the enemy's movement speed
-                EnemyMovement em = hit.transform.GetComponent<EnemyMovement>();
-
-                // Step 4: If the detected object has an "EnemyMovement" script, proceed
+                RaycastHit2D hit = hits[e];
+                EnemyMovement em = hit.transform.GetComponent<EnemyMovement>(); // Get the enemy's movement component
                 if (em != null)
                 {
-                    // Step 5: Apply a slow effect by reducing the enemy's speed to 0.1
-                    em.UpdateSpeed(0.1f);
-
-                    // Step 6: Start a coroutine (timer) to reset the enemy's speed after the slow effect ends
-                    StartCoroutine(ResetEnemySpeed(em));
-                }
-                else
-                {
-                    // If no "EnemyMovement" script is found, log a warning
-                    Debug.LogWarning("Detected object does not have an EnemyMovement script.");
+                    em.UpdateSpeed(0.1f); // Slow down the enemy
+                    StartCoroutine(ResetEnemySpeed(em)); // Reset the speed after the freeze time
                 }
             }
         }
-
     }
 
-    // Coroutine per ripristinare la velocit� originale del nemico dopo il tempo di freeze
+    // Coroutine to reset the enemy's speed after the freeze effect ends
     private IEnumerator ResetEnemySpeed(EnemyMovement em)
     {
-        // Step 1: Pause this coroutine for the duration of the freeze effect
-        yield return new WaitForSeconds(freezeTime);
-
-        // Step 2: After the freeze duration ends, restore the enemy's original speed
-        em.ResetSpeed();
+        yield return new WaitForSeconds(freezeTime); // Wait for the freeze time
+        em.ResetSpeed(); // Restore the enemy's original speed
     }
 
-    // Funzione per aprire l'UI di upgrade
+    // Function to open the turret upgrade UI
     public void OpenUpgradeUI()
     {
-        upgradeUI.SetActive(true); // Mostra l'UI per gli upgrade
+        upgradeUI.SetActive(true);
     }
 
-    // Funzione per chiudere l'UI di upgrade
+    // Function to close the turret upgrade UI
     public void CloseUpgradeUI()
     {
-        upgradeUI.SetActive(false); // Nasconde l'UI
-        UiManager.main.SetHoveringState(false); // Aggiorna lo stato del cursore
+        upgradeUI.SetActive(false);
+        UiManager.main.SetHoveringState(false);
     }
 
-    // Funzione per gestire l'upgrade della torretta
+    // Function to handle turret upgrades
     public void Upgrade()
     {
-        // Controlla se ci sono abbastanza risorse per effettuare l'upgrade
+        // Check if there are enough resources for the upgrade
         if (CalculateCost() > LevelManager.main.currency) return;
 
-        // Deduce la valuta necessaria per l'upgrade
-        LevelManager.main.SpendCurrency(CalculateCost());
-
-        // Aumenta il livello della torretta
-        level++;
-
-        // Aggiorna i valori della torretta in base al nuovo livello
-        aps = CalculateAPS(); // Aumenta gli attacchi per secondo
-        targetingRange = CalculateRange(); // Aumenta il raggio di targeting
-
-        // Chiude l'UI di upgrade dopo l'aggiornamento
-        CloseUpgradeUI();
-
+        LevelManager.main.SpendCurrency(CalculateCost()); // Deduct the upgrade cost
+        level++; // Increment the turret level
+        aps = CalculateAPS(); // Update APS
+        targetingRange = CalculateRange(); // Update targeting range
+        UpdateSprite(); // Update the turret's sprite to reflect the upgrade
+        CloseUpgradeUI(); // Close the upgrade UI
     }
 
-    // Funzione per calcolare il costo dell'upgrade basato sul livello
+    // Function to calculate the upgrade cost based on the level
     public int CalculateCost()
     {
-        return Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 2f)); // Il costo aumenta esponenzialmente con il livello
+        return Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 2f));
     }
 
-    // Calcola la nuova frequenza di attacco in base al livello
+    // Calculate the new attack speed (APS) based on the level
     private float CalculateAPS()
     {
-        return apsBase * Mathf.Pow(level, 0.32f); 
+        return apsBase * Mathf.Pow(level, 0.32f);
     }
 
-    // Calcola il nuovo raggio di targeting in base al livello
+    // Calculate the new targeting range based on the level
     private float CalculateRange()
     {
-        return targetingRange * Mathf.Pow(level, 0.3f); // Aumento del raggio di targeting con l'upgrade
+        return targetingRange * Mathf.Pow(level, 0.3f);
     }
 
-    // Potresti aggiungere qui una funzione per disegnare un cerchio attorno alla torretta per mostrare il raggio di targeting visivamente
-    // ad esempio con un LineRenderer, se richiesto per effetti visivi o debugging.
-
-    // Metodo pubblico per nascondere il cerchio di targeting (se il LineRenderer viene utilizzato)
+    // Update the turret's sprite to reflect the current level
+    private void UpdateSprite()
+    {
+        if (turretSpriteRenderer != null && upgradeSprites != null && level - 1 < upgradeSprites.Length)
+        {
+            turretSpriteRenderer.sprite = upgradeSprites[level - 1];
+        }
+        else
+        {
+            Debug.LogWarning("Sprite or sprite array is missing!");
+        }
+    }
 }

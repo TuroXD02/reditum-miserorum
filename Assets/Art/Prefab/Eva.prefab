@@ -176,12 +176,13 @@ MonoBehaviour:
   firingPoint: {fileID: 533822673557765447}
   upgradeUI: {fileID: 8244601190167970700}
   upgradeButton: {fileID: 3752934329463867287}
+  turretSpriteRenderer: {fileID: 8589680523580077789}
+  upgradeSprites: []
   targetingRange: 4
   rotationSpeed: 22
   bps: 0.1
   baseUpgradeCost: 200
   bulletDamage: 1
-  circleSegments: 50
 --- !u!1 &1801084609021479898
 GameObject:
   m_ObjectHideFlags: 0
@@ -752,7 +753,7 @@ SpriteRenderer:
   m_SortingLayerID: -449135385
   m_SortingLayer: 1
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 8b05bbced5ad43e48a750b7c25938e93, type: 3}
+  m_Sprite: {fileID: 21300000, guid: bf2fbf25c08f830469fd9616b0c75b45, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

@@ -720,8 +720,16 @@ MonoBehaviour:
   firingPoint: {fileID: 331473841153339061}
   upgradeUI: {fileID: 8337477246573558891}
   upgradeButton: {fileID: 4818884365336455620}
-  targetingRange: 10
-  rotationSpeed: 180
+  turretSpriteRenderer: {fileID: 4120020767630820342}
+  upgradeSprites:
+  - {fileID: 21300000, guid: c3b922d2ecff5624e989fc0e6a1a4468, type: 3}
+  - {fileID: 21300000, guid: efad7acf0b1a7b741bb3b91b11f6674a, type: 3}
+  - {fileID: 21300000, guid: ab576972d6b40f34983cda1e310dd85a, type: 3}
+  - {fileID: 21300000, guid: b4312b0f27a58c94d9048a2a7aacef36, type: 3}
+  - {fileID: 21300000, guid: d0b8c0a6c525f1445814620da504e505, type: 3}
+  - {fileID: 21300000, guid: 89432353eabed144980163505150b6ab, type: 3}
+  targetingRange: 8
+  rotationSpeed: 50
   bps: 0.2
   baseUpgradeCost: 200
   bulletDamage: 1
@@ -911,7 +919,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &3200588876147707365
 RectTransform:
   m_ObjectHideFlags: 0
