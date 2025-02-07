@@ -51,6 +51,12 @@ public class LussuriaHealth : MonoBehaviour
         //Debug.Log($"Incoming Damage: {dmg}, Speed: {currentSpeed}, Adjusted Armor: {adjustedArmor}%, Final Damage: {finalDamage}, Remaining HP: {hitPoints}");
     }
     
+    public void ReduceArmour(int amount)
+    {
+        // Reduce the armour value (and ensure it doesn't drop below zero).
+        armor = Mathf.Max(armor - amount, 0);
+    }
+    
     // Corrected naming for the DOT damage method
     public void TakeDamageDOTLU(int dmg)
     {

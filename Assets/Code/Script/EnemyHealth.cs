@@ -33,6 +33,12 @@ public class EnemyHealth : MonoBehaviour
 
        // Debug.Log($"Incoming Damage: {dmg}, Armor: {armor}%, Final Damage: {finalDamage}, Remaining HP: {hitPoints}");
     }
+    
+    public void ReduceArmour(int amount)
+    {
+        // Reduce the armour value (and ensure it doesn't drop below zero).
+        armor = Mathf.Max(armor - amount, 0);
+    }
 
     public void TakeDamageDOT(int dmg)
     {
@@ -68,4 +74,6 @@ public class EnemyHealth : MonoBehaviour
         // Destroy the enemy object
         Destroy(gameObject);
     }
+    
+    
 }

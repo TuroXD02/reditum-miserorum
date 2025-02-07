@@ -38,27 +38,27 @@ public class Plot : MonoBehaviour
         {
             Debug.Log($"Interacting with tower: {towerObj.name}");
 
-           
-
             // Switch based on the component name to open the appropriate UI
             switch (towerObj.name)
             {
                 case "Maddalena(Clone)":
                     towerObj.GetComponent<TurretSlow>()?.OpenUpgradeUI();
                     break;
-
                 case "SanPietro(Clone)":
                     towerObj.GetComponent<Turret>()?.OpenUpgradeUI();
                     break;
-
                 case "Davide(Clone)":
                     towerObj.GetComponent<TurretLongRange>()?.OpenUpgradeUI();
                     break;
-
                 case "Eva(Clone)":
                     towerObj.GetComponent<TurretPoison>()?.OpenUpgradeUI();
                     break;
-
+                case "Lot(Clone)":
+                    towerObj.GetComponent<TurretAreaDamage>()?.OpenUpgradeUI();
+                    break;
+                case "Tubal(Clone)":
+                    towerObj.GetComponent<TurretArmourBreaker>()?.OpenUpgradeUI();
+                    break;
                 default:
                     Debug.LogWarning("Unknown turret type.");
                     break;
@@ -66,8 +66,6 @@ public class Plot : MonoBehaviour
 
             return;
         }
-
-        
 
         // Get the tower to build or use the last selected tower
         Tower towerToBuild = BuildManager.main.GetSelectedTower();
@@ -84,8 +82,6 @@ public class Plot : MonoBehaviour
         {
             // Instantiate the new tower and set it to the towerObj reference
             towerObj = Instantiate(towerToBuild.prefab, transform.position, Quaternion.identity);
-            
         }
-        
     }
 }

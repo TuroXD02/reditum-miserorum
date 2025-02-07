@@ -9,6 +9,7 @@ TagManager:
   - TurretSlow
   - LongRangeTurret
   - Turret
+  - AOETurret
   layers:
   - Default
   - TransparentFX

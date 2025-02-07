@@ -175,7 +175,7 @@ public class Turret : MonoBehaviour
     // Calcola la nuova frequenza di fuoco in base al livello
     private float CalculateBPS()
     {
-        return bpsBase * Mathf.Pow(level, 0.5f);
+        return bpsBase * Mathf.Pow(level, 1f);
     }
 
     // Calcola il nuovo raggio di targeting in base al livello

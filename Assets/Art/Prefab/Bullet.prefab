@@ -164,7 +164,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rb: {fileID: 5478355086916874175}
   pivot: {fileID: 6651918146290785953}
-  bulletSpeed: 10
+  bulletSpeed: 5
   target: {fileID: 0}
 --- !u!1 &6651918146290785953
 GameObject:
