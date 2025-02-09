@@ -5,13 +5,17 @@ public class LoseScreen : MonoBehaviour
 {
     public void Retry()
     {
-        Time.timeScale = 1f; // Unfreeze the game
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name); // Reload the current scene
+        if (AudioManager.instance != null)
+        {
+            AudioManager.instance.ResetMusic();
+        }
+
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     public void MainMenu()
     {
-        // Load the main menu scene
         SceneManager.LoadScene("MainMenu");
     }
 }
