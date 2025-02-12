@@ -197,9 +197,9 @@ MonoBehaviour:
   targetingRange: 5
   rotationSpeed: 5
   attacksPerSecond: 1
-  baseUpgradeCost: 100
-  attackDamage: 3
-  armourReduction: 2
+  baseUpgradeCost: 150
+  attackDamage: 10
+  armourReduction: 5
 --- !u!1 &933191796149165651
 GameObject:
   m_ObjectHideFlags: 0

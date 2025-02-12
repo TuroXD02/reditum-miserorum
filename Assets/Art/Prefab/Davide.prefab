@@ -27,7 +27,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0.0104676485, y: 0.023604523, z: 0}
-  m_LocalScale: {x: 0.99999994, y: 0.99999994, z: 0.99999994}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 5430052614007459332}
@@ -190,7 +190,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.033, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 5430052614007459332}
   m_Father: {fileID: 2172101961160008126}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &4120020767630820342
@@ -696,7 +697,6 @@ Transform:
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 3200588876147707365}
-  - {fileID: 5430052614007459332}
   - {fileID: 6019905929921684057}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -892,13 +892,13 @@ Transform:
   m_GameObject: {fileID: 8233195842395553787}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.297, y: -0.031, z: 0}
+  m_LocalPosition: {x: -0.297, y: -0.063999996, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 331473841153339061}
   - {fileID: 850592176638340004}
-  m_Father: {fileID: 2172101961160008126}
+  m_Father: {fileID: 6019905929921684057}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8337477246573558891
 GameObject:
@@ -1028,6 +1028,7 @@ MonoBehaviour:
   TurretLongRangeInstance: {fileID: 5785025669134519000}
   TurretPoisonInstance: {fileID: 0}
   TurretAreaDamageInstance: {fileID: 0}
+  TurretArmourBreakerInstance: {fileID: 0}
   circleSegments: 50
   circleColor: {r: 0.4792453, g: 0.4792453, b: 0.4792453, a: 1}
 --- !u!1 &8620362903969275219

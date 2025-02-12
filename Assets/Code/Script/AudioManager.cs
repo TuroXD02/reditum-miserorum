@@ -50,7 +50,7 @@ public class AudioManager : MonoBehaviour
         if (playOnAwake)
         {
             audioSource.Play();
-            Debug.Log("Background music started playing.");
+            
         }
     }
 
