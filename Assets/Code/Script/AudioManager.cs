@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Audio;
 
 [RequireComponent(typeof(AudioSource))]
 public class AudioManager : MonoBehaviour
@@ -7,19 +8,23 @@ public class AudioManager : MonoBehaviour
     public static AudioManager instance;  // Singleton instance
 
     [Header("Audio Settings")]
-    public AudioClip backgroundMusic;       // Background music clip
+    public AudioClip backgroundMusic;       // Background music clip (assign in Inspector).
     [Range(0f, 1f)]
-    public float targetVolume = 1f;         // Normal volume level
-    public float fadeInDuration = 15f;      // Duration of fade-in effect
-    public float fadeOutDuration = 5f;      // Duration of fade-out effect
-    public float loseVolume = 0.2f;         // Volume level after losing
+    public float targetVolume = 1f;         // Normal volume level.
+    public float fadeInDuration = 15f;      // Duration of fade-in effect.
+    public float fadeOutDuration = 5f;      // Duration of fade-out effect.
+    public float loseVolume = 0.2f;         // Volume level after losing.
     public bool playOnAwake = true;         // Should music start on scene load?
+
+    [Header("Mixer Settings")]
+    public AudioMixer audioMixer;           // Reference to your AudioMixer asset.
+    public string musicVolumeParameter = "Music"; // Exposed parameter name in the AudioMixer.
 
     private AudioSource audioSource;
 
     private void Awake()
     {
-        // Implement the singleton pattern.
+        // Singleton pattern.
         if (instance == null)
         {
             instance = this;
@@ -46,16 +51,39 @@ public class AudioManager : MonoBehaviour
         audioSource.clip = backgroundMusic;
         audioSource.loop = true;
         audioSource.volume = targetVolume;
+        
+        if (audioMixer != null)
+        {
+            float dB = (targetVolume > 0) ? Mathf.Log10(targetVolume) * 20 : -80f;
+            audioMixer.SetFloat(musicVolumeParameter, dB);
+        }
 
         if (playOnAwake)
         {
             audioSource.Play();
-            
         }
     }
 
     /// <summary>
-    /// Resets the music by stopping, rewinding, setting volume to 0, and fading in.
+    /// Sets the music volume in real time.
+    /// </summary>
+    /// <param name="vol">Volume value from 0 to 1</param>
+    public void SetVolume(float vol)
+    {
+        targetVolume = vol;
+        if (audioSource != null)
+        {
+            audioSource.volume = vol;
+        }
+        if (audioMixer != null)
+        {
+            float dB = (vol > 0) ? Mathf.Log10(vol) * 20 : -80f;
+            audioMixer.SetFloat(musicVolumeParameter, dB);
+        }
+    }
+
+    /// <summary>
+    /// Resets the music by stopping, rewinding, setting volume to 0, and then fading in.
     /// </summary>
     public void ResetMusic()
     {
@@ -83,14 +111,26 @@ public class AudioManager : MonoBehaviour
         while (elapsed < fadeInDuration)
         {
             elapsed += Time.deltaTime;
-            audioSource.volume = Mathf.Lerp(0f, targetVolume, elapsed / fadeInDuration);
+            float newVolume = Mathf.Lerp(0f, targetVolume, elapsed / fadeInDuration);
+            audioSource.volume = newVolume;
+            if (audioMixer != null)
+            {
+                float dB = (newVolume > 0) ? Mathf.Log10(newVolume) * 20 : -80f;
+                audioMixer.SetFloat(musicVolumeParameter, dB);
+            }
             yield return null;
         }
         audioSource.volume = targetVolume;
+        if (audioMixer != null)
+        {
+            float dB = (targetVolume > 0) ? Mathf.Log10(targetVolume) * 20 : -80f;
+            audioMixer.SetFloat(musicVolumeParameter, dB);
+        }
     }
 
     /// <summary>
     /// Gradually decreases the volume to loseVolume over fadeOutDuration seconds.
+    /// Uses unscaled time so that it continues even when the game is paused.
     /// </summary>
     private IEnumerator FadeOutMusic()
     {
@@ -98,11 +138,22 @@ public class AudioManager : MonoBehaviour
         float startVolume = audioSource.volume;
         while (elapsed < fadeOutDuration)
         {
-            elapsed += Time.unscaledDeltaTime;  // Use unscaled time to continue during pause.
-            audioSource.volume = Mathf.Lerp(startVolume, loseVolume, elapsed / fadeOutDuration);
+            elapsed += Time.unscaledDeltaTime;
+            float newVolume = Mathf.Lerp(startVolume, loseVolume, elapsed / fadeOutDuration);
+            audioSource.volume = newVolume;
+            if (audioMixer != null)
+            {
+                float dB = (newVolume > 0) ? Mathf.Log10(newVolume) * 20 : -80f;
+                audioMixer.SetFloat(musicVolumeParameter, dB);
+            }
             yield return null;
         }
         audioSource.volume = loseVolume;
+        if (audioMixer != null)
+        {
+            float dB = (loseVolume > 0) ? Mathf.Log10(loseVolume) * 20 : -80f;
+            audioMixer.SetFloat(musicVolumeParameter, dB);
+        }
     }
 
     /// <summary>

@@ -142,7 +142,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hitPoints: 200
-  currencyWorth: 60
+  currencyWorth: 110
   armor: 99
 --- !u!61 &6440253017690519623
 BoxCollider2D:
