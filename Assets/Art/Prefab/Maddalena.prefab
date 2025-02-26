@@ -145,9 +145,16 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 30a4b26c5825645429b0cad57aeb2ec0, type: 3}
   - {fileID: 21300000, guid: 668bddd5b07bffb419aed0b76e1785b3, type: 3}
   targetingRange: 3
-  aps: 0.3
-  freezeTime: 1.5
+  aps: 0.25
+  freezeTime: 3
   baseUpgradeCost: 100
+  freezeEffectPrefab: {fileID: 346091996500417233, guid: e230902dd586159409ff2b56a6f32cd5, type: 3}
+  freezeAnimatorController: {fileID: 9100000, guid: a02d9aee30ed0cb4aa4c895433d08ec4, type: 2}
+  freezeEffectDuration: 0.3
+  enemyVisualEffectPrefab: {fileID: 911721255936366020, guid: ec20cf062e243e947b5803c60c99a371, type: 3}
+  enemyEffectDuration: 0.5
+  enemyBlueColor: {r: 0.7, g: 0.7, b: 1, a: 1}
+  tintLerpDuration: 0.3
 --- !u!1 &2686944574562900299
 GameObject:
   m_ObjectHideFlags: 0
@@ -608,6 +615,7 @@ MonoBehaviour:
   TurretLongRangeInstance: {fileID: 0}
   TurretPoisonInstance: {fileID: 0}
   TurretAreaDamageInstance: {fileID: 0}
+  TurretArmourBreakerInstance: {fileID: 0}
   circleSegments: 50
   circleColor: {r: 0.52624416, g: 0.7835357, b: 0.8037735, a: 1}
 --- !u!1 &4846592208779309689

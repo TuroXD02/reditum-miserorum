@@ -4,36 +4,30 @@ using UnityEngine;
 
 public class EnemyMovement : MonoBehaviour
 {
-
     [Header("References")]
     [SerializeField] private Rigidbody2D rb;
 
     [Header("Attributes")]
-    [SerializeField] public float moveSpeed;
+    [SerializeField] public float moveSpeed;         // Current speed.
+    private float baseSpeed;                         // The original speed.
+    public float BaseSpeed { get { return baseSpeed; } } // Exposed base speed.
 
-    private Transform target;
-    
-    private int pathIndex = 0;
-
-    private float baseSpeed;
-
-    
+    private Transform target;                        // Current waypoint target.
+    private int pathIndex = 0;                       // Index in LevelManager.main.path.
 
     private void Start()
     {
         baseSpeed = moveSpeed;
-        target = LevelManager.main.path[pathIndex]; //inizio partita definisce il percorso seguendo i numeri sul path in unity
+        target = LevelManager.main.path[pathIndex];  
     }
 
     private void Update()
     {
+        // If the enemy is near the current waypoint, advance to the next.
         if (Vector2.Distance(target.position, transform.position) <= 0.2f)
         {
-            pathIndex++; //quando il nemico va su un path, aumenta il path index creano un vettore
-            //quando enemy sale su path cambia
-
+            pathIndex++;
             if (pathIndex == LevelManager.main.path.Length)
-                //se il numero del path � uguaale al massimo, distruggi il game obj (enemy) e richiama on enemy detstroy
             {
                 EnemySpawner.onEnemyDestroy.Invoke();
                 Destroy(gameObject);
@@ -42,22 +36,22 @@ public class EnemyMovement : MonoBehaviour
             else
             {
                 target = LevelManager.main.path[pathIndex];
-                //negli altri casi il target viene impostato il prossimo in linea
             }
         }
     }
 
     private void FixedUpdate()
     {
-        Vector3 RandomTarget = new Vector3(Random.Range(target.position.x - 0.4f, target.position.x + 0.4f), Random.Range(target.position.y - 1, target.position.y + 1), 0);
+        // Slight randomization for natural movement.
+        Vector3 RandomTarget = new Vector3(
+            Random.Range(target.position.x - 0.4f, target.position.x + 0.4f),
+            Random.Range(target.position.y - 1, target.position.y + 1),
+            0);
         Vector2 direction = (RandomTarget - transform.position).normalized;
-        //crea un vettore in 2d che � composto tra posizione enemy e posizione, normalizzato in maniera tale che sia di modulo 1 ovvero che non varia velocit� 
-
         rb.velocity = direction * moveSpeed;
     }
 
-
-    public void UpdateSpeed(float newSpeed) 
+    public void UpdateSpeed(float newSpeed)
     {
         moveSpeed = newSpeed;
     }
@@ -65,5 +59,40 @@ public class EnemyMovement : MonoBehaviour
     public void ResetSpeed()
     {
         moveSpeed = baseSpeed;
+    }
+
+    /// <summary>
+    /// Returns the enemy's progress along the path as a float.
+    /// For example, if the enemy has completed 2 segments and is 50% through the 3rd,
+    /// this method returns 2.5.
+    /// </summary>
+    public float GetProgress()
+    {
+        if (pathIndex == 0)
+            return 0f;
+        Transform prev = LevelManager.main.path[pathIndex - 1];
+        Transform curr = LevelManager.main.path[pathIndex];
+        float segmentLength = Vector2.Distance(prev.position, curr.position);
+        float distTravelled = Vector2.Distance(prev.position, transform.position);
+        float fraction = (segmentLength > 0) ? Mathf.Clamp01(distTravelled / segmentLength) : 0f;
+        return (pathIndex - 1) + fraction;
+    }
+
+    /// <summary>
+    /// Sets the enemy's position along the path based on the provided progress value.
+    /// 'progress' should be between 0 and (number of segments).
+    /// For example, a progress value of 2.5 will place the enemy halfway between waypoint 2 and 3.
+    /// </summary>
+    public void SetProgress(float progress)
+    {
+        int index = Mathf.FloorToInt(progress);
+        float fraction = progress - index;
+        // Clamp index to ensure valid range. There must be at least two waypoints.
+        index = Mathf.Clamp(index, 0, LevelManager.main.path.Length - 2);
+        pathIndex = index + 1;
+        Transform prev = LevelManager.main.path[index];
+        Transform curr = LevelManager.main.path[pathIndex];
+        transform.position = Vector3.Lerp(prev.position, curr.position, fraction);
+        target = curr;
     }
 }

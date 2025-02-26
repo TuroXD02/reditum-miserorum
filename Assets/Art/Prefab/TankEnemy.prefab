@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 980224092370302550}
   - component: {fileID: 948588560539055683}
   - component: {fileID: 7015275431231620923}
+  - component: {fileID: -3400210152307959677}
   m_Layer: 6
   m_Name: TankEnemy
   m_TagString: Enemy
@@ -143,7 +144,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hitPoints: 1150
   currencyWorth: 90
-  armor: 5
+  armor: 10
 --- !u!61 &7015275431231620923
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -189,3 +190,15 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 0.94710445, y: 0.94710445}
   m_EdgeRadius: 0
+--- !u!114 &-3400210152307959677
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 935788788543515107}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a788af8615200a94dbb973589b69fe5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

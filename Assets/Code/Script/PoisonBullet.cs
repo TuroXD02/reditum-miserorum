@@ -1,27 +1,32 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PoisonBullet : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private Rigidbody2D rb;  // Riferimento al Rigidbody2D per gestire il movimento del proiettile
-    [SerializeField] private SpriteRenderer spriteRenderer; // Riferimento al SpriteRenderer per gestire l'aspetto visivo del proiettile
-    [SerializeField] private Collider2D bulletCollider;    // Riferimento al Collider2D del proiettile per gestire le collisioni
+    [SerializeField] private Rigidbody2D rb;  
+    [SerializeField] private SpriteRenderer spriteRenderer; 
+    [SerializeField] private Collider2D bulletCollider;    
 
     [Header("Attributes")]
-    [SerializeField] private float bulletSpeed;  // Velocita del proiettile
+    [SerializeField] private float bulletSpeed;  
 
     [Header("Poison Damage Settings")]
-    [Tooltip("Durata dell'effetto veleno sul target.")]
-    [SerializeField] private float poisonDuration;   // Durata totale dell'effetto veleno
-    [Tooltip("Intervallo di tempo in secondi per l'applicazione del danno da veleno.")]
-    [SerializeField] private float poisonTickInterval;  // Intervallo di tempo per ogni applicazione di danno
+    [Tooltip("Duration of the poison effect on the target.")]
+    [SerializeField] private float poisonDuration;   
+    [Tooltip("Interval between poison damage ticks.")]
+    [SerializeField] private float poisonTickInterval;  
 
-    private Transform target;  // Riferimento al target
-    private bool hasHitTarget = false;  // Flag per controllare se il proiettile ha colpito il target
-    private int poisonDamagePerTick;  // Danno applicato per ogni tick di veleno
+    private Transform target;  
+    private bool hasHitTarget = false;  
+    private int poisonDamagePerTick;  
     
-    // Metodo per impostare il target del proiettile
+    [Header("Poison Visual Effect Settings")]
+    [SerializeField] private GameObject poisonVfxPrefab;  // Prefab for the poison visual effect.
+    [SerializeField] private Color poisonOverlayColor = new Color(0.7f, 1f, 0.7f, 1f); // Slight green tint.
+    [SerializeField] private float poisonTintFadeDuration = 0.5f; // Fade in/out duration for tint.
+
     public void SetTarget(Transform _target)
     {
         target = _target;
@@ -29,37 +34,29 @@ public class PoisonBullet : MonoBehaviour
 
     private void Start()
     {
-        // Calcola quanti tick di veleno vengono applicati durante la durata del veleno
         int numberOfTicks = Mathf.CeilToInt(poisonDuration / poisonTickInterval);
         if (numberOfTicks == 0)
         {
-            numberOfTicks = 1; // Prevenire divisione per zero
+            numberOfTicks = 1;
         }
-
-        poisonDamagePerTick = 50; // Imposta il danno per ogni tick
+        poisonDamagePerTick = 50;
     }
 
     private void Update()
     {
         if (!hasHitTarget)
         {
-            // Ruota il proiettile per un effetto visivo
             transform.Rotate(0, 0, -720 * Time.deltaTime);
         }
     }
 
     private void FixedUpdate()
     {
-        // Se il target non � impostato, non fa nulla
         if (!target) return;
-
-        // Muove il proiettile verso il target se non ha ancora colpito
         if (!hasHitTarget)
         {
-            Vector2 direction = (target.position - transform.position).normalized;  // Calcola la direzione verso il target
-            rb.velocity = direction * bulletSpeed;  // Imposta la velocit� del proiettile
-
-            // Se il proiettile raggiunge il target, chiama il metodo OnHitTarget
+            Vector2 direction = (target.position - transform.position).normalized;
+            rb.velocity = direction * bulletSpeed;
             if (Vector2.Distance(transform.position, target.position) < 0.1f)
             {
                 OnHitTarget();
@@ -69,95 +66,101 @@ public class PoisonBullet : MonoBehaviour
 
     private void OnHitTarget()
     {
-        // Segna che il target � stato colpito
         hasHitTarget = true;
-
-        // Ferma il movimento del proiettile
         rb.velocity = Vector2.zero;
 
-        // Cerca il componente EnemyHealth o LussuriaHealth sul target
         EnemyHealth enemyHealth = target.GetComponent<EnemyHealth>();
         LussuriaHealth lussuriaHealth = target.GetComponent<LussuriaHealth>();
 
-        // Applica danno da veleno nel tempo se il target ha EnemyHealth
+        // Apply poison damage over time and visual effects for EnemyHealth.
         if (enemyHealth != null)
         {
             StartCoroutine(ApplyPoisonDamageOverTime(enemyHealth));
+            ApplyPoisonVisualEffects(target);
         }
 
-        // Applica danno da veleno nel tempo se il target ha LussuriaHealth
+        // Apply poison damage over time and visual effects for LussuriaHealth.
         if (lussuriaHealth != null)
         {
             StartCoroutine(ApplyPoisonDamageOverTime(lussuriaHealth));
+            ApplyPoisonVisualEffects(target);
         }
 
-        // Rende il proiettile invisibile e non collidibile
         HideBullet();
-
-        // Distrugge il proiettile dopo che l'effetto veleno � terminato
         Destroy(gameObject, poisonDuration);
     }
 
     private void OnCollisionEnter2D(Collision2D other)
     {
-        // Controlla se l'oggetto con cui ha colliso � il target
         if (other.transform == target)
         {
             OnHitTarget();
         }
     }
 
-    // Coroutine per applicare danno da veleno nel tempo a EnemyHealth
     private IEnumerator ApplyPoisonDamageOverTime(EnemyHealth enemy)
     {
         float elapsedTime = 0f;
-
         while (elapsedTime < poisonDuration)
         {
-            enemy.TakeDamageDOT(poisonDamagePerTick);  // Applica danno per tick
-            
-
-            yield return new WaitForSeconds(poisonTickInterval);  // Aspetta per il prossimo tick
+            enemy.TakeDamageDOT(poisonDamagePerTick);
+            yield return new WaitForSeconds(poisonTickInterval);
             elapsedTime += poisonTickInterval;
         }
-
-        
     }
 
-    // Coroutine per applicare danno da veleno nel tempo a LussuriaHealth
     private IEnumerator ApplyPoisonDamageOverTime(LussuriaHealth lussuria)
     {
         float elapsedTime = 0f;
-
         while (elapsedTime < poisonDuration)
         {
-            lussuria.TakeDamageDOTLU(poisonDamagePerTick);  // Updated method name
-            
-
-            yield return new WaitForSeconds(poisonTickInterval);  // Wait for the next tick
+            lussuria.TakeDamageDOTLU(poisonDamagePerTick);
+            yield return new WaitForSeconds(poisonTickInterval);
             elapsedTime += poisonTickInterval;
         }
     }
 
-    // Rende il proiettile invisibile e disabilita il suo collider
     private void HideBullet()
     {
-        // Disabilita il renderer del proiettile per renderlo invisibile
         if (spriteRenderer != null)
         {
             spriteRenderer.enabled = false;
         }
-
-        // Disabilita il collider del proiettile per evitare ulteriori interazioni
         if (bulletCollider != null)
         {
             bulletCollider.enabled = false;
         }
     }
 
-    // Metodo per impostare il danno del veleno per tick
     public void SetDamage(int poisonDamage)
     {
         poisonDamagePerTick = poisonDamage;
+    }
+
+    /// <summary>
+    /// Applies visual poison effects to the enemy:
+    /// - Instantiates a poison VFX prefab (if assigned).
+    /// - Applies a green overlay using the EnemyPoisonEffect component.
+    /// </summary>
+    private void ApplyPoisonVisualEffects(Transform enemyTransform)
+    {
+        // Instantiate poison VFX prefab on the enemy.
+        if (poisonVfxPrefab != null)
+        {
+            GameObject vfx = Instantiate(poisonVfxPrefab, enemyTransform.position, Quaternion.identity, enemyTransform);
+            Destroy(vfx, poisonDuration);
+        }
+        
+        // Get or add the EnemyPoisonEffect component and apply the poison effect.
+        SpriteRenderer enemyRenderer = enemyTransform.GetComponent<SpriteRenderer>();
+        if (enemyRenderer != null)
+        {
+            EnemyPoisonEffect poisonEffect = enemyTransform.GetComponent<EnemyPoisonEffect>();
+            if (poisonEffect == null)
+            {
+                poisonEffect = enemyTransform.gameObject.AddComponent<EnemyPoisonEffect>();
+            }
+            poisonEffect.ApplyPoisonEffect(poisonOverlayColor, poisonTintFadeDuration, poisonDuration);
+        }
     }
 }

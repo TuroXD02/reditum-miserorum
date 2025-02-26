@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,121 +6,187 @@ using UnityEngine.UI;
 public class TurretSlow : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private LayerMask enemyMask; // Mask to identify enemies
-    [SerializeField] private GameObject upgradeUI; // UI for turret upgrades
-    [SerializeField] private Button upgradeButton; // Button for triggering upgrades
-    [SerializeField] private SpriteRenderer turretSpriteRenderer; // Reference to the SpriteRenderer component
-    [SerializeField] private Sprite[] upgradeSprites; // Array of sprites representing turret states
+    [SerializeField] private LayerMask enemyMask;                // Mask to identify enemies.
+    [SerializeField] private GameObject upgradeUI;                 // UI for turret upgrades.
+    [SerializeField] private Button upgradeButton;                 // Button for triggering upgrades.
+    [SerializeField] private SpriteRenderer turretSpriteRenderer;  // Turret's SpriteRenderer.
+    [SerializeField] private Sprite[] upgradeSprites;              // Array of turret sprites for upgrades.
 
     [Header("Attributes")]
-    [SerializeField] public float targetingRange; // Range within which the turret can detect enemies
-    [SerializeField] private float aps; // Attacks per second
-    [SerializeField] private float freezeTime; // Duration of the freeze effect
-    [SerializeField] public int baseUpgradeCost; // Base cost of upgrading the turret
+    [SerializeField] public float targetingRange;                 // Detection range.
+    [SerializeField] private float aps;                            // Attacks per second.
+    [SerializeField] private float freezeTime;                     // Duration enemy remains slowed (to be extended on re-hit).
+    [SerializeField] public int baseUpgradeCost;                  // Base cost for upgrading the turret.
 
-    private float apsBase; // Base value for attacks per second, used for upgrade calculations
-    private float timeUntilFire; // Timer to control the time between attacks
-    private int level = 1; // Current level of the turret
+    [Header("Freeze Effect Animation (on Turret)")]
+    [SerializeField] private GameObject freezeEffectPrefab;        // Prefab for turret freeze effect.
+    [SerializeField] private RuntimeAnimatorController freezeAnimatorController; // Animator for turret freeze effect.
+    [SerializeField] private float freezeEffectDuration = 2f;      // Duration of turret freeze effect.
+
+    [Header("Enemy Visual Effect Settings")]
+    [SerializeField] private GameObject enemyVisualEffectPrefab;   // Prefab for enemy visual effect.
+    [SerializeField] private float enemyEffectDuration = 3f;       // Duration enemy visual effect stays active.
+
+    [Header("Enemy Tint Settings")]
+    [SerializeField] private Color enemyBlueColor = new Color(0.7f, 0.7f, 1f, 1f); // Blue tint to apply.
+    [SerializeField] private float tintLerpDuration = 0.5f;          // Time to fade in/out the tint.
+
+    // Internal state.
+    private float apsBase;         // Base APS.
+    private float timeUntilFire;   // Timer for attack rate.
+    private int level = 1;         // Current turret level.
+
+    // Dictionary to track active reset speed coroutines per enemy.
+    private static Dictionary<EnemyMovement, Coroutine> activeResetCoroutines = new Dictionary<EnemyMovement, Coroutine>();
+    // Dictionary to track the last slow hit time for each enemy.
+    private static Dictionary<EnemyMovement, float> lastSlowHitTime = new Dictionary<EnemyMovement, float>();
 
     private void Start()
     {
-        apsBase = aps; // Store the base APS for future upgrades
-        upgradeButton.onClick.AddListener(Upgrade); // Attach the Upgrade function to the button
+        apsBase = aps;
+        upgradeButton.onClick.AddListener(Upgrade);
     }
 
     private void Update()
     {
-        // Update the timer for the next attack
         timeUntilFire += Time.deltaTime;
-
-        // If enough time has passed, trigger the freeze effect
         if (timeUntilFire >= 1f / aps)
         {
             Freeze();
-            timeUntilFire = 0f; // Reset the timer
+            timeUntilFire = 0f;
         }
     }
 
-    // Function to apply the freeze effect to enemies in range
+    /// <summary>
+    /// Applies the slow effect to all enemies in range:
+    /// - Sets their speed to 0.1.
+    /// - Updates a timestamp so that the slow effect lasts freezeTime seconds after the last hit.
+    /// - Instantiates a visual effect prefab on them.
+    /// - Applies the blue tint effect via the EnemySlowEffect component.
+    /// Also plays the turret's freeze effect.
+    /// </summary>
     private void Freeze()
     {
-        RaycastHit2D[] hits = Physics2D.CircleCastAll(
-            transform.position, // Center of the detection circle
-            targetingRange,     // Radius of the detection circle
-            Vector2.zero,       // No movement, detect in place
-            0f,                 // Circle does not move
-            enemyMask           // Only detect objects on the "enemy" layer
-        );
-
-        // If there are enemies in range, apply the freeze effect
+        RaycastHit2D[] hits = Physics2D.CircleCastAll(transform.position, targetingRange, Vector2.zero, 0f, enemyMask);
         if (hits.Length > 0)
         {
-            for (int e = 0; e < hits.Length; e++) // Loop through all detected enemies
+            foreach (RaycastHit2D hit in hits)
             {
-                RaycastHit2D hit = hits[e];
-                EnemyMovement em = hit.transform.GetComponent<EnemyMovement>(); // Get the enemy's movement component
+                EnemyMovement em = hit.transform.GetComponent<EnemyMovement>();
                 if (em != null)
                 {
-                    em.UpdateSpeed(0.1f); // Slow down the enemy
-                    StartCoroutine(ResetEnemySpeed(em)); // Reset the speed after the freeze time
+                    // Apply the slow by setting speed.
+                    em.UpdateSpeed(0.1f);
+                    // Update last slow hit time.
+                    lastSlowHitTime[em] = Time.time;
+
+                    // If there's no reset coroutine for this enemy, start one.
+                    if (!activeResetCoroutines.ContainsKey(em))
+                    {
+                        Coroutine resetCoroutine = StartCoroutine(ResetEnemySpeed(em, freezeTime));
+                        activeResetCoroutines.Add(em, resetCoroutine);
+                    }
+                    // Instantiate enemy visual effect.
+                    if (enemyVisualEffectPrefab != null)
+                    {
+                        GameObject effect = Instantiate(enemyVisualEffectPrefab, hit.transform.position, Quaternion.identity, hit.transform);
+                        Destroy(effect, enemyEffectDuration);
+                    }
+                    // Apply the blue tint effect.
+                    EnemySlowEffect slowEffect = hit.transform.GetComponent<EnemySlowEffect>();
+                    if (slowEffect == null)
+                    {
+                        slowEffect = hit.transform.gameObject.AddComponent<EnemySlowEffect>();
+                    }
+                    slowEffect.ApplySlowEffect(enemyBlueColor, tintLerpDuration, freezeTime);
                 }
             }
         }
+
+        // Play turret freeze effect.
+        if (freezeEffectPrefab != null)
+        {
+            GameObject turretEffect = Instantiate(freezeEffectPrefab, transform.position, Quaternion.identity, transform);
+            Animator effectAnim = turretEffect.GetComponent<Animator>();
+            if (effectAnim != null && freezeAnimatorController != null)
+            {
+                effectAnim.runtimeAnimatorController = freezeAnimatorController;
+            }
+            float scaleFactor = targetingRange / 2f;
+            turretEffect.transform.localScale = new Vector3(scaleFactor, scaleFactor, 1f);
+            Destroy(turretEffect, freezeEffectDuration);
+        }
     }
 
-    // Coroutine to reset the enemy's speed after the freeze effect ends
-    private IEnumerator ResetEnemySpeed(EnemyMovement em)
+    /// <summary>
+    /// Continuously checks if the enemy should be unslowed.
+    /// Waits until the current time is at least freezeTime seconds past the last slow hit, then resets speed.
+    /// </summary>
+    private IEnumerator ResetEnemySpeed(EnemyMovement enemy, float duration)
     {
-        yield return new WaitForSeconds(freezeTime); // Wait for the freeze time
-        em.ResetSpeed(); // Restore the enemy's original speed
+        while (true)
+        {
+            if (lastSlowHitTime.ContainsKey(enemy))
+            {
+                if (Time.time >= lastSlowHitTime[enemy] + duration)
+                {
+                    enemy.ResetSpeed();
+                    lastSlowHitTime.Remove(enemy);
+                    break;
+                }
+            }
+            else
+            {
+                break;
+            }
+            yield return null;
+        }
+        if (activeResetCoroutines.ContainsKey(enemy))
+        {
+            activeResetCoroutines.Remove(enemy);
+        }
     }
 
-    // Function to open the turret upgrade UI
     public void OpenUpgradeUI()
     {
         upgradeUI.SetActive(true);
     }
 
-    // Function to close the turret upgrade UI
     public void CloseUpgradeUI()
     {
         upgradeUI.SetActive(false);
         UiManager.main.SetHoveringState(false);
     }
 
-    // Function to handle turret upgrades
     public void Upgrade()
     {
-        // Check if there are enough resources for the upgrade
         if (CalculateCost() > LevelManager.main.currency) return;
-
-        LevelManager.main.SpendCurrency(CalculateCost()); // Deduct the upgrade cost
-        level++; // Increment the turret level
-        aps = CalculateAPS(); // Update APS
-        targetingRange = CalculateRange(); // Update targeting range
-        UpdateSprite(); // Update the turret's sprite to reflect the upgrade
-        CloseUpgradeUI(); // Close the upgrade UI
+        LevelManager.main.SpendCurrency(CalculateCost());
+        level++;
+        aps = CalculateAttackSpeed();
+        targetingRange = CalculateRange();
+        UpdateSprite();
+        CloseUpgradeUI();
+        Debug.Log("New APS:" + aps);
+        Debug.Log("New Range:" + targetingRange);
+        Debug.Log("New Cost:" + CalculateCost());
     }
 
-    // Function to calculate the upgrade cost based on the level
     public int CalculateCost()
     {
         return Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 2f));
     }
 
-    // Calculate the new attack speed (APS) based on the level
-    private float CalculateAPS()
+    private float CalculateAttackSpeed()
     {
         return apsBase * Mathf.Pow(level, 0.32f);
     }
 
-    // Calculate the new targeting range based on the level
     private float CalculateRange()
     {
         return targetingRange * Mathf.Pow(level, 0.3f);
     }
 
-    // Update the turret's sprite to reflect the current level
     private void UpdateSprite()
     {
         if (turretSpriteRenderer != null && upgradeSprites != null && level - 1 < upgradeSprites.Length)

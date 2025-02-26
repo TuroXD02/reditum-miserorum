@@ -65,3 +65,6 @@ TagManager:
   - name: Enemy
     uniqueID: 827084425
     locked: 0
+  - name: Buff
+    uniqueID: 3327072123
+    locked: 0

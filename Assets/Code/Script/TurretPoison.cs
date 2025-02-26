@@ -84,13 +84,22 @@ public class TurretPoison : MonoBehaviour
 
     private void FindTarget()
     {
-        // Use CircleCast to detect enemies
+        // Perform a CircleCastAll to detect enemies in range.
         RaycastHit2D[] hits = Physics2D.CircleCastAll(transform.position, targetingRange, Vector2.zero, 0f, enemyMask);
 
-        // If enemies are found, set the first one as the target
         if (hits.Length > 0)
         {
+            Debug.Log("TurretPoison found " + hits.Length + " enemy(ies) in range:");
+            foreach (RaycastHit2D hit in hits)
+            {
+                Debug.Log("Found enemy: " + hit.transform.name);
+            }
+            // For simplicity, select the first enemy detected.
             target = hits[0].transform;
+        }
+        else
+        {
+            Debug.Log("TurretPoison: No enemies found in range.");
         }
     }
 

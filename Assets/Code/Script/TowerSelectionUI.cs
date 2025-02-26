@@ -31,7 +31,7 @@ public class TowerSelectionUI : MonoBehaviour
         if (LevelManager.main != null && turretPrefab != null)
         {
             LevelManager.main.SetSelectedTurret(turretPrefab);
-            Debug.Log("TowerSelectionUI: Selected turret " + turretPrefab.name);
+           
         }
         else
         {

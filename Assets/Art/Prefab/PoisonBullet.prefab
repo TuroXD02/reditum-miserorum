@@ -168,6 +168,9 @@ MonoBehaviour:
   bulletSpeed: 10
   poisonDuration: 4
   poisonTickInterval: 2
+  poisonVfxPrefab: {fileID: 8819224582256602449, guid: 8d899dc4dcbb81b44a4bdc99757ff662, type: 3}
+  poisonOverlayColor: {r: 0.7, g: 1, b: 0.7, a: 1}
+  poisonTintFadeDuration: 0.5
 --- !u!1 &6651918146290785953
 GameObject:
   m_ObjectHideFlags: 0

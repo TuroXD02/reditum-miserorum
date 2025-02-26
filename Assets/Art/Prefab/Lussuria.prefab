@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 6691463953868291389}
   - component: {fileID: 1294645826451896528}
   - component: {fileID: 7899843645807127658}
+  - component: {fileID: -7973715154411889432}
   m_Layer: 6
   m_Name: Lussuria
   m_TagString: Lussuria
@@ -142,8 +143,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hitPoints: 90
-  currencyWorth: 50
-  armor: 0
+  currencyWorth: 100
+  armor: 100
 --- !u!61 &7899843645807127658
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -189,3 +190,15 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 0.3711727, y: 0.8703475}
   m_EdgeRadius: 0
+--- !u!114 &-7973715154411889432
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6753773731279626888}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a788af8615200a94dbb973589b69fe5d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

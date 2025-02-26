@@ -36,7 +36,7 @@ public class Plot : MonoBehaviour
         // Check if there is already a tower on this plot
         if (towerObj != null)
         {
-            Debug.Log($"Interacting with tower: {towerObj.name}");
+            
 
             // Switch based on the component name to open the appropriate UI
             switch (towerObj.name)

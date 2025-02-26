@@ -5,111 +5,177 @@ using UnityEngine;
 public class ArmourBreakerBullet : MonoBehaviour
 {
     [Header("Bullet Settings")]
-    [SerializeField] private float bulletSpeed = 10f; // Speed at which the bullet travels.
-    
-    private int damage;              // Damage to apply when hitting the enemy.
-    private int armourReduction;     // Amount by which to reduce the enemy's armour.
+    [SerializeField] private float bulletDuration = 0.5f; // How long the bullet remains before applying damage.
+
+    private int damage;              // Damage applied on hit.
+    private int armourReduction;     // Armour reduction value.
     private Transform target;        // The enemy target.
-    private float aoeRadius;         // Area-of-effect radius provided by the turret.
+    private Vector3 startPosition;   // Turret firing point (bullet's spawn position).
 
-    [Header("Swiping Animation Settings")]
-    // Animator Controller for the swiping animation (assign this via the Inspector).
-    [SerializeField] private RuntimeAnimatorController swipeAnimatorController;
-    // Base effect radius used for scaling; when the turret's aoeRadius exceeds this, the bullet scales up.
-    [SerializeField] private float baseEffectRadius = 5f;
+    [Header("Animation & Scaling Settings")]
+    [SerializeField] private RuntimeAnimatorController swipeAnimatorController; // Controller for the swipe animation.
+    [SerializeField] private float baseBulletSize = 1f;  // Scale multiplier for overall bullet size.
 
-    private Animator anim; // Reference to the bullet's Animator.
+    private Animator anim;           // Reference to the bullet's Animator.
+    private SpriteRenderer sr;       // Reference to the bullet's SpriteRenderer.
+    private float spriteWidth;       // The natural width of the sprite in world units.
+
+    private float timer = 0f;
+    private bool hasHit = false;
 
     private void Awake()
     {
-        // Get the Animator component from this bullet (it should be attached on the prefab).
+        // Get components from this bullet (or its children).
         anim = GetComponent<Animator>();
-        // If an Animator and a swiping animation controller have been assigned, set the controller.
         if (anim != null && swipeAnimatorController != null)
         {
             anim.runtimeAnimatorController = swipeAnimatorController;
         }
+
+        sr = GetComponentInChildren<SpriteRenderer>();
+        if (sr != null)
+        {
+            spriteWidth = sr.sprite.bounds.size.x;
+            if (spriteWidth <= 0)
+            {
+                Debug.LogError("ArmourBreakerBullet: Sprite width is zero or negative!");
+            }
+        }
+        else
+        {
+            Debug.LogError("ArmourBreakerBullet: No SpriteRenderer found!");
+        }
     }
 
-    // ---------------------------
-    // Public Methods to Set Parameters
-    // ---------------------------
+    private void Start()
+    {
+        // If target hasn't been set before Start(), destroy the bullet.
+        if (target == null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        // Record the turret firing point.
+        startPosition = transform.position;
+        timer = 0f;
+        AdjustBullet();
+    }
 
-    // Set the damage value.
+    private void Update()
+    {
+        // If the target gets destroyed mid-animation, destroy the bullet.
+        if (target == null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        
+        // Optionally update if target moves. (If you want it to follow a moving target, uncomment the next line.)
+        // UpdateBulletTransform();
+
+        timer += Time.deltaTime;
+        if (timer >= bulletDuration)
+        {
+            HitTarget();
+        }
+    }
+
+    /// <summary>
+    /// Computes the transformation so that the bullet stretches from the turret firing point (startPosition) to the enemy.
+    /// </summary>
+    private void AdjustBullet()
+    {
+        // Calculate direction and distance from turret (point A) to enemy (point B).
+        Vector3 direction = (target.position - startPosition).normalized;
+        float distance = Vector2.Distance(startPosition, target.position);
+
+        // Rotate the bullet so that it points from turret to enemy.
+        // (If your animation is reversed, adding 180° flips it.)
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        transform.rotation = Quaternion.Euler(0, 0, angle + 180);
+
+        // Scale the bullet's width so that its stretched width equals the distance.
+        // (spriteWidth is the natural width of the sprite when localScale.x is 1.)
+        if (spriteWidth > 0)
+        {
+            Vector3 newScale = transform.localScale;
+            newScale.x = (distance / spriteWidth) * baseBulletSize;
+            newScale.y = baseBulletSize;
+            transform.localScale = newScale;
+        }
+
+        // Position the bullet so its center is exactly halfway between turret and enemy.
+        // With a centered pivot, this makes the left edge align with the turret firing point.
+        transform.position = startPosition + direction * (distance / 2);
+    }
+
+    /// <summary>
+    /// Optionally, if you want the bullet to update its transform continuously if the enemy moves.
+    /// Uncomment this function and call it in Update().
+    /// </summary>
+    private void UpdateBulletTransform()
+    {
+        Vector3 direction = (target.position - startPosition).normalized;
+        float distance = Vector2.Distance(startPosition, target.position);
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        transform.rotation = Quaternion.Euler(0, 0, angle + 180);
+        if (spriteWidth > 0)
+        {
+            Vector3 newScale = transform.localScale;
+            newScale.x = (distance / spriteWidth) * baseBulletSize;
+            newScale.y = baseBulletSize;
+            transform.localScale = newScale;
+        }
+        transform.position = startPosition + direction * (distance / 2);
+    }
+
+    /// <summary>
+    /// Sets the damage value.
+    /// </summary>
     public void SetDamage(int dmg)
     {
         damage = dmg;
     }
 
-    // Set the armour reduction value.
+    /// <summary>
+    /// Sets the armour reduction value.
+    /// </summary>
     public void SetArmourReduction(int reduction)
     {
         armourReduction = reduction;
     }
 
-    // Set the target for the bullet.
+    /// <summary>
+    /// Sets the enemy target for this bullet.
+    /// </summary>
     public void SetTarget(Transform targetTransform)
     {
         target = targetTransform;
     }
 
-    // Set the area-of-effect radius and adjust the bullet's scale accordingly.
-    public void SetAOERadius(float radius)
-    {
-        aoeRadius = radius;
-        // Calculate a scaling factor based on the ratio of the turret's aoeRadius to a base value.
-        float scaleFactor = aoeRadius / baseEffectRadius;
-        // Scale the bullet (and its animation) so that larger aoeRadius values result in a larger slash.
-        transform.localScale = Vector3.one * scaleFactor;
-    }
-
-    // ---------------------------
-    // Update: Moves the bullet toward its target.
-    // ---------------------------
-    private void Update()
-    {
-        if (target != null)
-        {
-            // Move toward the target using MoveTowards.
-            transform.position = Vector2.MoveTowards(transform.position, target.position, bulletSpeed * Time.deltaTime);
-            
-            // When the bullet is close enough, trigger the hit.
-            if (Vector2.Distance(transform.position, target.position) < 0.2f)
-            {
-                HitTarget();
-            }
-        }
-        else
-        {
-            // If the target is missing, destroy the bullet.
-            Destroy(gameObject);
-        }
-    }
-
-    // ---------------------------
-    // HitTarget: Called when the bullet reaches the enemy.
-    // ---------------------------
+    /// <summary>
+    /// Applies damage and armour reduction to the target, then destroys the bullet.
+    /// </summary>
     private void HitTarget()
     {
-        // Try to get the EnemyHealth component.
-        EnemyHealth enemyHealth = target.GetComponent<EnemyHealth>();
-        if (enemyHealth != null)
-        {
-            enemyHealth.TakeDamage(damage);
-            enemyHealth.ReduceArmour(armourReduction);
-        }
-        
-        // Also check for a LussuriaHealth component.
-        LussuriaHealth lussuriaHealth = target.GetComponent<LussuriaHealth>();
-        if (lussuriaHealth != null)
-        {
-            lussuriaHealth.TakeDamage(damage);
-            lussuriaHealth.ReduceArmour(armourReduction);
-        }
-        
-        // Optionally, you can trigger additional visual effects here if needed.
+        if (hasHit) return;
+        hasHit = true;
 
-        // Destroy the bullet after impact.
+        if (target != null)
+        {
+            EnemyHealth enemyHealth = target.GetComponent<EnemyHealth>();
+            if (enemyHealth != null)
+            {
+                enemyHealth.TakeDamage(damage);
+                enemyHealth.ReduceArmour(armourReduction);
+            }
+            LussuriaHealth lussuriaHealth = target.GetComponent<LussuriaHealth>();
+            if (lussuriaHealth != null)
+            {
+                lussuriaHealth.TakeDamage(damage);
+                lussuriaHealth.ReduceArmour(armourReduction);
+            }
+        }
         Destroy(gameObject);
     }
 }

@@ -5,75 +5,134 @@ using UnityEngine;
 public class LussuriaHealth : MonoBehaviour
 {
     [Header("Attributes")]
-    [SerializeField] private int hitPoints;
-    [SerializeField] private int currencyWorth;
-    [SerializeField] private float armor; // Armor percentage (e.g., 20 means 20% damage reduction)
+    [SerializeField] private int hitPoints;            // Base hit points for the enemy.
+    [SerializeField] private int currencyWorth;        // Currency earned when enemy is killed.
+    [SerializeField] private float baseArmor = 100f;     // Base armor value (full protection by default).
+    [SerializeField] private float armor;              // Current effective armor value.
 
     private bool isDestroyed = false;
-
     private EnemyMovement enemyMovement;
+
+    // Store the previous effective armor value to detect changes.
+    private float previousEffectiveArmor;
+
+    // Public property to expose current hit points.
+    public int HitPoints { get { return hitPoints; } }
 
     private void Start()
     {
-        // Get the EnemyMovement component from the same GameObject
         enemyMovement = GetComponent<EnemyMovement>();
+        // Initialize effective armor with full protection.
+        armor = baseArmor;
+        previousEffectiveArmor = armor;
     }
 
-    // Method to handle taking damage, including armor reduction
+    private void Update()
+    {
+        UpdateArmorBasedOnSpeed();
+    }
+
+    /// <summary>
+    /// Dynamically updates effective armor based on current speed.
+    /// EffectiveArmor = baseArmor * (currentSpeed / BaseSpeed)
+    /// If effective armor increases (i.e. enemy regains speed), trigger the "armor up" effect.
+    /// If it drops (i.e. enemy is slowed), trigger the "armor down" effect.
+    /// </summary>
+    private void UpdateArmorBasedOnSpeed()
+    {
+        if (enemyMovement == null) return;
+
+        float currentSpeed = enemyMovement.moveSpeed;
+        float baseSpeed = enemyMovement.BaseSpeed;
+        if (baseSpeed <= 0) return;
+
+        float effectiveArmor = baseArmor * (currentSpeed / baseSpeed);
+        effectiveArmor = Mathf.Clamp(effectiveArmor, 0, baseArmor);
+
+        if (effectiveArmor < previousEffectiveArmor)
+        {
+            Debug.Log($"{gameObject.name} effective armor dropped from {previousEffectiveArmor} to {effectiveArmor}. Triggering armor reduction effect.");
+            if (LevelManager.main != null)
+            {
+                LevelManager.main.PlayArmorChangeEffect(transform, false);
+            }
+        }
+        else if (effectiveArmor > previousEffectiveArmor)
+        {
+            Debug.Log($"{gameObject.name} effective armor increased from {previousEffectiveArmor} to {effectiveArmor}. Triggering armor increase effect.");
+            if (LevelManager.main != null)
+            {
+                LevelManager.main.PlayArmorChangeEffect(transform, true);
+            }
+        }
+
+        previousEffectiveArmor = effectiveArmor;
+        armor = effectiveArmor;
+        Debug.Log($"{gameObject.name} updated effective armor to: {armor} (Speed: {currentSpeed}/{baseSpeed}, baseArmor: {baseArmor})");
+    }
+
+    /// <summary>
+    /// Applies damage using the effective armor value.
+    /// </summary>
     public void TakeDamage(int dmg)
     {
-        // Get the current speed of the enemy
-        float currentSpeed = enemyMovement != null ? enemyMovement.moveSpeed : 0;
-
-        // Modify the armor to increase proportionally with the current speed
-        float speedFactor = 20f; // Adjust this factor to control how much speed affects armor
-        float adjustedArmor = currentSpeed * speedFactor;
-
-        // Calculate damage reduction based on adjusted armor percentage
-        float damageMultiplier = 1f - (adjustedArmor / 100f);
-        damageMultiplier = Mathf.Clamp(damageMultiplier, -1f, 1f);
-
-        // Calculate the actual damage after reduction
+        float damageMultiplier = 1f - (armor / 100f);
         int finalDamage = Mathf.CeilToInt(dmg * damageMultiplier);
-
-        // Subtract the final damage from hit points
         hitPoints -= finalDamage;
+        Debug.Log($"{gameObject.name} took {finalDamage} damage (Effective Armor: {armor}), remaining HP: {hitPoints}");
 
-        // Check if the enemy is destroyed
         if (hitPoints <= 0 && !isDestroyed)
         {
             isDestroyed = true;
             EnemySpawner.onEnemyDestroy.Invoke();
             LevelManager.main.IncreaseCurrency(currencyWorth);
             Destroy(gameObject);
+            return;
         }
+    }
 
-        //Debug.Log($"Incoming Damage: {dmg}, Speed: {currentSpeed}, Adjusted Armor: {adjustedArmor}%, Final Damage: {finalDamage}, Remaining HP: {hitPoints}");
-    }
-    
-    public void ReduceArmour(int amount)
-    {
-        // Reduce the armour value (and ensure it doesn't drop below zero).
-        armor = Mathf.Max(armor - amount, 0);
-    }
-    
-    // Corrected naming for the DOT damage method
+    /// <summary>
+    /// Applies flat DOT damage.
+    /// </summary>
     public void TakeDamageDOTLU(int dmg)
     {
-        // Reduce the hit points of the object by the damage amount (dmg).
         hitPoints -= dmg;
-
-        // Check if the object's hit points have reached 0 or below and it hasn't been destroyed yet.
+        Debug.Log($"{gameObject.name} took {dmg} DOT damage, remaining HP: {hitPoints}");
         if (hitPoints <= 0 && !isDestroyed)
         {
-            // Mark the object as destroyed to prevent multiple destruction events.
             isDestroyed = true;
-
-            // Increase the player's currency by the value of this object's currencyWorth.
             LevelManager.main.IncreaseCurrency(currencyWorth);
-
-            // Destroy this GameObject, removing it from the game world.
             Destroy(gameObject);
+        }
+    }
+
+    /// <summary>
+    /// Permanently reduces the enemy’s base armor (e.g., via an armor breaker turret).
+    /// This permanently lowers the maximum protection.
+    /// Also triggers an armor reduction effect.
+    /// </summary>
+    public void ReduceArmour(int amount)
+    {
+        Debug.Log($"{gameObject.name} ReduceArmour() called with amount: {amount}");
+        float oldBaseArmor = baseArmor;
+        baseArmor = Mathf.Max(baseArmor - amount, 0);
+        Debug.Log($"{gameObject.name} baseArmor reduced from {oldBaseArmor} to {baseArmor} by {amount}");
+
+        // Immediately update effective armor.
+        if (enemyMovement != null)
+        {
+            float currentSpeed = enemyMovement.moveSpeed;
+            float baseSpeed = enemyMovement.BaseSpeed;
+            float effectiveArmor = baseArmor * (currentSpeed / baseSpeed);
+            effectiveArmor = Mathf.Clamp(effectiveArmor, 0, baseArmor);
+            armor = effectiveArmor;
+            previousEffectiveArmor = effectiveArmor;
+        }
+
+        if (LevelManager.main != null)
+        {
+            Debug.Log($"{gameObject.name} calling PlayArmorChangeEffect for permanent armor reduction");
+            LevelManager.main.PlayArmorChangeEffect(transform, false);
         }
     }
 }

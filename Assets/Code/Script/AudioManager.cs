@@ -24,7 +24,7 @@ public class AudioManager : MonoBehaviour
 
     private void Awake()
     {
-        // Singleton pattern.
+        // Implement the singleton pattern.
         if (instance == null)
         {
             instance = this;
@@ -52,10 +52,25 @@ public class AudioManager : MonoBehaviour
         audioSource.loop = true;
         audioSource.volume = targetVolume;
         
+        // Set the AudioSource's output group to the one that uses the "Music" parameter.
         if (audioMixer != null)
         {
+            var groups = audioMixer.FindMatchingGroups("Music");
+            if (groups.Length > 0)
+            {
+                audioSource.outputAudioMixerGroup = groups[0];
+            }
+            else
+            {
+                Debug.LogError("No matching AudioMixer group found for 'Music'");
+            }
+
             float dB = (targetVolume > 0) ? Mathf.Log10(targetVolume) * 20 : -80f;
             audioMixer.SetFloat(musicVolumeParameter, dB);
+        }
+        else
+        {
+            Debug.LogWarning("AudioMixer is not assigned in AudioManager!");
         }
 
         if (playOnAwake)
@@ -70,14 +85,14 @@ public class AudioManager : MonoBehaviour
     /// <param name="vol">Volume value from 0 to 1</param>
     public void SetVolume(float vol)
     {
-        targetVolume = vol;
+        targetVolume = Mathf.Clamp01(vol);
         if (audioSource != null)
         {
-            audioSource.volume = vol;
+            audioSource.volume = targetVolume;
         }
         if (audioMixer != null)
         {
-            float dB = (vol > 0) ? Mathf.Log10(vol) * 20 : -80f;
+            float dB = (targetVolume > 0) ? Mathf.Log10(targetVolume) * 20 : -80f;
             audioMixer.SetFloat(musicVolumeParameter, dB);
         }
     }
