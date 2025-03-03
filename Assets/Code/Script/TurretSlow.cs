@@ -174,17 +174,17 @@ public class TurretSlow : MonoBehaviour
 
     public int CalculateCost()
     {
-        return Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 2f));
+        return Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 1.3f));
     }
 
     private float CalculateAttackSpeed()
     {
-        return apsBase * Mathf.Pow(level, 0.32f);
+        return apsBase * Mathf.Pow(level, 0.1f);
     }
 
     private float CalculateRange()
     {
-        return targetingRange * Mathf.Pow(level, 0.3f);
+        return targetingRange * Mathf.Pow(level, 0.12f);
     }
 
     private void UpdateSprite()

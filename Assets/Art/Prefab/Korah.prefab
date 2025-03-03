@@ -129,10 +129,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e84cf6cfaa7054b4b8bca186342ab8c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  boostInterval: 10
-  minBoostPercent: 1.5
-  maxBoostPercent: 1.8
-  effectDuration: 5
+  boostInterval: 8
+  minBoostPercent: 0.5
+  maxBoostPercent: 1
+  effectDuration: 3
   buffEffectPrefab: {fileID: 6861304764735826249, guid: b3eecee55692c6e4fb9393d7f53e76cb, type: 3}
   visualEffectDuration: 0.5
   targetTint: {r: 1, g: 0.7, b: 0.7, a: 1}
@@ -163,9 +163,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1d26bd60f65cd2468371a2c970e3eff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hitPoints: 200
+  hitPoints: 600
   currencyWorth: 150
-  armor: 3
+  armor: 15
 --- !u!61 &6189314551703861056
 BoxCollider2D:
   m_ObjectHideFlags: 0

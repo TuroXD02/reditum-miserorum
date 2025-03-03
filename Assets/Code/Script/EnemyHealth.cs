@@ -9,17 +9,22 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] private int currencyWorth;       // Currency earned when enemy is killed.
     [SerializeField] private float armor;             // Armor percentage.
 
-    private bool isDestroyed = false;
+    protected bool isDestroyed = false;
 
-    public void TakeDamage(int dmg)
+    // Public property to expose current hit points.
+    public virtual int HitPoints 
+    { 
+        get { return hitPoints; } 
+    }
+
+    public virtual void TakeDamage(int dmg)
     {
         if (isDestroyed) return;
 
         float damageMultiplier = 1f - (armor / 100f);
         int finalDamage = Mathf.CeilToInt(dmg * damageMultiplier);
-
         hitPoints -= finalDamage;
-        
+        Debug.Log($"{gameObject.name} took {finalDamage} damage, remaining HP: {hitPoints}");
 
         if (hitPoints <= 0 && !isDestroyed)
         {
@@ -27,19 +32,19 @@ public class EnemyHealth : MonoBehaviour
         }
     }
     
-    public void ReduceArmour(int amount)
+    public virtual void ReduceArmour(int amount)
     {
         float oldArmor = armor;
         armor = Mathf.Max(armor - amount, 0);
         Debug.Log($"{gameObject.name} armor reduced from {oldArmor} to {armor} by {amount}");
         
-        if(LevelManager.main != null)
+        if (LevelManager.main != null)
         {
             LevelManager.main.PlayArmorChangeEffect(transform, false);
         }
     }
 
-    public void TakeDamageDOT(int dmg)
+    public virtual void TakeDamageDOT(int dmg)
     {
         if (isDestroyed) return;
 
@@ -54,11 +59,14 @@ public class EnemyHealth : MonoBehaviour
         }
     }
 
-    private void EnemyDestroyed()
+    protected virtual void EnemyDestroyed()
     {
         isDestroyed = true;
         EnemySpawner.onEnemyDestroy.Invoke();
-        LevelManager.main.IncreaseCurrency(currencyWorth);
+        if (LevelManager.main != null)
+        {
+            LevelManager.main.IncreaseCurrency(currencyWorth);
+        }
         Destroy(gameObject);
     }
 }
