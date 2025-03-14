@@ -4,9 +4,10 @@ using UnityEngine;
 public class EnemySlowEffect : MonoBehaviour
 {
     private SpriteRenderer enemyRenderer;
-    private Coroutine slowCoroutine;
+    private Coroutine effectCoroutine;
     private Color originalColor;
-    private float effectEndTime;
+    private Color currentTargetTint;
+    private float currentHoldDuration;
 
     private void Awake()
     {
@@ -20,63 +21,60 @@ public class EnemySlowEffect : MonoBehaviour
             Debug.LogWarning($"{gameObject.name}: No SpriteRenderer found for slow effect.");
         }
     }
-    
+
     /// <summary>
-    /// Applies the slow effect by tinting the enemy's sprite to the specified tint.
-    /// If the effect is already active, the enemy's color is immediately set to the tint,
-    /// and the hold duration is refreshed.
+    /// Applies (or refreshes) the slow effect by tinting the enemy's sprite.
+    /// If the effect is already active, it restarts the routine to refresh the hold duration.
     /// </summary>
-    /// <param name="tint">The blue tint color to apply.</param>
+    /// <param name="tint">The blue tint to apply.</param>
     /// <param name="fadeDuration">Time to fade in/out the tint.</param>
-    /// <param name="holdDuration">Duration for which the tint is held.</param>
+    /// <param name="holdDuration">Duration to hold the tint after fade in.</param>
     public void ApplySlowEffect(Color tint, float fadeDuration, float holdDuration)
     {
-        if (slowCoroutine != null)
+        currentTargetTint = tint;
+        currentHoldDuration = holdDuration;
+        // If already active, restart the coroutine to refresh the effect.
+        if (effectCoroutine != null)
         {
-            // Refresh the hold duration.
-            effectEndTime = Time.time + holdDuration;
-            // Force the color to the full tint immediately.
-            if (enemyRenderer != null)
-            {
-                enemyRenderer.color = tint;
-            }
-            return;
+            StopCoroutine(effectCoroutine);
         }
-        slowCoroutine = StartCoroutine(SlowEffectRoutine(tint, fadeDuration, holdDuration));
+        effectCoroutine = StartCoroutine(SlowEffectRoutine(fadeDuration));
     }
-    
-    private IEnumerator SlowEffectRoutine(Color tint, float fadeDuration, float holdDuration)
+
+    private IEnumerator SlowEffectRoutine(float fadeDuration)
     {
         float t = 0f;
-        // Fade in to the tint.
+        // Fade in from originalColor to currentTargetTint.
         while (t < fadeDuration)
         {
             t += Time.deltaTime;
             if (enemyRenderer != null)
             {
-                enemyRenderer.color = Color.Lerp(originalColor, tint, t / fadeDuration);
+                enemyRenderer.color = Color.Lerp(originalColor, currentTargetTint, t / fadeDuration);
             }
             yield return null;
         }
         if (enemyRenderer != null)
         {
-            enemyRenderer.color = tint;
+            enemyRenderer.color = currentTargetTint;
         }
-        // Set the effect end time.
-        effectEndTime = Time.time + holdDuration;
-        // Wait until the effect duration has elapsed.
-        while (Time.time < effectEndTime)
+
+        // Hold the tint for the full duration.
+        float holdTimer = 0f;
+        while (holdTimer < currentHoldDuration)
         {
+            holdTimer += Time.deltaTime;
             yield return null;
         }
-        // Fade out back to the original color.
+
+        // Fade out from the tint back to originalColor.
         t = 0f;
         while (t < fadeDuration)
         {
             t += Time.deltaTime;
             if (enemyRenderer != null)
             {
-                enemyRenderer.color = Color.Lerp(tint, originalColor, t / fadeDuration);
+                enemyRenderer.color = Color.Lerp(currentTargetTint, originalColor, t / fadeDuration);
             }
             yield return null;
         }
@@ -84,6 +82,6 @@ public class EnemySlowEffect : MonoBehaviour
         {
             enemyRenderer.color = originalColor;
         }
-        slowCoroutine = null;
+        effectCoroutine = null;
     }
 }

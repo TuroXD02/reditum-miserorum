@@ -15,7 +15,7 @@ public class TurretSlow : MonoBehaviour
     [Header("Attributes")]
     [SerializeField] public float targetingRange;                 // Detection range.
     [SerializeField] private float aps;                            // Attacks per second.
-    [SerializeField] private float freezeTime;                     // Duration enemy remains slowed (to be extended on re-hit).
+    [SerializeField] private float freezeTime;                     // Duration enemy remains slowed (after last hit).
     [SerializeField] public int baseUpgradeCost;                  // Base cost for upgrading the turret.
 
     [Header("Freeze Effect Animation (on Turret)")]
@@ -60,7 +60,7 @@ public class TurretSlow : MonoBehaviour
     /// <summary>
     /// Applies the slow effect to all enemies in range:
     /// - Sets their speed to 0.1.
-    /// - Updates a timestamp so that the slow effect lasts freezeTime seconds after the last hit.
+    /// - Updates the timestamp so that the slow effect lasts freezeTime seconds after the last hit.
     /// - Instantiates a visual effect prefab on them.
     /// - Applies the blue tint effect via the EnemySlowEffect component.
     /// Also plays the turret's freeze effect.
@@ -72,13 +72,21 @@ public class TurretSlow : MonoBehaviour
         {
             foreach (RaycastHit2D hit in hits)
             {
+                // If the enemy has SlowImmunity, skip slowing it.
+                if (hit.transform.GetComponent<SlowImmunity>() != null)
+                {
+                    Debug.Log($"{hit.transform.name} is immune to slow. Skipping slow effect.");
+                    continue;
+                }
+
                 EnemyMovement em = hit.transform.GetComponent<EnemyMovement>();
                 if (em != null)
                 {
-                    // Apply the slow by setting speed.
+                    // Apply the slow effect.
                     em.UpdateSpeed(0.1f);
-                    // Update last slow hit time.
+                    // Update the last hit timestamp.
                     lastSlowHitTime[em] = Time.time;
+                    Debug.Log($"[{hit.transform.name}] Slow hit at time {Time.time}");
 
                     // If there's no reset coroutine for this enemy, start one.
                     if (!activeResetCoroutines.ContainsKey(em))
@@ -86,12 +94,14 @@ public class TurretSlow : MonoBehaviour
                         Coroutine resetCoroutine = StartCoroutine(ResetEnemySpeed(em, freezeTime));
                         activeResetCoroutines.Add(em, resetCoroutine);
                     }
+                    
                     // Instantiate enemy visual effect.
                     if (enemyVisualEffectPrefab != null)
                     {
                         GameObject effect = Instantiate(enemyVisualEffectPrefab, hit.transform.position, Quaternion.identity, hit.transform);
                         Destroy(effect, enemyEffectDuration);
                     }
+                    
                     // Apply the blue tint effect.
                     EnemySlowEffect slowEffect = hit.transform.GetComponent<EnemySlowEffect>();
                     if (slowEffect == null)
@@ -120,7 +130,7 @@ public class TurretSlow : MonoBehaviour
 
     /// <summary>
     /// Continuously checks if the enemy should be unslowed.
-    /// Waits until the current time is at least freezeTime seconds past the last slow hit, then resets speed.
+    /// Waits until current time is at least freezeTime seconds past the last slow hit, then resets speed.
     /// </summary>
     private IEnumerator ResetEnemySpeed(EnemyMovement enemy, float duration)
     {
@@ -131,6 +141,7 @@ public class TurretSlow : MonoBehaviour
                 if (Time.time >= lastSlowHitTime[enemy] + duration)
                 {
                     enemy.ResetSpeed();
+                    Debug.Log($"{enemy.gameObject.name} speed reset at time {Time.time}");
                     lastSlowHitTime.Remove(enemy);
                     break;
                 }
@@ -167,9 +178,9 @@ public class TurretSlow : MonoBehaviour
         targetingRange = CalculateRange();
         UpdateSprite();
         CloseUpgradeUI();
-        Debug.Log("New APS:" + aps);
-        Debug.Log("New Range:" + targetingRange);
-        Debug.Log("New Cost:" + CalculateCost());
+        Debug.Log("New APS: " + aps);
+        Debug.Log("New Range: " + targetingRange);
+        Debug.Log("New Cost: " + CalculateCost());
     }
 
     public int CalculateCost()

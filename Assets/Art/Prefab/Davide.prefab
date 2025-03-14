@@ -730,7 +730,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 89432353eabed144980163505150b6ab, type: 3}
   targetingRange: 8
   rotationSpeed: 50
-  bps: 0.2
+  bps: 0.5
   baseUpgradeCost: 200
   bulletDamage: 1
 --- !u!1 &7481640872950284230

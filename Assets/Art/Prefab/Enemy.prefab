@@ -145,6 +145,10 @@ MonoBehaviour:
   hitPoints: 480
   currencyWorth: 80
   armor: 5
+  healthSprites:
+  - {fileID: 21300000, guid: aa50d7726ae8558488ab2e868970b30a, type: 3}
+  - {fileID: 21300000, guid: 5914bb42a8565e1478c61fb0c3ed8368, type: 3}
+  - {fileID: 21300000, guid: 20c9b1925240097409703236513c8524, type: 3}
 --- !u!61 &6440253017690519623
 BoxCollider2D:
   m_ObjectHideFlags: 0

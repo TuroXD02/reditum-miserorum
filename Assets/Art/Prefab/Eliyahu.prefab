@@ -189,9 +189,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hitPoints: 500
   currencyWorth: 600
-  armor: 15
+  armor: 30
   maxRespawns: 8
-  fullHealth: 1200
+  fullHealth: 500
   speedMultiplier: 1.1
   respawnSprites:
   - {fileID: 21300000, guid: 7425839fcd8f1d54c90249093f05b96d, type: 3}

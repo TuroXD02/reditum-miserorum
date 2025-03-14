@@ -8,7 +8,8 @@ public class EnemySpawner : MonoBehaviour
     [Header("References")]
     public Transform startPoint; // Must be assigned in the Inspector.
     [SerializeField] private GameObject[] enemyPrefabs; // Base enemy prefabs.
-    [SerializeField] private GameObject[] extraEnemyPrefabs; // Additional enemy prefabs to add after round 6.
+    [SerializeField] private GameObject[] extraEnemyPrefabs; // Additional enemy prefabs to add starting from wave 7.
+    [SerializeField] private GameObject[] moreEnemyPrefabs;  // Additional enemy prefabs to add starting from wave 12.
 
     [Header("Attributes")]
     [SerializeField] private int baseEnemies = 5; // Base number of enemies in the first wave.
@@ -38,8 +39,7 @@ public class EnemySpawner : MonoBehaviour
     }
 
     private void Start()
-    {
-        
+    {       
         StartCoroutine(StartWave());
     }
 
@@ -66,7 +66,6 @@ public class EnemySpawner : MonoBehaviour
     private void EnemyDestroyed()
     {
         enemiesAlive = Mathf.Max(0, enemiesAlive - 1);
-        Debug.Log("[EnemySpawner] Enemy destroyed. Remaining alive: " + enemiesAlive);
     }
 
     private void EndWave()
@@ -87,14 +86,11 @@ public class EnemySpawner : MonoBehaviour
 
     private IEnumerator StartWave()
     {
-        
         yield return new WaitForSeconds(timeBetweenWaves);
 
         isSpawning = true;
         enemiesLeftToSpawn = EnemiesPerWave();
         eps = EnemiesPerSecond();
-
-        
 
         waveTimeoutCoroutine = StartCoroutine(WaveTimeout());
     }
@@ -104,7 +100,6 @@ public class EnemySpawner : MonoBehaviour
         yield return new WaitForSeconds(waveTimeout);
         if (isSpawning)
         {
-            
             EndWave();
         }
     }
@@ -112,12 +107,26 @@ public class EnemySpawner : MonoBehaviour
     private void SpawnEnemy()
     {
         GameObject[] spawnPool;
-        if (currentWave >= 6 && extraEnemyPrefabs.Length > 0)
+
+        // If currentWave is 12 or higher and there are entries in moreEnemyPrefabs, combine all pools.
+        if (currentWave >= 12 && moreEnemyPrefabs.Length > 0)
+        {
+            List<GameObject> combined = new List<GameObject>(enemyPrefabs);
+            if (extraEnemyPrefabs.Length > 0)
+            {
+                combined.AddRange(extraEnemyPrefabs);
+            }
+            combined.AddRange(moreEnemyPrefabs);
+            spawnPool = combined.ToArray();
+            Debug.Log("[EnemySpawner] Using combined enemy spawn pool for wave 12+.");
+        }
+        // Else if currentWave is 7 or higher, use enemyPrefabs + extraEnemyPrefabs.
+        else if (currentWave >= 7 && extraEnemyPrefabs.Length > 0)
         {
             List<GameObject> combined = new List<GameObject>(enemyPrefabs);
             combined.AddRange(extraEnemyPrefabs);
             spawnPool = combined.ToArray();
-            Debug.Log("[EnemySpawner] Using combined enemy spawn pool.");
+            Debug.Log("[EnemySpawner] Using combined enemy spawn pool for wave 7+.");
         }
         else
         {
@@ -127,7 +136,6 @@ public class EnemySpawner : MonoBehaviour
         int index = Random.Range(0, spawnPool.Length);
         GameObject prefabToSpawn = spawnPool[index];
 
-        // Ensure startPoint is assigned.
         if (startPoint == null)
         {
             Debug.LogError("[EnemySpawner] startPoint is not assigned!");
@@ -141,20 +149,17 @@ public class EnemySpawner : MonoBehaviour
         );
 
         Instantiate(prefabToSpawn, position, Quaternion.identity);
-        
     }
 
     private int EnemiesPerWave()
     {
         int calculatedEnemies = Mathf.RoundToInt(baseEnemies * Mathf.Pow(currentWave, difficultyScalingFactor));
-        
         return calculatedEnemies;
     }
 
     private float EnemiesPerSecond()
     {
         float calculatedEps = Mathf.Clamp(enemiesPerSecond * Mathf.Pow(currentWave, difficultyScalingFactor), 0f, enemiesPerSecondCap);
-       
         return calculatedEps;
     }
 }

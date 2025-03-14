@@ -201,5 +201,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hitPoints: 2000
   currencyWorth: 250
-  armor: 45
+  armor: 50
   speedReductionPercentage: 0.05
+  hitSprites:
+  - {fileID: 21300000, guid: a473a36fe8bf0b049a38372751f3031d, type: 3}
+  - {fileID: 21300000, guid: 574ebd8e393d7614f95fa99edae91fd2, type: 3}
+  - {fileID: 21300000, guid: 30e73b1acd4d1c2489eb076385ae22d2, type: 3}
+  - {fileID: 21300000, guid: 30e73b1acd4d1c2489eb076385ae22d2, type: 3}
+  - {fileID: 21300000, guid: 30e73b1acd4d1c2489eb076385ae22d2, type: 3}
+  - {fileID: 21300000, guid: 30e73b1acd4d1c2489eb076385ae22d2, type: 3}
+  - {fileID: 21300000, guid: 30e73b1acd4d1c2489eb076385ae22d2, type: 3}
+  - {fileID: 21300000, guid: 30e73b1acd4d1c2489eb076385ae22d2, type: 3}
+  hitsPerSpriteSwitch: 20

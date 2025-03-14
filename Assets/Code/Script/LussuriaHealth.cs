@@ -17,12 +17,33 @@ public class LussuriaHealth : MonoBehaviour
     private float previousEffectiveArmor;
 
     // Public property to expose current hit points.
-    public int HitPoints { get { return hitPoints; } }
+    public int HitPoints 
+    { 
+        get { return hitPoints; } 
+    }
+
+    [Header("Armor Sprite Settings")]
+    [Tooltip("Sprite to display when effective armor is above 50.")]
+    [SerializeField] private Sprite highEffectiveArmorSprite;
+    [Tooltip("Sprite to display when effective armor is 50 or below.")]
+    [SerializeField] private Sprite lowEffectiveArmorSprite;
+
+    private SpriteRenderer sr;
+    private Sprite originalSprite;
 
     private void Start()
     {
         enemyMovement = GetComponent<EnemyMovement>();
-        // Initialize effective armor with full protection.
+        sr = GetComponent<SpriteRenderer>();
+        if (sr != null)
+        {
+            originalSprite = sr.sprite;
+        }
+        else
+        {
+            Debug.LogWarning($"{gameObject.name} has no SpriteRenderer component!");
+        }
+        // Initialize effective armor.
         armor = baseArmor;
         previousEffectiveArmor = armor;
     }
@@ -35,8 +56,8 @@ public class LussuriaHealth : MonoBehaviour
     /// <summary>
     /// Dynamically updates effective armor based on current speed.
     /// EffectiveArmor = baseArmor * (currentSpeed / BaseSpeed)
-    /// If effective armor increases (i.e. enemy regains speed), trigger the "armor up" effect.
-    /// If it drops (i.e. enemy is slowed), trigger the "armor down" effect.
+    /// Triggers an armor up effect if effective armor increases, and an armor down effect if it drops.
+    /// Also updates the enemy sprite based on effective armor.
     /// </summary>
     private void UpdateArmorBasedOnSpeed()
     {
@@ -69,6 +90,50 @@ public class LussuriaHealth : MonoBehaviour
         previousEffectiveArmor = effectiveArmor;
         armor = effectiveArmor;
         Debug.Log($"{gameObject.name} updated effective armor to: {armor} (Speed: {currentSpeed}/{baseSpeed}, baseArmor: {baseArmor})");
+
+        // Update the sprite based on effective armor.
+        CheckArmorSprite();
+    }
+
+    /// <summary>
+    /// Checks the current effective armor value and updates the sprite accordingly.
+    /// If effective armor is above 50, uses highEffectiveArmorSprite (if assigned, otherwise original sprite).
+    /// If effective armor is 50 or below, uses lowEffectiveArmorSprite.
+    /// </summary>
+    private void CheckArmorSprite()
+    {
+        if (sr == null) return;
+
+        if (armor > 50)
+        {
+            if (highEffectiveArmorSprite != null)
+            {
+                if (sr.sprite != highEffectiveArmorSprite)
+                {
+                    sr.sprite = highEffectiveArmorSprite;
+                    Debug.Log($"{gameObject.name} switched to high effective armor sprite (armor > 50).");
+                }
+            }
+            else
+            {
+                if (sr.sprite != originalSprite)
+                {
+                    sr.sprite = originalSprite;
+                    Debug.Log($"{gameObject.name} reverted to original sprite (armor > 50, no high effective armor sprite assigned).");
+                }
+            }
+        }
+        else // armor <= 50
+        {
+            if (lowEffectiveArmorSprite != null)
+            {
+                if (sr.sprite != lowEffectiveArmorSprite)
+                {
+                    sr.sprite = lowEffectiveArmorSprite;
+                    Debug.Log($"{gameObject.name} switched to low effective armor sprite (armor <= 50).");
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -85,7 +150,10 @@ public class LussuriaHealth : MonoBehaviour
         {
             isDestroyed = true;
             EnemySpawner.onEnemyDestroy.Invoke();
-            LevelManager.main.IncreaseCurrency(currencyWorth);
+            if (LevelManager.main != null)
+            {
+                LevelManager.main.IncreaseCurrency(currencyWorth);
+            }
             Destroy(gameObject);
             return;
         }
@@ -101,7 +169,10 @@ public class LussuriaHealth : MonoBehaviour
         if (hitPoints <= 0 && !isDestroyed)
         {
             isDestroyed = true;
-            LevelManager.main.IncreaseCurrency(currencyWorth);
+            if (LevelManager.main != null)
+            {
+                LevelManager.main.IncreaseCurrency(currencyWorth);
+            }
             Destroy(gameObject);
         }
     }
@@ -109,7 +180,7 @@ public class LussuriaHealth : MonoBehaviour
     /// <summary>
     /// Permanently reduces the enemy’s base armor (e.g., via an armor breaker turret).
     /// This permanently lowers the maximum protection.
-    /// Also triggers an armor reduction effect.
+    /// Also triggers an armor reduction effect and immediately updates effective armor.
     /// </summary>
     public void ReduceArmour(int amount)
     {
@@ -134,5 +205,8 @@ public class LussuriaHealth : MonoBehaviour
             Debug.Log($"{gameObject.name} calling PlayArmorChangeEffect for permanent armor reduction");
             LevelManager.main.PlayArmorChangeEffect(transform, false);
         }
+        
+        // Update sprite immediately after armor reduction.
+        CheckArmorSprite();
     }
 }

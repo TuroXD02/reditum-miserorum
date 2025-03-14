@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Korah : MonoBehaviour
@@ -28,18 +29,27 @@ public class Korah : MonoBehaviour
         {
             yield return new WaitForSeconds(boostInterval);
 
-            // Generate a random boost factor (e.g., 0.07 means 7% boost).
+            // Generate a random boost factor.
             float boostFactor = Random.Range(minBoostPercent, maxBoostPercent);
 
             // Find all enemies with an EnemyMovement component.
             EnemyMovement[] enemies = FindObjectsOfType<EnemyMovement>();
             foreach (EnemyMovement enemy in enemies)
             {
+                // Skip self.
                 if (enemy.gameObject == this.gameObject)
                     continue;
 
-                // Permanently boost enemy speed.
+                // If the enemy is slowed (current speed is below BaseSpeed), reset its speed.
+                if (enemy.moveSpeed < enemy.BaseSpeed)
+                {
+                    enemy.moveSpeed = enemy.BaseSpeed;
+                    Debug.Log($"{enemy.gameObject.name} was slowed; resetting speed to base: {enemy.BaseSpeed}");
+                }
+                
+                // Apply boost.
                 enemy.moveSpeed *= (1f + boostFactor);
+                Debug.Log($"{enemy.gameObject.name} boosted to {enemy.moveSpeed} (boost factor: {boostFactor * 100f}%)");
 
                 // Start a coroutine to reset enemy speed after effectDuration seconds.
                 StartCoroutine(ResetEnemySpeed(enemy, effectDuration));
@@ -48,13 +58,12 @@ public class Korah : MonoBehaviour
                 if (buffEffectPrefab != null)
                 {
                     GameObject effect = Instantiate(buffEffectPrefab, enemy.transform.position, Quaternion.identity, enemy.transform);
-                    // Optionally adjust effect scale.
                     float effectScale = 1f; // Adjust as needed.
                     effect.transform.localScale = new Vector3(effectScale, effectScale, 1f);
                     Destroy(effect, visualEffectDuration);
                 }
 
-                // Start the tint coroutine on the enemy's sprite.
+                // Apply the tint effect.
                 SpriteRenderer enemyRenderer = enemy.GetComponent<SpriteRenderer>();
                 if (enemyRenderer != null)
                 {
@@ -72,23 +81,22 @@ public class Korah : MonoBehaviour
         if (enemy != null)
         {
             enemy.ResetSpeed();
+            Debug.Log($"{enemy.gameObject.name} speed reset to base speed: {enemy.BaseSpeed}");
         }
     }
 
     /// <summary>
     /// Applies a temporary color tint to the enemy's sprite.
-    /// Fades in the tint over fadeDuration seconds, holds it for (duration - fadeDuration), then fades back.
-    /// Checks for null before updating to avoid errors if the enemy is destroyed.
+    /// Fades in the tint over fadeDuration seconds, holds for (duration - fadeDuration), then fades out.
     /// </summary>
     private IEnumerator ApplyTemporaryColor(SpriteRenderer renderer, Color newColor, float duration, float fadeDuration)
     {
         if (renderer == null)
             yield break;
-            
+
         Color originalColor = renderer.color;
-        
-        // Fade in.
         float t = 0f;
+        // Fade in.
         while (t < fadeDuration)
         {
             t += Time.deltaTime;
@@ -100,10 +108,9 @@ public class Korah : MonoBehaviour
         if (renderer != null)
             renderer.color = newColor;
         
-        // Hold for the remainder of the duration.
         yield return new WaitForSeconds(duration - fadeDuration);
         
-        // Fade back out.
+        // Fade out.
         t = 0f;
         while (t < fadeDuration)
         {
