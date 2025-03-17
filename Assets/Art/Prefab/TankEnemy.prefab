@@ -144,7 +144,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hitPoints: 1500
   currencyWorth: 90
-  armor: 10
+  armor: 30
   healthSprites:
   - {fileID: 21300000, guid: 2f68f0029904fe846baa84fb6b448100, type: 3}
   - {fileID: 21300000, guid: 71c5f31c64d0ad14d8fa9704346c3512, type: 3}

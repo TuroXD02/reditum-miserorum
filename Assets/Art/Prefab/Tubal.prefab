@@ -199,7 +199,7 @@ MonoBehaviour:
   attacksPerSecond: 0.5
   baseUpgradeCost: 150
   attackDamage: 10
-  armourReduction: 5
+  armourReduction: 20
 --- !u!1 &933191796149165651
 GameObject:
   m_ObjectHideFlags: 0

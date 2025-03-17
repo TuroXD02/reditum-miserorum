@@ -7,9 +7,11 @@ public class GameSpeedController : MonoBehaviour
     [SerializeField] private Button normalSpeedButton;  // Assign this button from the Inspector for 1x speed.
     [SerializeField] private Button doubleSpeedButton;  // Assign this button from the Inspector for 2x speed.
     [SerializeField] private Button quadSpeedButton;    // Assign this button from the Inspector for 4x speed.
-
+    [SerializeField] private Button PauseButton;
     private void Start()
     {
+        if(PauseButton != null)
+            PauseButton.onClick.AddListener(SetPauseSpeed);
         if(normalSpeedButton != null)
             normalSpeedButton.onClick.AddListener(SetNormalSpeed);
         if(doubleSpeedButton != null)
@@ -18,6 +20,11 @@ public class GameSpeedController : MonoBehaviour
             quadSpeedButton.onClick.AddListener(SetQuadSpeed);
     }
 
+    public void SetPauseSpeed()
+    {
+        Time.timeScale = 0f;
+        Debug.Log("Game speed set to 1x");
+    }
     public void SetNormalSpeed()
     {
         Time.timeScale = 1f;
