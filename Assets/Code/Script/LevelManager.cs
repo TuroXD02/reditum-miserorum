@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.Events;
 
 public class LevelManager : MonoBehaviour
 {
@@ -10,15 +10,10 @@ public class LevelManager : MonoBehaviour
 
     public Transform startPoint;
     public Transform[] path;
-
     public int currency;
 
-    // ------------------------------
-    // Turret Ghost Preview Variables
-    // ------------------------------
-    // The preview object that follows the cursor.
+    // Turret ghost preview variables (unchanged)...
     private GameObject turretGhost;
-    // Stores the original local scale of the ghost.
     private Vector3 ghostOriginalScale;
 
     [Header("Ghost Scaling Settings")]
@@ -27,15 +22,27 @@ public class LevelManager : MonoBehaviour
     [SerializeField] private float ghostScaleModifier = 0.5f;
 
     [Header("Armor Change Effect Settings")]
-    [SerializeField] private GameObject armorReducedEffectPrefab;   // Prefab for armor reduction effect.
-    [SerializeField] private GameObject armorIncreasedEffectPrefab;   // Prefab for armor increase effect.
-    [SerializeField] private float armorEffectDuration = 2f;          // Duration the effect stays on the enemy.
+    [SerializeField] private GameObject armorIncreasedEffectPrefab; // Effect for armor increase.
+    [SerializeField] private GameObject armorReducedEffectPrefab;   // Effect for armor reduction.
+    [SerializeField] private GameObject armorZeroEffectPrefab;      // Effect when armor reaches 0.
+    [SerializeField] private float effectDuration = 2f;             // Duration the effect stays.
+
+    // --- New: Armor Change Event ---
+    public delegate void ArmorChangeEvent(Transform target, bool armorUp, bool isArmorZero);
+    public static event ArmorChangeEvent OnArmorChanged;
 
     private void Awake()
     {
-        // Do not remove these assignments—they are used by other scripts.
         main = this;
         instance = this;
+        // Subscribe to the event.
+        OnArmorChanged += HandleArmorChangeEvent;
+    }
+
+    private void OnDestroy()
+    {
+        // Unsubscribe to avoid memory leaks.
+        OnArmorChanged -= HandleArmorChangeEvent;
     }
 
     private void Start()
@@ -50,10 +57,7 @@ public class LevelManager : MonoBehaviour
         UpdateTurretGhostPosition();
     }
 
-    // ---------------------------
-    // Currency Management Methods
-    // ---------------------------
-    
+    // Currency management methods...
     public void IncreaseCurrency(int amount)
     {
         currency += amount;
@@ -68,7 +72,6 @@ public class LevelManager : MonoBehaviour
         }
         else
         {
-           
             return false;
         }
     }
@@ -78,14 +81,7 @@ public class LevelManager : MonoBehaviour
         IncreaseCurrency(amount);
     }
 
-    // ---------------------------
-    // Turret Ghost Preview Functions
-    // ---------------------------
-    
-    /// <summary>
-    /// Call this function when a turret is selected from your build UI.
-    /// It instantiates a ghost version of the turret (using its prefab) at the cursor with reduced opacity.
-    /// </summary>
+    // Turret ghost preview functions...
     public void SetSelectedTurret(GameObject turretPrefab)
     {
         if (turretPrefab == null)
@@ -93,17 +89,14 @@ public class LevelManager : MonoBehaviour
             Debug.LogError("[LevelManager] SetSelectedTurret: turretPrefab is null!");
             return;
         }
-        
         if (turretGhost != null)
         {
             Destroy(turretGhost);
             turretGhost = null;
         }
-        
         turretGhost = Instantiate(turretPrefab);
         turretGhost.name = turretPrefab.name + "_Ghost";
         ghostOriginalScale = turretGhost.transform.localScale;
-        
         SpriteRenderer sr = turretGhost.GetComponentInChildren<SpriteRenderer>();
         if (sr != null)
         {
@@ -115,13 +108,8 @@ public class LevelManager : MonoBehaviour
         {
             Debug.LogWarning("[LevelManager] SetSelectedTurret: No SpriteRenderer found on " + turretPrefab.name);
         }
-        
-        
     }
 
-    /// <summary>
-    /// Updates the turret ghost's position and scales it relative to screen resolution.
-    /// </summary>
     private void UpdateTurretGhostPosition()
     {
         if (turretGhost != null)
@@ -135,15 +123,11 @@ public class LevelManager : MonoBehaviour
             mousePos.z = 10f;
             Vector3 worldPos = Camera.main.ScreenToWorldPoint(mousePos);
             turretGhost.transform.position = new Vector3(worldPos.x, worldPos.y, 0f);
-            
             float resolutionScale = Screen.width / baseResolutionWidth;
             turretGhost.transform.localScale = ghostOriginalScale * resolutionScale * ghostScaleMultiplier * ghostScaleModifier;
         }
     }
 
-    /// <summary>
-    /// Clears the turret ghost preview.
-    /// </summary>
     public void ClearSelectedTurret()
     {
         if (turretGhost != null)
@@ -155,33 +139,46 @@ public class LevelManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Plays an armor change effect on an enemy.
-    /// Call this function whenever an enemy's armor is increased or reduced.
+    /// Central handler for armor change effects.  
+    /// This method is invoked when any enemy calls LevelManager.PlayArmorChangeEffect().
+    /// It instantiates the appropriate effect prefab at the target's position.
     /// </summary>
-    /// <param name="enemyTransform">The enemy's transform.</param>
-    /// <param name="armorIncreased">True if armor is increased; false if reduced.</param>
-    public void PlayArmorChangeEffect(Transform enemyTransform, bool armorIncreased)
+    /// <param name="target">The enemy transform.</param>
+    /// <param name="armorUp">True for armor up, false for armor down.</param>
+    /// <param name="isArmorZero">True if armor reached zero.</param>
+    private void HandleArmorChangeEvent(Transform target, bool armorUp, bool isArmorZero)
     {
-        if(enemyTransform == null)
-        {
-            Debug.LogWarning("[LevelManager] PlayArmorChangeEffect: enemyTransform is null");
+        if (target == null)
             return;
-        }
-    
-        // Choose the appropriate prefab based on whether armor is increased or reduced.
-        GameObject effectPrefab = armorIncreased ? armorIncreasedEffectPrefab : armorReducedEffectPrefab;
-        if(effectPrefab == null)
+
+        GameObject effectPrefab = null;
+        if (isArmorZero)
         {
-            Debug.LogWarning("[LevelManager] PlayArmorChangeEffect: No effect prefab assigned for " + (armorIncreased ? "armor increase" : "armor reduction"));
-            return;
+            effectPrefab = armorZeroEffectPrefab;
         }
-    
-        Debug.Log("[LevelManager] Playing armor change effect on " + enemyTransform.name + " (armorIncreased: " + armorIncreased + ")");
-        // Instantiate the effect as a child of the enemy so it follows the enemy.
-        GameObject effect = Instantiate(effectPrefab, enemyTransform.position, Quaternion.identity, enemyTransform);
-        // Force the effect to appear at the enemy's origin.
-        effect.transform.localPosition = Vector3.zero;
-        Destroy(effect, armorEffectDuration);
+        else
+        {
+            effectPrefab = armorUp ? armorIncreasedEffectPrefab : armorReducedEffectPrefab;
+        }
+
+        if (effectPrefab != null)
+        {
+            GameObject effect = Instantiate(effectPrefab, target.position, Quaternion.identity, target);
+            Destroy(effect, effectDuration);
+        }
     }
 
+    /// <summary>
+    /// Call this method from any enemy health script to trigger an armor change effect.
+    /// </summary>
+    /// <param name="target">The enemy transform.</param>
+    /// <param name="armorUp">True if armor increased; false if armor decreased.</param>
+    /// <param name="isArmorZero">True if armor reached 0.</param>
+    public void PlayArmorChangeEffect(Transform target, bool armorUp, bool isArmorZero = false)
+    {
+        if (OnArmorChanged != null)
+        {
+            OnArmorChanged(target, armorUp, isArmorZero);
+        }
+    }
 }

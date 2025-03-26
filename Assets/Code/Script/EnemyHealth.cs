@@ -60,13 +60,17 @@ public class EnemyHealth : MonoBehaviour
     
     public virtual void ReduceArmour(int amount)
     {
+        if (armor <= 0) return;  // If armor is already zero, do nothing.
+
         float oldArmor = armor;
         armor = Mathf.Max(armor - amount, 0);
         Debug.Log($"{gameObject.name} armor reduced from {oldArmor} to {armor} by {amount}");
-        
+
+        bool isArmorZero = (armor == 0); // Check if armor reached zero.
+
         if (LevelManager.main != null)
         {
-            LevelManager.main.PlayArmorChangeEffect(transform, false);
+            LevelManager.main.PlayArmorChangeEffect(transform, false, isArmorZero);
         }
     }
 

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -10,7 +11,7 @@ public class AudioManager : MonoBehaviour
     [Header("Audio Settings")]
     public AudioClip backgroundMusic;       // Background music clip (assign in Inspector).
     [Range(0f, 1f)]
-    public float targetVolume = 1f;         // Normal volume level.
+    public float targetVolume = 1f;         // Normal volume level (default 1 = 100%).
     public float fadeInDuration = 15f;      // Duration of fade-in effect.
     public float fadeOutDuration = 5f;      // Duration of fade-out effect.
     public float loseVolume = 0.2f;         // Volume level after losing.
@@ -21,10 +22,10 @@ public class AudioManager : MonoBehaviour
     public string musicVolumeParameter = "Music"; // Exposed parameter name in the AudioMixer.
 
     private AudioSource audioSource;
+    private const string VolumePrefKey = "MusicVolume";
 
     private void Awake()
     {
-        // Implement the singleton pattern.
         if (instance == null)
         {
             instance = this;
@@ -47,30 +48,29 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
-        // Configure the AudioSource.
-        audioSource.clip = backgroundMusic;
-        audioSource.loop = true;
-        audioSource.volume = targetVolume;
-        
-        // Set the AudioSource's output group to the one that uses the "Music" parameter.
-        if (audioMixer != null)
+        // Check if a volume has been saved; if not, default to full volume (1f).
+        if (!PlayerPrefs.HasKey(VolumePrefKey))
         {
-            var groups = audioMixer.FindMatchingGroups("Music");
-            if (groups.Length > 0)
-            {
-                audioSource.outputAudioMixerGroup = groups[0];
-            }
-            else
-            {
-                Debug.LogError("No matching AudioMixer group found for 'Music'");
-            }
-
-            float dB = (targetVolume > 0) ? Mathf.Log10(targetVolume) * 20 : -80f;
-            audioMixer.SetFloat(musicVolumeParameter, dB);
+            targetVolume = 1f;
+            PlayerPrefs.SetFloat(VolumePrefKey, targetVolume);
+            PlayerPrefs.Save();
+            Debug.Log("No saved volume found, defaulting to 1 (100%).");
         }
         else
         {
-            Debug.LogWarning("AudioMixer is not assigned in AudioManager!");
+            targetVolume = PlayerPrefs.GetFloat(VolumePrefKey, 1f);
+            targetVolume = Mathf.Clamp01(targetVolume);
+            Debug.Log("Loaded targetVolume: " + targetVolume);
+        }
+
+        audioSource.clip = backgroundMusic;
+        audioSource.loop = true;
+        audioSource.volume = targetVolume;
+
+        if (audioMixer != null)
+        {
+            float dB = (targetVolume > 0) ? Mathf.Log10(targetVolume) * 20 : -80f;
+            audioMixer.SetFloat(musicVolumeParameter, dB);
         }
 
         if (playOnAwake)
@@ -80,9 +80,9 @@ public class AudioManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Sets the music volume in real time.
+    /// Sets the music volume in real time and saves the value.
     /// </summary>
-    /// <param name="vol">Volume value from 0 to 1</param>
+    /// <param name="vol">Volume value from 0 to 1.</param>
     public void SetVolume(float vol)
     {
         targetVolume = Mathf.Clamp01(vol);
@@ -95,10 +95,13 @@ public class AudioManager : MonoBehaviour
             float dB = (targetVolume > 0) ? Mathf.Log10(targetVolume) * 20 : -80f;
             audioMixer.SetFloat(musicVolumeParameter, dB);
         }
+        PlayerPrefs.SetFloat(VolumePrefKey, targetVolume);
+        PlayerPrefs.Save();
+        Debug.Log("Volume set to: " + targetVolume);
     }
 
     /// <summary>
-    /// Resets the music by stopping, rewinding, setting volume to 0, and then fading in.
+    /// Resets the music by fading in from 0 volume.
     /// </summary>
     public void ResetMusic()
     {
@@ -117,9 +120,6 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Gradually increases the volume from 0 to targetVolume over fadeInDuration seconds.
-    /// </summary>
     private IEnumerator FadeInMusic()
     {
         float elapsed = 0f;
@@ -143,10 +143,6 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Gradually decreases the volume to loseVolume over fadeOutDuration seconds.
-    /// Uses unscaled time so that it continues even when the game is paused.
-    /// </summary>
     private IEnumerator FadeOutMusic()
     {
         float elapsed = 0f;

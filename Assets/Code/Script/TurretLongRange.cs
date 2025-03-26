@@ -170,7 +170,7 @@ public class TurretLongRange : MonoBehaviour
     private float CalculateBPS()
     {
         // Increase bullets per second based on the turret's level
-        return bpsBase * Mathf.Pow(level, 0.4f);
+        return bpsBase * Mathf.Pow(level, 0.2f);
     }
 
     private float CalculateRange()
