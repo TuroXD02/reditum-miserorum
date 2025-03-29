@@ -194,9 +194,9 @@ MonoBehaviour:
   - {fileID: 21300000, guid: fab4fa5d36dd5f24da8b0dfdd7ab1d8e, type: 3}
   - {fileID: 21300000, guid: 0d6b3aab7d9f7c4438c8ae49efe9b620, type: 3}
   - {fileID: 21300000, guid: 0f15f41dbb6981f4cbb66499dfdc610f, type: 3}
-  targetingRange: 5
-  rotationSpeed: 5
-  attacksPerSecond: 0.5
+  targetingRange: 2
+  rotationSpeed: 222
+  attacksPerSecond: 1
   baseUpgradeCost: 150
   attackDamage: 10
   armourReduction: 20
@@ -464,7 +464,7 @@ MonoBehaviour:
   TurretAreaDamageInstance: {fileID: 0}
   TurretArmourBreakerInstance: {fileID: 7866288903368148068}
   circleSegments: 50
-  circleColor: {r: 0.23660856, g: 0.6150943, b: 0.11489493, a: 1}
+  circleColor: {r: 0.5018867, g: 0.2489995, b: 0.11647556, a: 1}
 --- !u!1 &4173823517164181437
 GameObject:
   m_ObjectHideFlags: 0
