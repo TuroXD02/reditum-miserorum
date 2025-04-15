@@ -6,40 +6,47 @@ using UnityEngine.Events;
 public class EnemySpawner : MonoBehaviour
 {
     [Header("References")]
-    public Transform startPoint; // Must be assigned in the Inspector.
-    [SerializeField] private GameObject[] enemyPrefabs; // Base enemy prefabs.
-    [SerializeField] private GameObject[] extraEnemyPrefabs; // Additional enemy prefabs to add starting from wave 7.
-    [SerializeField] private GameObject[] moreEnemyPrefabs;  // Additional enemy prefabs to add starting from wave 12.
+    public Transform startPoint;
+
+    [SerializeField] private GameObject[] waveEnemies1;
+    [SerializeField] private GameObject[] waveEnemies2;
+    [SerializeField] private GameObject[] waveEnemies3;
+    [SerializeField] private GameObject[] waveEnemies4;
+    [SerializeField] private GameObject[] waveEnemies5;
+    [SerializeField] private GameObject[] waveEnemies6;
+    [SerializeField] private GameObject[] waveEnemies7;
+    [SerializeField] private GameObject[] waveEnemies8;
+    [SerializeField] private GameObject[] waveEnemies9;
+    [SerializeField] private GameObject[] waveEnemies10;
+    [SerializeField] private GameObject[] waveEnemies11;
+    [SerializeField] private GameObject[] waveEnemies12;
 
     [Header("Attributes")]
-    [SerializeField] private int baseEnemies = 5; // Base number of enemies in the first wave.
-    [SerializeField] private float enemiesPerSecond = 1f; // Base spawn rate.
-    [SerializeField] private float timeBetweenWaves = 5f; // Time between waves.
-    [SerializeField] private float difficultyScalingFactor = 1.2f; // How quickly difficulty scales.
-    [SerializeField] private float enemiesPerSecondCap = 5f; // Maximum EPS.
-    [SerializeField] private float waveTimeout = 30f; // Maximum time allowed for a wave.
+    [SerializeField] private int baseEnemies = 5;
+    [SerializeField] private float enemiesPerSecond = 1f;
+    [SerializeField] private float timeBetweenWaves = 5f;
+    [SerializeField] private float difficultyScalingFactor = 1.2f;
+    [SerializeField] private float enemiesPerSecondCap = 5f;
+    [SerializeField] private float waveTimeout = 30f;
 
     [Header("Events")]
     public static UnityEvent onEnemyDestroy = new UnityEvent();
 
-    // State variables.
-    private int currentWave = 1; 
+    private int currentWave = 1;
     private float timeSinceLastSpawn = 0f;
     private int enemiesAlive = 0;
     private int enemiesLeftToSpawn = 0;
     private float eps = 0f;
     private bool isSpawning = false;
-
     private Coroutine waveTimeoutCoroutine;
 
     private void Awake()
     {
-        // Register enemy destroyed event.
         onEnemyDestroy.AddListener(EnemyDestroyed);
     }
 
     private void Start()
-    {       
+    {
         StartCoroutine(StartWave());
     }
 
@@ -80,7 +87,7 @@ public class EnemySpawner : MonoBehaviour
 
         Debug.Log($"[EnemySpawner] Wave {currentWave} ended.");
         currentWave++;
-        
+
         StartCoroutine(StartWave());
     }
 
@@ -106,34 +113,23 @@ public class EnemySpawner : MonoBehaviour
 
     private void SpawnEnemy()
     {
-        GameObject[] spawnPool;
+        List<GameObject> spawnPool = new List<GameObject>();
 
-        // If currentWave is 12 or higher and there are entries in moreEnemyPrefabs, combine all pools.
-        if (currentWave >= 12 && moreEnemyPrefabs.Length > 0)
+        int tier = Mathf.Clamp((currentWave - 1) / 3 + 1, 1, 12); // Adds a new pool every 3 waves
+        for (int i = 1; i <= tier; i++)
         {
-            List<GameObject> combined = new List<GameObject>(enemyPrefabs);
-            if (extraEnemyPrefabs.Length > 0)
-            {
-                combined.AddRange(extraEnemyPrefabs);
-            }
-            combined.AddRange(moreEnemyPrefabs);
-            spawnPool = combined.ToArray();
-            Debug.Log("[EnemySpawner] Using combined enemy spawn pool for wave 12+.");
-        }
-        // Else if currentWave is 7 or higher, use enemyPrefabs + extraEnemyPrefabs.
-        else if (currentWave >= 7 && extraEnemyPrefabs.Length > 0)
-        {
-            List<GameObject> combined = new List<GameObject>(enemyPrefabs);
-            combined.AddRange(extraEnemyPrefabs);
-            spawnPool = combined.ToArray();
-            Debug.Log("[EnemySpawner] Using combined enemy spawn pool for wave 7+.");
-        }
-        else
-        {
-            spawnPool = enemyPrefabs;
+            GameObject[] pool = GetWaveEnemiesByIndex(i);
+            if (pool != null && pool.Length > 0)
+                spawnPool.AddRange(pool);
         }
 
-        int index = Random.Range(0, spawnPool.Length);
+        if (spawnPool.Count == 0)
+        {
+            Debug.LogWarning("[EnemySpawner] No enemies to spawn!");
+            return;
+        }
+
+        int index = Random.Range(0, spawnPool.Count);
         GameObject prefabToSpawn = spawnPool[index];
 
         if (startPoint == null)
@@ -151,15 +147,33 @@ public class EnemySpawner : MonoBehaviour
         Instantiate(prefabToSpawn, position, Quaternion.identity);
     }
 
+    private GameObject[] GetWaveEnemiesByIndex(int index)
+    {
+        return index switch
+        {
+            1 => waveEnemies1,
+            2 => waveEnemies2,
+            3 => waveEnemies3,
+            4 => waveEnemies4,
+            5 => waveEnemies5,
+            6 => waveEnemies6,
+            7 => waveEnemies7,
+            8 => waveEnemies8,
+            9 => waveEnemies9,
+            10 => waveEnemies10,
+            11 => waveEnemies11,
+            12 => waveEnemies12,
+            _ => null
+        };
+    }
+
     private int EnemiesPerWave()
     {
-        int calculatedEnemies = Mathf.RoundToInt(baseEnemies * Mathf.Pow(currentWave, difficultyScalingFactor));
-        return calculatedEnemies;
+        return Mathf.RoundToInt(baseEnemies * Mathf.Pow(currentWave, difficultyScalingFactor));
     }
 
     private float EnemiesPerSecond()
     {
-        float calculatedEps = Mathf.Clamp(enemiesPerSecond * Mathf.Pow(currentWave, difficultyScalingFactor), 0f, enemiesPerSecondCap);
-        return calculatedEps;
+        return Mathf.Clamp(enemiesPerSecond * Mathf.Pow(currentWave, difficultyScalingFactor), 0f, enemiesPerSecondCap);
     }
 }

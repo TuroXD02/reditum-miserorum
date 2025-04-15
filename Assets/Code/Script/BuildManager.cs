@@ -11,7 +11,8 @@ public class BuildManager : MonoBehaviour
     public Tower lastSelectedTower;            // The last selected tower reference.
 
     [Header("UI Controls")]
-    [SerializeField] private Button clearButton; // Button to clear the current turret selection.
+    [SerializeField] private Button clearButton;          // Optional: A single clear button.
+    [SerializeField] private Button[] additionalClearButtons; // Array of additional clear buttons.
 
     private void Awake()
     {
@@ -20,9 +21,20 @@ public class BuildManager : MonoBehaviour
 
     private void Start()
     {
+        // Assign the clear function to the single clearButton if assigned.
         if (clearButton != null)
         {
             clearButton.onClick.AddListener(ClearSelectedTower);
+        }
+
+        // Assign the clear function to each button in the additionalClearButtons array.
+        if (additionalClearButtons != null && additionalClearButtons.Length > 0)
+        {
+            foreach (Button btn in additionalClearButtons)
+            {
+                if (btn != null)
+                    btn.onClick.AddListener(ClearSelectedTower);
+            }
         }
     }
 
