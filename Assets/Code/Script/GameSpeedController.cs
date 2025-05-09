@@ -9,64 +9,71 @@ public class GameSpeedController : MonoBehaviour
     [SerializeField] private Button quadSpeedButton;
     [SerializeField] private Button pauseButton;
 
-    private Color defaultColor = Color.white;
-    private Color selectedColor = new Color(0.6f, 0.6f, 0.6f); // A darker gray for selected button
+    [Header("Colors")]
+    [SerializeField] private Color activeColor = Color.gray;   // Highlighted color
+    [SerializeField] private Color defaultColor = Color.white; // Normal color
 
     private void Start()
     {
         if (pauseButton != null)
-            pauseButton.onClick.AddListener(() => { SetPauseSpeed(); HighlightButton(pauseButton); });
-
+            pauseButton.onClick.AddListener(() => SetGameSpeed(0f));
         if (normalSpeedButton != null)
-            normalSpeedButton.onClick.AddListener(() => { SetNormalSpeed(); HighlightButton(normalSpeedButton); });
-
+            normalSpeedButton.onClick.AddListener(() => SetGameSpeed(1f));
         if (doubleSpeedButton != null)
-            doubleSpeedButton.onClick.AddListener(() => { SetDoubleSpeed(); HighlightButton(doubleSpeedButton); });
-
+            doubleSpeedButton.onClick.AddListener(() => SetGameSpeed(2f));
         if (quadSpeedButton != null)
-            quadSpeedButton.onClick.AddListener(() => { SetQuadSpeed(); HighlightButton(quadSpeedButton); });
-
-        // Highlight normal speed by default
-        HighlightButton(normalSpeedButton);
+            quadSpeedButton.onClick.AddListener(() => SetGameSpeed(4f));
+        
+        UpdateHighlight(); // Set correct highlight at start
     }
 
-    public void SetPauseSpeed() => Time.timeScale = 0f;
-    public void SetNormalSpeed() => Time.timeScale = 1f;
-    public void SetDoubleSpeed() => Time.timeScale = 2f;
-    public void SetQuadSpeed() => Time.timeScale = 4f;
+    private void Update()
+    {
+        UpdateHighlight(); // Continuously ensure correct button is highlighted
+    }
 
-    private void HighlightButton(Button selected)
+    private void SetGameSpeed(float speed)
+    {
+        Time.timeScale = speed;
+        UpdateHighlight();
+        Debug.Log($"Game speed set to {speed}x");
+    }
+
+    private void UpdateHighlight()
     {
         ResetAllButtons();
 
-        if (selected != null)
+        if (Time.timeScale == 0f && pauseButton != null)
         {
-            var colors = selected.colors;
-            colors.normalColor = selectedColor;
-            colors.highlightedColor = selectedColor;
-            colors.pressedColor = selectedColor;
-            colors.selectedColor = selectedColor;
-            selected.colors = colors;
+            pauseButton.image.color = activeColor;
+        }
+        else if (Time.timeScale == 1f && normalSpeedButton != null)
+        {
+            normalSpeedButton.image.color = activeColor;
+        }
+        else if (Time.timeScale == 2f && doubleSpeedButton != null)
+        {
+            doubleSpeedButton.image.color = activeColor;
+        }
+        else if (Time.timeScale == 4f && quadSpeedButton != null)
+        {
+            quadSpeedButton.image.color = activeColor;
+        }
+        else
+        {
+            // Optional: handle weird timescales if needed
         }
     }
 
     private void ResetAllButtons()
     {
-        ResetButtonColor(pauseButton);
-        ResetButtonColor(normalSpeedButton);
-        ResetButtonColor(doubleSpeedButton);
-        ResetButtonColor(quadSpeedButton);
-    }
-
-    private void ResetButtonColor(Button btn)
-    {
-        if (btn == null) return;
-
-        var colors = btn.colors;
-        colors.normalColor = defaultColor;
-        colors.highlightedColor = defaultColor;
-        colors.pressedColor = defaultColor;
-        colors.selectedColor = defaultColor;
-        btn.colors = colors;
+        if (normalSpeedButton != null)
+            normalSpeedButton.image.color = defaultColor;
+        if (doubleSpeedButton != null)
+            doubleSpeedButton.image.color = defaultColor;
+        if (quadSpeedButton != null)
+            quadSpeedButton.image.color = defaultColor;
+        if (pauseButton != null)
+            pauseButton.image.color = defaultColor;
     }
 }
