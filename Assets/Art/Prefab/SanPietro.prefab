@@ -587,8 +587,9 @@ MonoBehaviour:
   TurretLongRangeInstance: {fileID: 0}
   TurretPoisonInstance: {fileID: 0}
   TurretAreaDamageInstance: {fileID: 0}
+  TurretArmourBreakerInstance: {fileID: 0}
   circleSegments: 50
-  circleColor: {r: 0.7509433, g: 0.62255305, b: 0.17427546, a: 1}
+  circleColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &3190808431766530886
 GameObject:
   m_ObjectHideFlags: 0

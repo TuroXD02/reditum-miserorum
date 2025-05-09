@@ -12,8 +12,9 @@ public class LevelManager : MonoBehaviour
     public Transform[] path;
     public int currency;
 
-    // Turret ghost preview variables (unchanged)...
+    // Turret ghost preview variables
     private GameObject turretGhost;
+    private GameObject rangeIndicator;
     private Vector3 ghostOriginalScale;
 
     [Header("Ghost Scaling Settings")]
@@ -22,12 +23,16 @@ public class LevelManager : MonoBehaviour
     [SerializeField] private float ghostScaleModifier = 0.5f;
 
     [Header("Armor Change Effect Settings")]
-    [SerializeField] private GameObject armorIncreasedEffectPrefab; // Effect for armor increase.
-    [SerializeField] private GameObject armorReducedEffectPrefab;   // Effect for armor reduction.
-    [SerializeField] private GameObject armorZeroEffectPrefab;      // Effect when armor reaches 0.
-    [SerializeField] private float effectDuration = 2f;             // Duration the effect stays.
+    [SerializeField] private GameObject armorIncreasedEffectPrefab;
+    [SerializeField] private GameObject armorReducedEffectPrefab;
+    [SerializeField] private GameObject armorZeroEffectPrefab;
+    [SerializeField] private float effectDuration = 2f;
 
-    // --- New: Armor Change Event ---
+    // Range indicator prefab (a 1×1 transparent circle)
+    [Header("Ghost Range Preview")]
+    [SerializeField] private GameObject rangeIndicatorPrefab;
+
+    // --- Armor Change Event ---
     public delegate void ArmorChangeEvent(Transform target, bool armorUp, bool isArmorZero);
     public static event ArmorChangeEvent OnArmorChanged;
 
@@ -35,20 +40,17 @@ public class LevelManager : MonoBehaviour
     {
         main = this;
         instance = this;
-        // Subscribe to the event.
         OnArmorChanged += HandleArmorChangeEvent;
     }
 
     private void OnDestroy()
     {
-        // Unsubscribe to avoid memory leaks.
         OnArmorChanged -= HandleArmorChangeEvent;
     }
 
     private void Start()
     {
         currency = 1000;
-        // Initialize the player's health system.
         GetComponent<PlayerHealthSystem>().Init();
     }
 
@@ -57,12 +59,8 @@ public class LevelManager : MonoBehaviour
         UpdateTurretGhostPosition();
     }
 
-    // Currency management methods...
-    public void IncreaseCurrency(int amount)
-    {
-        currency += amount;
-    }
-
+    // Currency
+    public void IncreaseCurrency(int amount) => currency += amount;
     public bool SpendCurrency(int amount)
     {
         if (amount <= currency)
@@ -70,115 +68,99 @@ public class LevelManager : MonoBehaviour
             currency -= amount;
             return true;
         }
-        else
-        {
-            return false;
-        }
+        return false;
     }
+    public void AddCurrency(int amount) => IncreaseCurrency(amount);
 
-    public void AddCurrency(int amount)
-    {
-        IncreaseCurrency(amount);
-    }
-
-    // Turret ghost preview functions...
+    // Ghost turret preview
     public void SetSelectedTurret(GameObject turretPrefab)
     {
-        if (turretPrefab == null)
-        {
-            Debug.LogError("[LevelManager] SetSelectedTurret: turretPrefab is null!");
-            return;
-        }
-        if (turretGhost != null)
-        {
-            Destroy(turretGhost);
-            turretGhost = null;
-        }
+        if (turretPrefab == null) return;
+        if (turretGhost != null) Destroy(turretGhost);
+        if (rangeIndicator != null) Destroy(rangeIndicator);
+
         turretGhost = Instantiate(turretPrefab);
         turretGhost.name = turretPrefab.name + "_Ghost";
         ghostOriginalScale = turretGhost.transform.localScale;
-        SpriteRenderer sr = turretGhost.GetComponentInChildren<SpriteRenderer>();
+
+        // semi-transparent
+        var sr = turretGhost.GetComponentInChildren<SpriteRenderer>();
         if (sr != null)
         {
-            Color col = sr.color;
-            col.a = 0.5f;
-            sr.color = col;
+            Color c = sr.color;
+            c.a = 0.5f;
+            sr.color = c;
         }
-        else
+
+        // spawn range indicator
+        if (rangeIndicatorPrefab != null)
         {
-            Debug.LogWarning("[LevelManager] SetSelectedTurret: No SpriteRenderer found on " + turretPrefab.name);
+            rangeIndicator = Instantiate(rangeIndicatorPrefab, turretGhost.transform);
+            rangeIndicator.name = "RangeIndicator";
+            // remove any collider so it doesn't block clicks
+            var col = rangeIndicator.GetComponent<Collider2D>();
+            if (col != null) Destroy(col);
         }
     }
 
     private void UpdateTurretGhostPosition()
     {
-        if (turretGhost != null)
+        if (turretGhost == null) return;
+
+        // follow mouse
+        Vector3 m = Input.mousePosition;
+        m.z = 10f;
+        var cam = Camera.main;
+        if (cam == null) return;
+        Vector3 world = cam.ScreenToWorldPoint(m);
+        turretGhost.transform.position = new Vector3(world.x, world.y, 0f);
+
+        // scale ghost
+        float resScale = Screen.width / baseResolutionWidth;
+        turretGhost.transform.localScale = ghostOriginalScale * resScale * ghostScaleMultiplier * ghostScaleModifier;
+
+        // update range indicator
+        if (rangeIndicator != null)
         {
-            Vector3 mousePos = Input.mousePosition;
-            if (Camera.main == null)
+            float range = 0f;
+            // try common turret scripts
+            var slow = turretGhost.GetComponent<TurretSlow>();
+            if (slow != null) range = slow.targetingRange;
+            else
             {
-                Debug.LogError("[LevelManager] UpdateTurretGhostPosition: Camera.main is null!");
-                return;
+                var poison = turretGhost.GetComponent<TurretPoison>();
+                if (poison != null) range = poison.targetingRange;
             }
-            mousePos.z = 10f;
-            Vector3 worldPos = Camera.main.ScreenToWorldPoint(mousePos);
-            turretGhost.transform.position = new Vector3(worldPos.x, worldPos.y, 0f);
-            float resolutionScale = Screen.width / baseResolutionWidth;
-            turretGhost.transform.localScale = ghostOriginalScale * resolutionScale * ghostScaleMultiplier * ghostScaleModifier;
+            // scale circle diameter = 2 * range
+            rangeIndicator.transform.localScale = Vector3.one * (range * 2f);
         }
     }
 
     public void ClearSelectedTurret()
     {
-        if (turretGhost != null)
-        {
-            Destroy(turretGhost);
-            turretGhost = null;
-            Debug.Log("Turret ghost cleared.");
-        }
+        if (turretGhost != null) Destroy(turretGhost);
+        turretGhost = null;
+        if (rangeIndicator != null) Destroy(rangeIndicator);
+        rangeIndicator = null;
     }
 
-    /// <summary>
-    /// Central handler for armor change effects.  
-    /// This method is invoked when any enemy calls LevelManager.PlayArmorChangeEffect().
-    /// It instantiates the appropriate effect prefab at the target's position.
-    /// </summary>
-    /// <param name="target">The enemy transform.</param>
-    /// <param name="armorUp">True for armor up, false for armor down.</param>
-    /// <param name="isArmorZero">True if armor reached zero.</param>
+    // Armor change handler
     private void HandleArmorChangeEvent(Transform target, bool armorUp, bool isArmorZero)
     {
-        if (target == null)
-            return;
-
-        GameObject effectPrefab = null;
-        if (isArmorZero)
+        if (target == null) return;
+        GameObject prefab = isArmorZero
+            ? armorZeroEffectPrefab
+            : (armorUp ? armorIncreasedEffectPrefab : armorReducedEffectPrefab);
+        if (prefab != null)
         {
-            effectPrefab = armorZeroEffectPrefab;
-        }
-        else
-        {
-            effectPrefab = armorUp ? armorIncreasedEffectPrefab : armorReducedEffectPrefab;
-        }
-
-        if (effectPrefab != null)
-        {
-            GameObject effect = Instantiate(effectPrefab, target.position, Quaternion.identity, target);
-            Destroy(effect, effectDuration);
+            var fx = Instantiate(prefab, target.position, Quaternion.identity, target);
+            Destroy(fx, effectDuration);
         }
     }
 
-    /// <summary>
-    /// Call this method from any enemy health script to trigger an armor change effect.
-    /// </summary>
-    /// <param name="target">The enemy transform.</param>
-    /// <param name="armorUp">True if armor increased; false if armor decreased.</param>
-    /// <param name="isArmorZero">True if armor reached 0.</param>
+    // Called by enemies
     public void PlayArmorChangeEffect(Transform target, bool armorUp, bool isArmorZero = false)
     {
-        if (OnArmorChanged != null)
-        {
-            OnArmorChanged(target, armorUp, isArmorZero);
-        }
+        OnArmorChanged?.Invoke(target, armorUp, isArmorZero);
     }
 }

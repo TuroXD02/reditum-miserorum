@@ -1301,7 +1301,7 @@ MonoBehaviour:
   TurretAreaDamageInstance: {fileID: 0}
   TurretArmourBreakerInstance: {fileID: 0}
   circleSegments: 50
-  circleColor: {r: 0.23660856, g: 0.6150943, b: 0.11489493, a: 1}
+  circleColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &8247556535810355363
 GameObject:
   m_ObjectHideFlags: 0
