@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -12,9 +11,8 @@ public class LevelManager : MonoBehaviour
     public Transform[] path;
     public int currency;
 
-    // Turret ghost preview variables
+    // Turret ghost preview
     private GameObject turretGhost;
-    private GameObject rangeIndicator;
     private Vector3 ghostOriginalScale;
 
     [Header("Ghost Scaling Settings")]
@@ -28,9 +26,11 @@ public class LevelManager : MonoBehaviour
     [SerializeField] private GameObject armorZeroEffectPrefab;
     [SerializeField] private float effectDuration = 2f;
 
-    // Range indicator prefab (a 1×1 transparent circle)
+    // LineRenderer range preview
     [Header("Ghost Range Preview")]
-    [SerializeField] private GameObject rangeIndicatorPrefab;
+    [SerializeField] private int circleSegments = 60;
+    [SerializeField] private Color circleColor = Color.cyan;
+    private LineRenderer ghostRangeLR;
 
     // --- Armor Change Event ---
     public delegate void ArmorChangeEvent(Transform target, bool armorUp, bool isArmorZero);
@@ -52,6 +52,8 @@ public class LevelManager : MonoBehaviour
     {
         currency = 1000;
         GetComponent<PlayerHealthSystem>().Init();
+        ClearSelectedTurret(); // <-- Ensure no ghost is selected at start
+    
     }
 
     private void Update()
@@ -75,9 +77,9 @@ public class LevelManager : MonoBehaviour
     // Ghost turret preview
     public void SetSelectedTurret(GameObject turretPrefab)
     {
+        ClearSelectedTurret();
+
         if (turretPrefab == null) return;
-        if (turretGhost != null) Destroy(turretGhost);
-        if (rangeIndicator != null) Destroy(rangeIndicator);
 
         turretGhost = Instantiate(turretPrefab);
         turretGhost.name = turretPrefab.name + "_Ghost";
@@ -92,15 +94,15 @@ public class LevelManager : MonoBehaviour
             sr.color = c;
         }
 
-        // spawn range indicator
-        if (rangeIndicatorPrefab != null)
-        {
-            rangeIndicator = Instantiate(rangeIndicatorPrefab, turretGhost.transform);
-            rangeIndicator.name = "RangeIndicator";
-            // remove any collider so it doesn't block clicks
-            var col = rangeIndicator.GetComponent<Collider2D>();
-            if (col != null) Destroy(col);
-        }
+        // add LineRenderer for range
+        ghostRangeLR = turretGhost.AddComponent<LineRenderer>();
+        ghostRangeLR.loop = true;
+        ghostRangeLR.positionCount = circleSegments + 1;
+        ghostRangeLR.useWorldSpace = true;
+        ghostRangeLR.widthMultiplier = 0.03f;
+        ghostRangeLR.material = new Material(Shader.Find("Sprites/Default"));
+        ghostRangeLR.startColor = circleColor;
+        ghostRangeLR.endColor = circleColor;
     }
 
     private void UpdateTurretGhostPosition()
@@ -108,8 +110,7 @@ public class LevelManager : MonoBehaviour
         if (turretGhost == null) return;
 
         // follow mouse
-        Vector3 m = Input.mousePosition;
-        m.z = 10f;
+        Vector3 m = Input.mousePosition; m.z = 10f;
         var cam = Camera.main;
         if (cam == null) return;
         Vector3 world = cam.ScreenToWorldPoint(m);
@@ -119,20 +120,26 @@ public class LevelManager : MonoBehaviour
         float resScale = Screen.width / baseResolutionWidth;
         turretGhost.transform.localScale = ghostOriginalScale * resScale * ghostScaleMultiplier * ghostScaleModifier;
 
-        // update range indicator
-        if (rangeIndicator != null)
+        // update range circle
+        if (ghostRangeLR != null)
         {
             float range = 0f;
-            // try common turret scripts
-            var slow = turretGhost.GetComponent<TurretSlow>();
-            if (slow != null) range = slow.targetingRange;
-            else
+            // detect range from common turret scripts:
+            if (turretGhost.TryGetComponent<TurretSlow>(out var slow))              range = slow.targetingRange;
+            else if (turretGhost.TryGetComponent<TurretPoison>(out var poison))     range = poison.targetingRange;
+            else if (turretGhost.TryGetComponent<TurretLongRange>(out var lr))      range = lr.targetingRange;
+            else if (turretGhost.TryGetComponent<TurretAreaDamage>(out var area))   range = area.targetingRange;
+            else if (turretGhost.TryGetComponent<TurretArmourBreaker>(out var ab))  range = ab.targetingRange;
+            else if (turretGhost.TryGetComponent<Turret>(out var basic))            range = basic.targetingRange;
+            // draw circle
+            float angleStep = 360f / circleSegments;
+            for (int i = 0; i <= circleSegments; i++)
             {
-                var poison = turretGhost.GetComponent<TurretPoison>();
-                if (poison != null) range = poison.targetingRange;
+                float angle = Mathf.Deg2Rad * (i * angleStep);
+                Vector3 pos = new Vector3(Mathf.Cos(angle) * range, Mathf.Sin(angle) * range, 0f) 
+                              + turretGhost.transform.position;
+                ghostRangeLR.SetPosition(i, pos);
             }
-            // scale circle diameter = 2 * range
-            rangeIndicator.transform.localScale = Vector3.one * (range * 2f);
         }
     }
 
@@ -140,8 +147,8 @@ public class LevelManager : MonoBehaviour
     {
         if (turretGhost != null) Destroy(turretGhost);
         turretGhost = null;
-        if (rangeIndicator != null) Destroy(rangeIndicator);
-        rangeIndicator = null;
+        if (ghostRangeLR != null) Destroy(ghostRangeLR);
+        ghostRangeLR = null;
     }
 
     // Armor change handler

@@ -143,9 +143,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1d26bd60f65cd2468371a2c970e3eff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hitPoints: 400
-  currencyWorth: 200
+  hitPoints: 600
+  currencyWorth: 110
   armor: 5
+  healthSprites: []
 --- !u!61 &8361791884548257850
 BoxCollider2D:
   m_ObjectHideFlags: 0

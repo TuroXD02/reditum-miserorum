@@ -143,8 +143,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hitPoints: 200
-  currencyWorth: 1
+  currencyWorth: 5
   armor: 1
+  healthSprites: []
 --- !u!61 &7287593441722117144
 BoxCollider2D:
   m_ObjectHideFlags: 0

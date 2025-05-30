@@ -190,7 +190,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hitPoints: 5000
   currencyWorth: 300
-  armor: 20
+  armor: 30
   healthSprites: []
 --- !u!114 &-270965630215940742
 MonoBehaviour:

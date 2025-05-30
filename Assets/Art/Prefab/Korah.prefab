@@ -165,7 +165,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hitPoints: 800
   currencyWorth: 150
-  armor: 60
+  armor: 20
+  healthSprites: []
 --- !u!61 &6189314551703861056
 BoxCollider2D:
   m_ObjectHideFlags: 0

@@ -728,9 +728,9 @@ MonoBehaviour:
   - {fileID: 21300000, guid: b4312b0f27a58c94d9048a2a7aacef36, type: 3}
   - {fileID: 21300000, guid: d0b8c0a6c525f1445814620da504e505, type: 3}
   - {fileID: 21300000, guid: 89432353eabed144980163505150b6ab, type: 3}
-  targetingRange: 8
+  targetingRange: 9
   rotationSpeed: 50
-  bps: 0.5
+  bps: 0.33
   baseUpgradeCost: 200
   bulletDamage: 1
 --- !u!1 &7481640872950284230

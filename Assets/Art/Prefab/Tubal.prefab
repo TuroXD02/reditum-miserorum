@@ -194,11 +194,11 @@ MonoBehaviour:
   - {fileID: 21300000, guid: fab4fa5d36dd5f24da8b0dfdd7ab1d8e, type: 3}
   - {fileID: 21300000, guid: 0d6b3aab7d9f7c4438c8ae49efe9b620, type: 3}
   - {fileID: 21300000, guid: 0f15f41dbb6981f4cbb66499dfdc610f, type: 3}
-  targetingRange: 2
+  targetingRange: 1.5
   rotationSpeed: 222
-  attacksPerSecond: 1
+  attacksPerSecond: 0.44
   baseUpgradeCost: 150
-  attackDamage: 10
+  attackDamage: 30
   armourReduction: 20
 --- !u!1 &933191796149165651
 GameObject:

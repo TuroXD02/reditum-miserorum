@@ -144,7 +144,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 46c80c6089ac3244488f15f71007aa0c, type: 3}
   - {fileID: 21300000, guid: 30a4b26c5825645429b0cad57aeb2ec0, type: 3}
   - {fileID: 21300000, guid: 668bddd5b07bffb419aed0b76e1785b3, type: 3}
-  targetingRange: 3
+  targetingRange: 2
   aps: 0.15
   freezeTime: 3
   baseUpgradeCost: 100

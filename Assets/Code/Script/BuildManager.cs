@@ -17,17 +17,17 @@ public class BuildManager : MonoBehaviour
     private void Awake()
     {
         main = this;
+        selectedTower = -1; // Make sure no turret is selected at start
     }
+
 
     private void Start()
     {
-        // Assign the clear function to the single clearButton if assigned.
-        if (clearButton != null)
-        {
-            clearButton.onClick.AddListener(ClearSelectedTower);
-        }
+        ClearSelectedTower(); // Just to be sure
 
-        // Assign the clear function to each button in the additionalClearButtons array.
+        if (clearButton != null)
+            clearButton.onClick.AddListener(ClearSelectedTower);
+
         if (additionalClearButtons != null && additionalClearButtons.Length > 0)
         {
             foreach (Button btn in additionalClearButtons)
@@ -37,6 +37,7 @@ public class BuildManager : MonoBehaviour
             }
         }
     }
+
 
     /// <summary>
     /// Returns the currently selected tower.

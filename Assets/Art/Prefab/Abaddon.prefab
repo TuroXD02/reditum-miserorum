@@ -200,8 +200,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hitPoints: 2000
-  currencyWorth: 250
-  armor: 50
+  currencyWorth: 300
+  armor: 45
+  healthSprites: []
   speedReductionPercentage: 0.05
   hitSprites:
   - {fileID: 21300000, guid: a473a36fe8bf0b049a38372751f3031d, type: 3}
