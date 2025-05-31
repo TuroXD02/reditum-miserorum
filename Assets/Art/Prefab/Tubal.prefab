@@ -198,8 +198,8 @@ MonoBehaviour:
   rotationSpeed: 222
   attacksPerSecond: 0.44
   baseUpgradeCost: 150
-  attackDamage: 30
-  armourReduction: 20
+  attackDamage: 120
+  armourReduction: 5
 --- !u!1 &933191796149165651
 GameObject:
   m_ObjectHideFlags: 0

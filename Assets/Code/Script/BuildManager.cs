@@ -72,6 +72,6 @@ public class BuildManager : MonoBehaviour
         {
             LevelManager.main.ClearSelectedTurret();
         }
-        Debug.Log("Turret selection cleared.");
+        
     }
 }

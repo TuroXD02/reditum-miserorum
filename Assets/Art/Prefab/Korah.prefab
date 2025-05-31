@@ -133,6 +133,8 @@ MonoBehaviour:
   minBoostPercent: 0.5
   maxBoostPercent: 1
   effectDuration: 3
+  linkPrefab: {fileID: 7970468246848631890, guid: 0989d76e8376fc94d97f4ec65af7d2fe, type: 3}
+  linkAnimationDuration: 0.5
   buffEffectPrefab: {fileID: 6861304764735826249, guid: b3eecee55692c6e4fb9393d7f53e76cb, type: 3}
   visualEffectDuration: 0.5
   targetTint: {r: 1, g: 0.7, b: 0.7, a: 1}

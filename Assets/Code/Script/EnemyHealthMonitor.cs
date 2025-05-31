@@ -47,6 +47,6 @@ public class EnemyHealthMonitor : MonoBehaviour
             return;
         }
 
-        Debug.Log($"{gameObject.name} ({enemyType}) current HP: {currentHP}");
+       
     }
 }

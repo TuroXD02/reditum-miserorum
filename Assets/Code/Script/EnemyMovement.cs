@@ -44,8 +44,8 @@ public class EnemyMovement : MonoBehaviour
     {
         // Slight randomization for natural movement.
         Vector3 RandomTarget = new Vector3(
-            Random.Range(target.position.x - 0.4f, target.position.x + 0.4f),
-            Random.Range(target.position.y - 1, target.position.y + 1),
+            Random.Range(target.position.x - 0.1f, target.position.x + 0.1f),
+            Random.Range(target.position.y - 0.2f, target.position.y + 0.2f),
             0);
         Vector2 direction = (RandomTarget - transform.position).normalized;
         rb.velocity = direction * moveSpeed;

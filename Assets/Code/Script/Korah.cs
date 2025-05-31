@@ -5,18 +5,22 @@ using UnityEngine;
 public class Korah : MonoBehaviour
 {
     [Header("Boost Settings")]
-    [SerializeField] private float boostInterval = 5f;       // How often (in seconds) to boost enemy speed.
-    [SerializeField] private float minBoostPercent = 0.05f;    // Minimum boost: 5%
-    [SerializeField] private float maxBoostPercent = 0.10f;    // Maximum boost: 10%
-    [SerializeField] private float effectDuration = 5f;        // Duration that the speed boost (and tint) lasts.
+    [SerializeField] private float boostInterval = 5f;
+    [SerializeField] private float minBoostPercent = 0.05f;
+    [SerializeField] private float maxBoostPercent = 0.10f;
+    [SerializeField] private float effectDuration = 5f;
+
+    [Header("Visual Link Settings")]
+    [SerializeField] private GameObject linkPrefab; // Prefab with SpriteRenderer only
+    [SerializeField] private float linkAnimationDuration = 0.5f;
 
     [Header("Buff Effect Settings")]
-    [SerializeField] private GameObject buffEffectPrefab;      // Prefab for the visual buff effect.
-    [SerializeField] private float visualEffectDuration = 2f;    // How long the visual effect stays visible.
+    [SerializeField] private GameObject buffEffectPrefab;
+    [SerializeField] private float visualEffectDuration = 2f;
 
     [Header("Tint Settings")]
-    [SerializeField] private Color targetTint = new Color(1f, 0.7f, 0.7f, 1f); // Subtle red tint.
-    [SerializeField] private float tintLerpDuration = 0.5f;      // Time to fade in/out the tint.
+    [SerializeField] private Color targetTint = new Color(1f, 0.7f, 0.7f, 1f);
+    [SerializeField] private float tintLerpDuration = 0.5f;
 
     private void Start()
     {
@@ -29,51 +33,125 @@ public class Korah : MonoBehaviour
         {
             yield return new WaitForSeconds(boostInterval);
 
-            // Generate a random boost factor.
+            List<EnemyMovement> allEnemies = new List<EnemyMovement>(FindObjectsOfType<EnemyMovement>());
+            allEnemies.RemoveAll(e => e == null || e.gameObject == this.gameObject);
+
+            allEnemies.Sort((a, b) =>
+                (transform.position - a.transform.position).sqrMagnitude
+                .CompareTo((transform.position - b.transform.position).sqrMagnitude)
+            );
+
+            int maxAffected = Mathf.Min(4, allEnemies.Count);
             float boostFactor = Random.Range(minBoostPercent, maxBoostPercent);
 
-            // Find all enemies with an EnemyMovement component.
-            EnemyMovement[] enemies = FindObjectsOfType<EnemyMovement>();
-            foreach (EnemyMovement enemy in enemies)
+            for (int i = 0; i < maxAffected; i++)
             {
-                // Skip self.
-                if (enemy.gameObject == this.gameObject)
-                    continue;
+                EnemyMovement enemy = allEnemies[i];
+                if (enemy == null) continue;
 
-                // If the enemy is slowed (current speed is below BaseSpeed), reset its speed.
                 if (enemy.moveSpeed < enemy.BaseSpeed)
                 {
                     enemy.moveSpeed = enemy.BaseSpeed;
-                    Debug.Log($"{enemy.gameObject.name} was slowed; resetting speed to base: {enemy.BaseSpeed}");
                 }
-                
-                // Apply boost.
-                enemy.moveSpeed *= (1f + boostFactor);
-                Debug.Log($"{enemy.gameObject.name} boosted to {enemy.moveSpeed} (boost factor: {boostFactor * 100f}%)");
 
-                // Start a coroutine to reset enemy speed after effectDuration seconds.
+                enemy.moveSpeed *= (1f + boostFactor);
                 StartCoroutine(ResetEnemySpeed(enemy, effectDuration));
 
-                // Instantiate the buff effect on the enemy.
                 if (buffEffectPrefab != null)
                 {
                     GameObject effect = Instantiate(buffEffectPrefab, enemy.transform.position, Quaternion.identity, enemy.transform);
-                    float effectScale = 1f; // Adjust as needed.
-                    effect.transform.localScale = new Vector3(effectScale, effectScale, 1f);
                     Destroy(effect, visualEffectDuration);
                 }
 
-                // Apply the tint effect.
-                SpriteRenderer enemyRenderer = enemy.GetComponent<SpriteRenderer>();
-                if (enemyRenderer != null)
+                SpriteRenderer sr = enemy.GetComponent<SpriteRenderer>();
+                if (sr != null)
                 {
-                    StartCoroutine(ApplyTemporaryColor(enemyRenderer, targetTint, effectDuration, tintLerpDuration));
+                    StartCoroutine(ApplyTemporaryColor(sr, targetTint, effectDuration, tintLerpDuration));
+                }
+
+                // Stretching link from Korah to enemy
+                if (linkPrefab != null)
+                {
+                    GameObject beam = Instantiate(linkPrefab, transform.position, Quaternion.identity);
+                    StartCoroutine(AnimateLink(beam, transform.position, enemy.transform));
                 }
             }
 
-            Debug.Log("Korah boosted enemy speed by " + (boostFactor * 100f) + "% for " + effectDuration + " seconds (visual effect lasts " + visualEffectDuration + " seconds).");
+            // Optional: link between two enemies
+            if (allEnemies.Count >= 2)
+            {
+                ConnectEnemies(allEnemies[0].transform, allEnemies[1].transform);
+            }
         }
     }
+
+    private void ConnectEnemies(Transform fromEnemy, Transform toEnemy)
+    {
+        if (linkPrefab == null || fromEnemy == null || toEnemy == null) return;
+
+        GameObject beam = Instantiate(linkPrefab, fromEnemy.position, Quaternion.identity);
+        StartCoroutine(AnimateLink(beam, fromEnemy.position, toEnemy));
+    }
+
+    private IEnumerator AnimateLink(GameObject beam, Vector3 origin, Transform target)
+    {
+        if (beam == null || target == null) yield break;
+
+        Transform beamTransform = beam.transform;
+        SpriteRenderer sr = beam.GetComponent<SpriteRenderer>();
+
+        beamTransform.localScale = new Vector3(0f, 1f, 1f);
+
+        float growDuration = linkAnimationDuration;
+        float elapsed = 0f;
+
+        while (elapsed < growDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / growDuration;
+
+            if (target == null || beam == null) yield break;
+
+            Vector3 targetPos = target.position;
+            Vector3 dir = targetPos - origin;
+            float distance = dir.magnitude;
+            Vector3 direction = dir.normalized;
+
+            // Calculate rotation
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            beamTransform.rotation = Quaternion.Euler(0, 0, angle);
+
+            // Scale beam along X axis
+            float length = Mathf.Lerp(0f, distance, t);
+            beamTransform.localScale = new Vector3(length, 1f, 1f);
+
+            // Offset beam so it stretches from origin to target
+            beamTransform.position = origin + direction * (length / 2f);
+
+            yield return null;
+        }
+
+        // Optional fade-out logic (same as before)
+        yield return new WaitForSeconds(0.1f);
+
+        if (sr != null)
+        {
+            float fadeDuration = 0.2f;
+            float fadeElapsed = 0f;
+            Color startColor = sr.color;
+            Color endColor = new Color(startColor.r, startColor.g, startColor.b, 0f);
+
+            while (fadeElapsed < fadeDuration)
+            {
+                fadeElapsed += Time.deltaTime;
+                sr.color = Color.Lerp(startColor, endColor, fadeElapsed / fadeDuration);
+                yield return null;
+            }
+        }
+
+        Destroy(beam);
+    }
+
 
     private IEnumerator ResetEnemySpeed(EnemyMovement enemy, float duration)
     {
@@ -81,46 +159,36 @@ public class Korah : MonoBehaviour
         if (enemy != null)
         {
             enemy.ResetSpeed();
-            Debug.Log($"{enemy.gameObject.name} speed reset to base speed: {enemy.BaseSpeed}");
         }
     }
 
-    /// <summary>
-    /// Applies a temporary color tint to the enemy's sprite.
-    /// Fades in the tint over fadeDuration seconds, holds for (duration - fadeDuration), then fades out.
-    /// </summary>
     private IEnumerator ApplyTemporaryColor(SpriteRenderer renderer, Color newColor, float duration, float fadeDuration)
     {
-        if (renderer == null)
-            yield break;
+        if (renderer == null) yield break;
 
         Color originalColor = renderer.color;
         float t = 0f;
-        // Fade in.
+
         while (t < fadeDuration)
         {
             t += Time.deltaTime;
-            if (renderer == null)
-                yield break;
+            if (renderer == null) yield break;
             renderer.color = Color.Lerp(originalColor, newColor, t / fadeDuration);
             yield return null;
         }
-        if (renderer != null)
-            renderer.color = newColor;
-        
+
+        if (renderer != null) renderer.color = newColor;
         yield return new WaitForSeconds(duration - fadeDuration);
-        
-        // Fade out.
+
         t = 0f;
         while (t < fadeDuration)
         {
             t += Time.deltaTime;
-            if (renderer == null)
-                yield break;
+            if (renderer == null) yield break;
             renderer.color = Color.Lerp(newColor, originalColor, t / fadeDuration);
             yield return null;
         }
-        if (renderer != null)
-            renderer.color = originalColor;
+
+        if (renderer != null) renderer.color = originalColor;
     }
 }

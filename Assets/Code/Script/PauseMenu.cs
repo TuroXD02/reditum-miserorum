@@ -23,7 +23,7 @@ public class PauseMenu : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log("[PauseMenu] Starting PauseMenu script.");
+       
         // Ensure the pause panel starts inactive.
         if (pausePanel != null)
         {

@@ -1,3 +1,5 @@
+
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -39,10 +41,14 @@ public class EnemySpawner : MonoBehaviour
     private float eps = 0f;
     private bool isSpawning = false;
     private Coroutine waveTimeoutCoroutine;
+    private bool[] waveIntroduced;
+    private List<GameObject> currentWaveSpawnPool;
 
     private void Awake()
     {
         onEnemyDestroy.AddListener(EnemyDestroyed);
+        waveIntroduced = new bool[12];
+        currentWaveSpawnPool = new List<GameObject>();
     }
 
     private void Start()
@@ -99,7 +105,47 @@ public class EnemySpawner : MonoBehaviour
         enemiesLeftToSpawn = EnemiesPerWave();
         eps = EnemiesPerSecond();
 
+        // Set up spawn pool for this wave
+        SetupWaveSpawnPool();
+
         waveTimeoutCoroutine = StartCoroutine(WaveTimeout());
+    }
+
+    private void SetupWaveSpawnPool()
+    {
+        currentWaveSpawnPool.Clear();
+        int tier = Mathf.Clamp((currentWave - 1) / 3 + 1, 1, 12);
+
+        if (!waveIntroduced[tier - 1])
+        {
+            // If this tier is being introduced, only use enemies from this tier
+            waveIntroduced[tier - 1] = true;
+            GameObject[] newEnemies = GetWaveEnemiesByIndex(tier);
+            if (newEnemies != null && newEnemies.Length > 0)
+            {
+                currentWaveSpawnPool.AddRange(newEnemies);
+            }
+        }
+        else
+        {
+            // If no new tier is being introduced, use all previously introduced enemies
+            for (int i = 1; i <= tier; i++)
+            {
+                if (waveIntroduced[i - 1])
+                {
+                    GameObject[] pool = GetWaveEnemiesByIndex(i);
+                    if (pool != null && pool.Length > 0)
+                    {
+                        currentWaveSpawnPool.AddRange(pool);
+                    }
+                }
+            }
+        }
+
+        if (currentWaveSpawnPool.Count == 0)
+        {
+            Debug.LogWarning("[EnemySpawner] No enemies available for the current wave!");
+        }
     }
 
     private IEnumerator WaveTimeout()
@@ -113,30 +159,20 @@ public class EnemySpawner : MonoBehaviour
 
     private void SpawnEnemy()
     {
-        List<GameObject> spawnPool = new List<GameObject>();
-
-        int tier = Mathf.Clamp((currentWave - 1) / 3 + 1, 1, 12); // Adds a new pool every 3 waves
-        for (int i = 1; i <= tier; i++)
-        {
-            GameObject[] pool = GetWaveEnemiesByIndex(i);
-            if (pool != null && pool.Length > 0)
-                spawnPool.AddRange(pool);
-        }
-
-        if (spawnPool.Count == 0)
+        if (currentWaveSpawnPool.Count == 0)
         {
             Debug.LogWarning("[EnemySpawner] No enemies to spawn!");
             return;
         }
-
-        int index = Random.Range(0, spawnPool.Count);
-        GameObject prefabToSpawn = spawnPool[index];
 
         if (startPoint == null)
         {
             Debug.LogError("[EnemySpawner] startPoint is not assigned!");
             return;
         }
+
+        int index = Random.Range(0, currentWaveSpawnPool.Count);
+        GameObject prefabToSpawn = currentWaveSpawnPool[index];
 
         Vector3 position = new Vector3(
             Random.Range(-1f, 1f),
