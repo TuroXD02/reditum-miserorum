@@ -11,8 +11,9 @@ public class Korah : MonoBehaviour
     [SerializeField] private float effectDuration = 5f;
 
     [Header("Visual Link Settings")]
-    [SerializeField] private GameObject linkPrefab; // Prefab with SpriteRenderer only
-    [SerializeField] private float linkAnimationDuration = 0.5f;
+    [SerializeField] private GameObject linkPrefab;
+    [SerializeField] private float linkLifetime = 0.6f;
+    [SerializeField] private float beamThickness = 3f;
 
     [Header("Buff Effect Settings")]
     [SerializeField] private GameObject buffEffectPrefab;
@@ -41,8 +42,10 @@ public class Korah : MonoBehaviour
                 .CompareTo((transform.position - b.transform.position).sqrMagnitude)
             );
 
-            int maxAffected = Mathf.Min(4, allEnemies.Count);
+            int maxAffected = Mathf.Min(3, allEnemies.Count);
             float boostFactor = Random.Range(minBoostPercent, maxBoostPercent);
+
+            Vector3 originCenter = GetSpriteCenter(transform);
 
             for (int i = 0; i < maxAffected; i++)
             {
@@ -69,88 +72,99 @@ public class Korah : MonoBehaviour
                     StartCoroutine(ApplyTemporaryColor(sr, targetTint, effectDuration, tintLerpDuration));
                 }
 
-                // Stretching link from Korah to enemy
                 if (linkPrefab != null)
                 {
-                    GameObject beam = Instantiate(linkPrefab, transform.position, Quaternion.identity);
-                    StartCoroutine(AnimateLink(beam, transform.position, enemy.transform));
-                }
-            }
+                    GameObject beam = Instantiate(linkPrefab);
+                    StartCoroutine(AnimateLink(beam, transform, enemy.transform, linkLifetime));
+                    Debug.Log($"Beam position: {beam.transform.position}");
+                    Debug.Log($"Beam scale: {beam.transform.localScale}");
 
-            // Optional: link between two enemies
-            if (allEnemies.Count >= 2)
-            {
-                ConnectEnemies(allEnemies[0].transform, allEnemies[1].transform);
+
+                }
             }
         }
     }
 
-    private void ConnectEnemies(Transform fromEnemy, Transform toEnemy)
+    private Vector3 GetSpriteCenter(Transform objTransform)
     {
-        if (linkPrefab == null || fromEnemy == null || toEnemy == null) return;
+        SpriteRenderer sr = objTransform.GetComponent<SpriteRenderer>();
+        if (sr != null)
+            return sr.bounds.center;
 
-        GameObject beam = Instantiate(linkPrefab, fromEnemy.position, Quaternion.identity);
-        StartCoroutine(AnimateLink(beam, fromEnemy.position, toEnemy));
+        BoxCollider2D col = objTransform.GetComponent<BoxCollider2D>();
+        if (col != null)
+            return col.bounds.center;
+
+        return objTransform.position;
     }
 
-    private IEnumerator AnimateLink(GameObject beam, Vector3 origin, Transform target)
+
+    private IEnumerator AnimateLink(GameObject beam, Transform source, Transform target, float duration)
     {
-        if (beam == null || target == null) yield break;
+        if (beam == null || source == null || target == null) yield break;
 
-        Transform beamTransform = beam.transform;
         SpriteRenderer sr = beam.GetComponent<SpriteRenderer>();
+        if (sr == null)
+        {
+            sr = beam.GetComponentInChildren<SpriteRenderer>();
+            if (sr == null)
+            {
+                Debug.LogError("No SpriteRenderer found in beam or its children");
+                yield break;
+            }
+        }
 
-        beamTransform.localScale = new Vector3(0f, 1f, 1f);
-
-        float growDuration = linkAnimationDuration;
         float elapsed = 0f;
+        float scaleMultiplier = 3.3f; // Adjust this value to increase the final size
 
-        while (elapsed < growDuration)
+        while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            float t = elapsed / growDuration;
 
-            if (target == null || beam == null) yield break;
-
-            Vector3 targetPos = target.position;
-            Vector3 dir = targetPos - origin;
+            Vector3 start = GetSpriteCenter(source);
+            Vector3 end = GetSpriteCenter(target);
+            Vector3 dir = end - start;
             float distance = dir.magnitude;
-            Vector3 direction = dir.normalized;
 
-            // Calculate rotation
+            // Position the beam at the midpoint
+            beam.transform.position = start + (dir * 0.5f);
+
+            // Rotate to point from start to end
             float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-            beamTransform.rotation = Quaternion.Euler(0, 0, angle);
+            beam.transform.rotation = Quaternion.Euler(0, 0, angle);
 
-            // Scale beam along X axis
-            float length = Mathf.Lerp(0f, distance, t);
-            beamTransform.localScale = new Vector3(length, 1f, 1f);
-
-            // Offset beam so it stretches from origin to target
-            beamTransform.position = origin + direction * (length / 2f);
+            // Scale to match distance, applying the scale multiplier
+            float widthScale = distance * scaleMultiplier; // Removed baseWidth
+            beam.transform.localScale = new Vector3(widthScale, beamThickness, 1f);
 
             yield return null;
         }
 
-        // Optional fade-out logic (same as before)
-        yield return new WaitForSeconds(0.1f);
+        // Fade out
+        float fadeDuration = 0.2f;
+        float fadeElapsed = 0f;
+        Color startColor = sr.color;
+        Color endColor = new Color(startColor.r, startColor.g, startColor.b, 0f);
 
-        if (sr != null)
+        while (fadeElapsed < fadeDuration)
         {
-            float fadeDuration = 0.2f;
-            float fadeElapsed = 0f;
-            Color startColor = sr.color;
-            Color endColor = new Color(startColor.r, startColor.g, startColor.b, 0f);
-
-            while (fadeElapsed < fadeDuration)
-            {
-                fadeElapsed += Time.deltaTime;
-                sr.color = Color.Lerp(startColor, endColor, fadeElapsed / fadeDuration);
-                yield return null;
-            }
+            fadeElapsed += Time.deltaTime;
+            sr.color = Color.Lerp(startColor, endColor, fadeElapsed / fadeDuration);
+            yield return null;
         }
 
         Destroy(beam);
     }
+
+
+
+
+
+
+
+
+
+
 
 
     private IEnumerator ResetEnemySpeed(EnemyMovement enemy, float duration)

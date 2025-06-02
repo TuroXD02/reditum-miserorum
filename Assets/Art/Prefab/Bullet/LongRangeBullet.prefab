@@ -29,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 3989859050725977550}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.27, y: 0.67, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1.3, y: 1.3, z: 1.3}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -166,6 +166,8 @@ MonoBehaviour:
   pivot: {fileID: 6845667556258019549}
   bulletSpeed: 20
   damageMultiplier: 100
+  maxDistanceForWhiteness: 10
+  startColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   target: {fileID: 0}
 --- !u!1 &6845667556258019549
 GameObject:

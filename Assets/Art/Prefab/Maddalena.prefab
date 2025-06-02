@@ -152,7 +152,7 @@ MonoBehaviour:
   freezeAnimatorController: {fileID: 9100000, guid: a02d9aee30ed0cb4aa4c895433d08ec4, type: 2}
   freezeEffectDuration: 0.625
   enemyVisualEffectPrefab: {fileID: 911721255936366020, guid: ec20cf062e243e947b5803c60c99a371, type: 3}
-  enemyEffectDuration: 0.5
+  enemyEffectDuration: 1.5
   enemyBlueColor: {r: 0.7, g: 0.7, b: 1, a: 1}
   tintLerpDuration: 0.3
 --- !u!1 &2686944574562900299
