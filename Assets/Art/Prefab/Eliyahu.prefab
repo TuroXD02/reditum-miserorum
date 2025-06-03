@@ -192,6 +192,7 @@ MonoBehaviour:
   armor: 40
   healthSprites: []
   maxRespawns: 8
+  respawnDelay: 1
   fullHealth: 500
   speedMultiplier: 1.1
   respawnSprites:
@@ -202,7 +203,14 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 37605675055e0544fae34c399a8d3690, type: 3}
   - {fileID: 21300000, guid: b813db1d2b5d1d14687502a8bcbb6ed8, type: 3}
   - {fileID: 21300000, guid: 3ed5a5a56cbc90442b7dd13e8fd50c3f, type: 3}
-  - {fileID: 21300000, guid: 3ed5a5a56cbc90442b7dd13e8fd50c3f, type: 3}
+  reviveEffectPrefab: {fileID: 6455950581175454767, guid: 2aed39568a2fbb94fa8c9601cb2b30f8, type: 3}
+  reviveEffectDuration: 0.65
+  aliveLayer: Enemy
+  deadLayer: DeadEnemy
+  projectileClearRadius: 1
+  projectileLayer:
+    serializedVersion: 2
+    m_Bits: 128
 --- !u!114 &1790246963033452187
 MonoBehaviour:
   m_ObjectHideFlags: 0

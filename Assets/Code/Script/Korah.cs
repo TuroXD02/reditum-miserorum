@@ -115,7 +115,7 @@ public class Korah : MonoBehaviour
         }
 
         float elapsed = 0f;
-        float scaleMultiplier = 3.3f; // Adjust this value to increase the final size
+        float scaleMultiplier = 4f; // Adjust this value to increase the final size
 
         while (elapsed < duration)
         {

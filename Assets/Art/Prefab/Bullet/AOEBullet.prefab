@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 5413229578665222255}
   - component: {fileID: 8058655616107894006}
   - component: {fileID: 98868068142420251}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: AOEBullet
   m_TagString: Untagged
   m_Icon: {fileID: 0}
