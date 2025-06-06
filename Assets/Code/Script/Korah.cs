@@ -53,9 +53,7 @@ public class Korah : MonoBehaviour
                 if (enemy == null) continue;
 
                 if (enemy.moveSpeed < enemy.BaseSpeed)
-                {
                     enemy.moveSpeed = enemy.BaseSpeed;
-                }
 
                 enemy.moveSpeed *= (1f + boostFactor);
                 StartCoroutine(ResetEnemySpeed(enemy, effectDuration));
@@ -63,7 +61,7 @@ public class Korah : MonoBehaviour
                 if (buffEffectPrefab != null)
                 {
                     GameObject effect = Instantiate(buffEffectPrefab, enemy.transform.position, Quaternion.identity, enemy.transform);
-                    Destroy(effect, visualEffectDuration);
+                    Destroy(effect, 3f); // Forceful destroy
                 }
 
                 SpriteRenderer sr = enemy.GetComponent<SpriteRenderer>();
@@ -75,11 +73,8 @@ public class Korah : MonoBehaviour
                 if (linkPrefab != null)
                 {
                     GameObject beam = Instantiate(linkPrefab);
+                    Destroy(beam, 3f); // Forceful destroy
                     StartCoroutine(AnimateLink(beam, transform, enemy.transform, linkLifetime));
-                    Debug.Log($"Beam position: {beam.transform.position}");
-                    Debug.Log($"Beam scale: {beam.transform.localScale}");
-
-
                 }
             }
         }
@@ -98,7 +93,6 @@ public class Korah : MonoBehaviour
         return objTransform.position;
     }
 
-
     private IEnumerator AnimateLink(GameObject beam, Transform source, Transform target, float duration)
     {
         if (beam == null || source == null || target == null) yield break;
@@ -109,13 +103,13 @@ public class Korah : MonoBehaviour
             sr = beam.GetComponentInChildren<SpriteRenderer>();
             if (sr == null)
             {
-                Debug.LogError("No SpriteRenderer found in beam or its children");
+                Debug.LogError("No SpriteRenderer found in beam or its children.");
                 yield break;
             }
         }
 
         float elapsed = 0f;
-        float scaleMultiplier = 4f; // Adjust this value to increase the final size
+        float scaleMultiplier = 4f;
 
         while (elapsed < duration)
         {
@@ -126,21 +120,17 @@ public class Korah : MonoBehaviour
             Vector3 dir = end - start;
             float distance = dir.magnitude;
 
-            // Position the beam at the midpoint
-            beam.transform.position = start + (dir * 0.5f);
+            beam.transform.position = start + dir * 0.5f;
 
-            // Rotate to point from start to end
             float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
             beam.transform.rotation = Quaternion.Euler(0, 0, angle);
 
-            // Scale to match distance, applying the scale multiplier
-            float widthScale = distance * scaleMultiplier; // Removed baseWidth
-            beam.transform.localScale = new Vector3(widthScale, beamThickness, 1f);
+            beam.transform.localScale = new Vector3(distance * scaleMultiplier, beamThickness, 1f);
 
             yield return null;
         }
 
-        // Fade out
+        // Optional fade out
         float fadeDuration = 0.2f;
         float fadeElapsed = 0f;
         Color startColor = sr.color;
@@ -153,27 +143,16 @@ public class Korah : MonoBehaviour
             yield return null;
         }
 
-        Destroy(beam);
+        // If not already destroyed
+        if (beam != null)
+            Destroy(beam);
     }
-
-
-
-
-
-
-
-
-
-
-
 
     private IEnumerator ResetEnemySpeed(EnemyMovement enemy, float duration)
     {
         yield return new WaitForSeconds(duration);
         if (enemy != null)
-        {
             enemy.ResetSpeed();
-        }
     }
 
     private IEnumerator ApplyTemporaryColor(SpriteRenderer renderer, Color newColor, float duration, float fadeDuration)

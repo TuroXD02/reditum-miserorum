@@ -94,6 +94,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1344935176248273776}
   - component: {fileID: 2717458135587438157}
+  - component: {fileID: 586831604310613463}
+  - component: {fileID: 1833471308888188369}
   m_Layer: 0
   m_Name: Portale_rotazione
   m_TagString: Untagged
@@ -168,6 +170,86 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!58 &586831604310613463
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3484369940561193021}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  serializedVersion: 2
+  m_Radius: 0.89085436
+--- !u!114 &1833471308888188369
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3484369940561193021}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d95056695b0b3242ad9aa3e5c242f78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dialVisual: {fileID: 1344935176248273776}
+  rewindSpeed: 3600
+  slowDownThreshold: 0.79
+  slowDownCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: -0.0033302307
+      value: 1.025444
+      inSlope: -0.053011827
+      outSlope: -0.053011827
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.3720885
+    - serializedVersion: 3
+      time: 1.0200195
+      value: -0.004722595
+      inSlope: -1.2679709
+      outSlope: -1.2679709
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.1096434
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  OnFullRotation:
+    m_PersistentCalls:
+      m_Calls: []
+  dialLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!1 &5493407747743631063
 GameObject:
   m_ObjectHideFlags: 0
@@ -178,7 +260,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5896750076629448097}
   - component: {fileID: 7411852057626363871}
-  - component: {fileID: 3998814363545863555}
   m_Layer: 0
   m_Name: Portale
   m_TagString: Untagged
@@ -256,30 +337,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &3998814363545863555
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5493407747743631063}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2d95056695b0b3242ad9aa3e5c242f78, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  dialVisual: {fileID: 1344935176248273776}
-  minAngle: -1080
-  maxAngle: 1080
-  snapBack: 1
-  rotationSpeed: 2
-  OnFullRotation:
-    m_PersistentCalls:
-      m_Calls: []
-  dragThreshold: 1
-  dialLayerMask:
-    serializedVersion: 2
-    m_Bits: 0
 --- !u!1 &8038164708983862959
 GameObject:
   m_ObjectHideFlags: 0

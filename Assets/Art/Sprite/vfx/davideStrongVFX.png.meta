@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: c7d1c5ef2a35094429fc22e2904d781f
+guid: 73607ab4025bf9441b5ef3f2b960522f
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -97,7 +97,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: maddalenaVFX_0
+      name: davideStrongVFX_0
       rect:
         serializedVersion: 2
         x: 0
@@ -111,14 +111,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: cfe516950fd1629449f3ccf64149b570
-      internalID: 209123500
+      spriteID: 0ddc0fc8907308a4b8d8c11c0c5e646b
+      internalID: 1858594486
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: maddalenaVFX_1
+      name: davideStrongVFX_1
       rect:
         serializedVersion: 2
         x: 768
@@ -132,14 +132,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 338b6b8976ef2b344a427302bb9911c9
-      internalID: 832644287
+      spriteID: baec491ac55870240a40a79de6e34b3b
+      internalID: 1103585637
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: maddalenaVFX_2
+      name: davideStrongVFX_2
       rect:
         serializedVersion: 2
         x: 1536
@@ -153,14 +153,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: c3680dc176ffd9643abae77770bb5ae4
-      internalID: 637334747
+      spriteID: ffbf511e8fdcb7f4d931c41205e215c2
+      internalID: 1704584890
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: maddalenaVFX_3
+      name: davideStrongVFX_3
       rect:
         serializedVersion: 2
         x: 2304
@@ -174,14 +174,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: ae78ff90e1dd0864e8fcf1650796835b
-      internalID: 1161808426
+      spriteID: a956db56dde4a7a489b0deb4174b5fbc
+      internalID: 1157284590
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: maddalenaVFX_4
+      name: davideStrongVFX_4
       rect:
         serializedVersion: 2
         x: 3072
@@ -195,14 +195,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 0bd521910ad8e3b42b3ae2a55abe57bf
-      internalID: -1909532257
+      spriteID: df76b9f26897e3b47a3845fe4a92711f
+      internalID: 1183904320
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: maddalenaVFX_5
+      name: davideStrongVFX_5
       rect:
         serializedVersion: 2
         x: 3840
@@ -216,14 +216,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 4804fa2a973b21348af134f228b9c249
-      internalID: 1195187279
+      spriteID: 49e14f91e9a29ee41a8c8ef0f086c977
+      internalID: -1017480744
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: maddalenaVFX_6
+      name: davideStrongVFX_6
       rect:
         serializedVersion: 2
         x: 4608
@@ -237,71 +237,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 92b98f6953937884eba4952035b1eab0
-      internalID: -1248018091
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: maddalenaVFX_7
-      rect:
-        serializedVersion: 2
-        x: 5376
-        y: 0
-        width: 768
-        height: 768
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 9425a9249bd57444c97cfc1b3aaf0fb3
-      internalID: 1976081443
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: maddalenaVFX_8
-      rect:
-        serializedVersion: 2
-        x: 6144
-        y: 0
-        width: 768
-        height: 768
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 4aa84a32c52df6e4cbc9c1eda3ce17ab
-      internalID: 642942718
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: maddalenaVFX_9
-      rect:
-        serializedVersion: 2
-        x: 6912
-        y: 0
-        width: 768
-        height: 768
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 73579ae641d1c9a4bab82e95ac927b18
-      internalID: -1752740782
+      spriteID: dcc5ac9f9b3b9e642accda8281965f2d
+      internalID: -518551790
       vertices: []
       indices: 
       edges: []
@@ -317,16 +254,13 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      maddalenaVFX_0: 209123500
-      maddalenaVFX_1: 832644287
-      maddalenaVFX_2: 637334747
-      maddalenaVFX_3: 1161808426
-      maddalenaVFX_4: -1909532257
-      maddalenaVFX_5: 1195187279
-      maddalenaVFX_6: -1248018091
-      maddalenaVFX_7: 1976081443
-      maddalenaVFX_8: 642942718
-      maddalenaVFX_9: -1752740782
+      davideStrongVFX_0: 1858594486
+      davideStrongVFX_1: 1103585637
+      davideStrongVFX_2: 1704584890
+      davideStrongVFX_3: 1157284590
+      davideStrongVFX_4: 1183904320
+      davideStrongVFX_5: -1017480744
+      davideStrongVFX_6: -518551790
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -1,117 +1,117 @@
 using UnityEngine;
 using UnityEngine.Events;
 
+[RequireComponent(typeof(Collider2D))]
 public class RotaryDial : MonoBehaviour
 {
     [Header("Dial Setup")]
-    public Transform dialVisual;            // Assign the visible part of the dial (child object)
-    public float minAngle = 0f;
-    public float maxAngle = 270f;
-    public bool snapBack = true;
-    public float rotationSpeed = 10f;       // Lerp speed
+    public Transform dialVisual;               // The rotating visual
+    public float rewindSpeed;           // Max degrees per second during rewind
+    public float slowDownThreshold = 0.2f;     // Slow down when under 20% of total rewind
+    public AnimationCurve slowDownCurve = AnimationCurve.EaseInOut(0, 1, 1, 0); // Eases out
 
     [Header("Events")]
     public UnityEvent OnFullRotation;
 
-    [SerializeField] private float dragThreshold = 1f; // Degrees threshold to register drag
     [SerializeField] private LayerMask dialLayerMask;
 
     private float currentAngle = 0f;
-    private float targetAngle = 0f;
-    private float startDragAngle;
-    private float initialMouseAngle;
+    private float totalDraggedRotation = 0f;
+    private float rewindRemainingRotation = 0f;
+    private float rewindTotalRotation = 0f;
+
     private bool isDragging = false;
-    private bool isSnappingBack = false;
+    private bool isRewinding = false;
+
+    private float lastMouseAngle = 0f;
 
     void Update()
     {
         HandleInput();
-        UpdateDialRotation();
+        UpdateDial();
     }
 
     private void HandleInput()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && IsMouseOverDial())
         {
-            if (IsMouseOverDial())
+            if (isRewinding)
             {
-                // Stop snap-back if it's winding
-                isDragging = true;
-                isSnappingBack = false;
-
-                initialMouseAngle = GetMouseAngleRelativeToPivot();
-                startDragAngle = currentAngle;
+                // Interrupt rewind
+                isRewinding = false;
+                rewindRemainingRotation = 0f;
+                totalDraggedRotation = 0f;
             }
+
+            isDragging = true;
+            lastMouseAngle = GetMouseAngle();
         }
 
-        if (Input.GetMouseButtonUp(0))
+        if (Input.GetMouseButtonUp(0) && isDragging)
         {
-            if (isDragging)
-            {
-                if (Mathf.Abs(targetAngle - maxAngle) < 5f)
-                {
-                    OnFullRotation?.Invoke();
-                }
+            isDragging = false;
 
-                isDragging = false;
+            rewindRemainingRotation = totalDraggedRotation;
+            rewindTotalRotation = totalDraggedRotation;
+            isRewinding = true;
 
-                if (snapBack)
-                {
-                    isSnappingBack = true;
-                    targetAngle = minAngle;
-                }
-            }
+            if (Mathf.Abs(totalDraggedRotation) >= 360f)
+                OnFullRotation?.Invoke();
         }
 
         if (isDragging)
         {
-            float currentMouseAngle = GetMouseAngleRelativeToPivot();
-            float angleDelta = Mathf.DeltaAngle(initialMouseAngle, currentMouseAngle);
-
-            if (Mathf.Abs(angleDelta) > dragThreshold)
-            {
-                targetAngle = Mathf.Clamp(startDragAngle + angleDelta, minAngle, maxAngle);
-            }
+            float currentMouseAngle = GetMouseAngle();
+            float delta = Mathf.DeltaAngle(lastMouseAngle, currentMouseAngle);
+            totalDraggedRotation += delta;
+            currentAngle += delta;
+            lastMouseAngle = currentMouseAngle;
         }
     }
 
-    private void UpdateDialRotation()
+    private void UpdateDial()
     {
-        if (!isDragging && isSnappingBack)
+        if (isRewinding)
         {
-            currentAngle = Mathf.LerpAngle(currentAngle, minAngle, Time.deltaTime * rotationSpeed);
+            float rewindProgress = 1f - Mathf.Clamp01(Mathf.Abs(rewindRemainingRotation / rewindTotalRotation));
+            float slowDownFactor = 1f;
 
-            if (Mathf.Abs(Mathf.DeltaAngle(currentAngle, minAngle)) < 0.5f)
+            if (rewindProgress > 1f - slowDownThreshold)
             {
-                currentAngle = minAngle;
-                isSnappingBack = false;
+                float t = (rewindProgress - (1f - slowDownThreshold)) / slowDownThreshold;
+                slowDownFactor = slowDownCurve.Evaluate(t);
             }
-        }
-        else
-        {
-            currentAngle = Mathf.LerpAngle(currentAngle, targetAngle, Time.deltaTime * rotationSpeed);
+
+            float direction = Mathf.Sign(rewindRemainingRotation);
+            float delta = rewindSpeed * slowDownFactor * Time.deltaTime * direction;
+
+            if (Mathf.Abs(delta) > Mathf.Abs(rewindRemainingRotation))
+                delta = rewindRemainingRotation;
+
+            currentAngle -= delta;
+            rewindRemainingRotation -= delta;
+
+            if (Mathf.Approximately(rewindRemainingRotation, 0f))
+            {
+                isRewinding = false;
+                totalDraggedRotation = 0f;
+            }
         }
 
         dialVisual.localRotation = Quaternion.Euler(0f, 0f, currentAngle);
     }
 
-    private float GetMouseAngleRelativeToPivot()
+    private float GetMouseAngle()
     {
-        Vector3 mousePos = Input.mousePosition;
-        Vector3 pivotScreenPos = Camera.main.WorldToScreenPoint(transform.position);
-        Vector2 dir = mousePos - pivotScreenPos;
-        return Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector2 direction = mouseWorld - transform.position;
+        return Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
     }
 
     private bool IsMouseOverDial()
     {
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out RaycastHit hit, 100f, dialLayerMask))
-        {
-            return hit.transform == dialVisual;
-        }
-
-        // Default true for simplicity if no collider is used
-        return true;
+        Vector2 mouseWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        RaycastHit2D hit = Physics2D.Raycast(mouseWorld, Vector2.zero, 0f, dialLayerMask);
+        return hit.collider != null && hit.collider.transform == dialVisual;
     }
 }

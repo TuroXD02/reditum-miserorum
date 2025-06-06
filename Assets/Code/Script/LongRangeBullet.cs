@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class LongRangeBullet : MonoBehaviour
@@ -9,30 +8,33 @@ public class LongRangeBullet : MonoBehaviour
     [SerializeField] private GameObject pivot;
 
     [Header("Attributes")]
-    [SerializeField] private float bulletSpeed;
-    [SerializeField] private float damageMultiplier; // Multiplier for damage scaling with distance
-    [SerializeField, Tooltip("Distance over which the bullet transitions from startColor to white.")]
-    private float maxDistanceForWhiteness = 6f;
+    [SerializeField] private float bulletSpeed = 10f;
+    [SerializeField] private float damageMultiplier = 1f;
 
     [Header("Color Settings")]
-    [SerializeField, Tooltip("The starting (darker) color for the bullet.")]
-    private Color startColor = Color.white; // Set to a dark color in the Inspector.
-    private Color endColor = Color.red;  // Final color is white.
+    [SerializeField] private Color startColor = Color.white;
+    [SerializeField] private Color endColor = Color.red;
+    [SerializeField] private float maxDistanceForWhiteness = 6f;
+
+    [Header("Impact Settings")]
+    [SerializeField] private GameObject impactEffectPrefab;
+    [SerializeField] private GameObject maxRangeImpactEffectPrefab;
+    [SerializeField] private float impactEffectDuration = 2f;
+    [SerializeField] private float impactRotationOffset = -90f;
+    [SerializeField, Range(0.5f, 1f)] private float maxDistanceThreshold = 0.95f;
 
     private int bulletDamage;
-    public Transform target;
-    private Vector2 startPosition; // Store the starting position
-
+    private Vector2 startPosition;
     private SpriteRenderer spriteRenderer;
+    public Transform target;
 
     private void Start()
     {
-        // Store the bullet's initial position.
         startPosition = transform.position;
         spriteRenderer = GetComponent<SpriteRenderer>();
+
         if (spriteRenderer != null)
         {
-            // Initialize with the dark starting color.
             spriteRenderer.color = startColor;
         }
         else
@@ -41,13 +43,11 @@ public class LongRangeBullet : MonoBehaviour
         }
     }
 
-    // Sets the damage value.
     public void SetDamage(int damage)
     {
         bulletDamage = damage;
     }
 
-    // Sets the target for the bullet.
     public void SetTarget(Transform _target)
     {
         target = _target;
@@ -55,15 +55,11 @@ public class LongRangeBullet : MonoBehaviour
 
     private void Update()
     {
-        // Rotate the bullet for visual effect.
         transform.Rotate(0, 0, -2 * Time.deltaTime);
 
-        // Calculate the distance traveled.
         float distanceTraveled = Vector2.Distance(startPosition, transform.position);
-        // Calculate an interpolation factor from 0 to 1.
         float factor = Mathf.Clamp01(distanceTraveled / maxDistanceForWhiteness);
 
-        // Lerp the color from the dark startColor to white based on the factor.
         if (spriteRenderer != null)
         {
             spriteRenderer.color = Color.Lerp(startColor, endColor, factor);
@@ -72,41 +68,44 @@ public class LongRangeBullet : MonoBehaviour
 
     private void FixedUpdate()
     {
-        // If no target is set, do nothing.
         if (target == null) return;
 
-        // Move the bullet toward the target.
         Vector2 direction = (target.position - transform.position).normalized;
         rb.velocity = direction * bulletSpeed;
     }
 
     private void OnCollisionEnter2D(Collision2D other)
     {
-        // Calculate the distance traveled.
         float distanceTraveled = Vector2.Distance(startPosition, transform.position);
+        int scaledDamage = Mathf.CeilToInt(bulletDamage + (distanceTraveled * damageMultiplier));
 
-        // Calculate the final damage based on distance.
-        int finalDamage = Mathf.CeilToInt(bulletDamage + (distanceTraveled * damageMultiplier));
+        // ✅ Debug log always prints
+        Debug.Log($"LongRangeBullet hit {other.gameObject.name} for {scaledDamage} damage (Distance: {distanceTraveled:F2})");
 
-        // Attempt to get the EnemyHealth component.
+        // Apply damage
         EnemyHealth enemyHealth = other.gameObject.GetComponent<EnemyHealth>();
-
-        // Attempt to get the LussuriaHealth component.
         LussuriaHealth lussuriaHealth = other.gameObject.GetComponent<LussuriaHealth>();
 
-        // Apply damage if EnemyHealth component exists.
-        if (enemyHealth != null)
+        if (enemyHealth != null) enemyHealth.TakeDamage(scaledDamage);
+        if (lussuriaHealth != null) lussuriaHealth.TakeDamage(scaledDamage);
+
+        // Play the correct animation
+        GameObject chosenImpact = impactEffectPrefab;
+
+        if ((distanceTraveled / maxDistanceForWhiteness) >= maxDistanceThreshold && maxRangeImpactEffectPrefab != null)
         {
-            enemyHealth.TakeDamage(finalDamage);
+            chosenImpact = maxRangeImpactEffectPrefab;
         }
 
-        // Apply damage if LussuriaHealth component exists.
-        if (lussuriaHealth != null)
+        if (chosenImpact != null)
         {
-            lussuriaHealth.TakeDamage(finalDamage);
+            Vector2 bulletDir = rb.velocity.normalized;
+            float angle = Mathf.Atan2(-bulletDir.y, -bulletDir.x) * Mathf.Rad2Deg + impactRotationOffset;
+
+            GameObject impact = Instantiate(chosenImpact, transform.position, Quaternion.Euler(0f, 0f, angle));
+            Destroy(impact, impactEffectDuration);
         }
 
-        // Destroy the bullet after collision.
         Destroy(gameObject);
     }
 }

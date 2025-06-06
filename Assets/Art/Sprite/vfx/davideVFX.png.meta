@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 0a70e9963915c8a4490c5d827a7adc6c
+guid: e738f5d17f23f314b86e5778f8aa8c4b
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -97,7 +97,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: maddalenaVFX_0
+      name: davideVFX_0
       rect:
         serializedVersion: 2
         x: 0
@@ -111,14 +111,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 0dd7be9d26233344688fda4c07bad342
-      internalID: -29422804
+      spriteID: 98a0218432295894ea5ebfa7788ff221
+      internalID: 1271175351
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: maddalenaVFX_1
+      name: davideVFX_1
       rect:
         serializedVersion: 2
         x: 768
@@ -132,14 +132,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 04e3af79975c6004b91b3ca53648a187
-      internalID: -1347531131
+      spriteID: 0f9c9f6a5a6011349a2d20f48f42454c
+      internalID: -892833376
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: maddalenaVFX_2
+      name: davideVFX_2
       rect:
         serializedVersion: 2
         x: 1536
@@ -153,14 +153,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 4583ea26ef237ed4b91762c9a2bb26c7
-      internalID: -413100673
+      spriteID: 452d66eb04196864fad6339090a55034
+      internalID: -296165290
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: maddalenaVFX_3
+      name: davideVFX_3
       rect:
         serializedVersion: 2
         x: 2304
@@ -174,14 +174,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 53712a66d7235cf45b0e4f6601b63310
-      internalID: 1613115845
+      spriteID: 65f05880670c49f4aa260633eeacbcbf
+      internalID: 1280517588
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: maddalenaVFX_4
+      name: davideVFX_4
       rect:
         serializedVersion: 2
         x: 3072
@@ -195,8 +195,50 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 00f7d5116655e594fb9867426be71807
-      internalID: -360489109
+      spriteID: 6b7a39825eee15e4c958e2c5ac8bbe33
+      internalID: 798627693
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: davideVFX_5
+      rect:
+        serializedVersion: 2
+        x: 3840
+        y: 0
+        width: 768
+        height: 768
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b2ec3b472cef06343a1f23edbfe7a038
+      internalID: -1737266343
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: davideVFX_6
+      rect:
+        serializedVersion: 2
+        x: 4608
+        y: 0
+        width: 768
+        height: 768
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 073189dd7fce25d4595f649610666566
+      internalID: 1006634295
       vertices: []
       indices: 
       edges: []
@@ -212,11 +254,13 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      maddalenaVFX_0: -29422804
-      maddalenaVFX_1: -1347531131
-      maddalenaVFX_2: -413100673
-      maddalenaVFX_3: 1613115845
-      maddalenaVFX_4: -360489109
+      davideVFX_0: 1271175351
+      davideVFX_1: -892833376
+      davideVFX_2: -296165290
+      davideVFX_3: 1280517588
+      davideVFX_4: 798627693
+      davideVFX_5: -1737266343
+      davideVFX_6: 1006634295
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

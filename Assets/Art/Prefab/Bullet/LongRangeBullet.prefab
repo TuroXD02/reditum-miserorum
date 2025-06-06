@@ -164,10 +164,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rb: {fileID: 5717294428929755587}
   pivot: {fileID: 6845667556258019549}
-  bulletSpeed: 20
+  bulletSpeed: 10
   damageMultiplier: 100
+  startColor: {r: 1, g: 1, b: 1, a: 1}
+  endColor: {r: 1, g: 0, b: 0, a: 1}
   maxDistanceForWhiteness: 10
-  startColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  impactEffectPrefab: {fileID: 7501192240954958659, guid: 5f4c53b569df3b34baca2bebd6e75e6d, type: 3}
+  maxRangeImpactEffectPrefab: {fileID: 3732404309996073873, guid: caee0374f0a7e154589b421ffeb6c7bf, type: 3}
+  impactEffectDuration: 0.65
+  impactRotationOffset: 90
+  maxDistanceThreshold: 0.5
   target: {fileID: 0}
 --- !u!1 &6845667556258019549
 GameObject:

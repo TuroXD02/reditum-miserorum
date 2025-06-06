@@ -188,11 +188,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hitPoints: 500
-  currencyWorth: 600
+  currencyWorth: 280
   armor: 40
   healthSprites: []
   maxRespawns: 8
-  respawnDelay: 1
+  respawnDelay: 0.5
   fullHealth: 500
   speedMultiplier: 1.1
   respawnSprites:
@@ -207,7 +207,8 @@ MonoBehaviour:
   reviveEffectDuration: 0.65
   aliveLayer: Enemy
   deadLayer: DeadEnemy
-  projectileClearRadius: 1
+  respawnLayer: Respawn
+  projectileClearRadius: 2
   projectileLayer:
     serializedVersion: 2
     m_Bits: 128

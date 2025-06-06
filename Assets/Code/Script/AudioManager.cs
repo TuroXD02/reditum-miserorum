@@ -60,7 +60,7 @@ public class AudioManager : MonoBehaviour
         {
             targetVolume = PlayerPrefs.GetFloat(VolumePrefKey, 1f);
             targetVolume = Mathf.Clamp01(targetVolume);
-            Debug.Log("Loaded targetVolume: " + targetVolume);
+            
         }
 
         audioSource.clip = backgroundMusic;
