@@ -79,8 +79,7 @@ public class LongRangeBullet : MonoBehaviour
         float distanceTraveled = Vector2.Distance(startPosition, transform.position);
         int scaledDamage = Mathf.CeilToInt(bulletDamage + (distanceTraveled * damageMultiplier));
 
-        // ✅ Debug log always prints
-        Debug.Log($"LongRangeBullet hit {other.gameObject.name} for {scaledDamage} damage (Distance: {distanceTraveled:F2})");
+
 
         // Apply damage
         EnemyHealth enemyHealth = other.gameObject.GetComponent<EnemyHealth>();

@@ -17,7 +17,7 @@ public class Korah : MonoBehaviour
 
     [Header("Buff Effect Settings")]
     [SerializeField] private GameObject buffEffectPrefab;
-    [SerializeField] private float visualEffectDuration = 2f;
+    [SerializeField] private float visualEffectDuration;
 
     [Header("Tint Settings")]
     [SerializeField] private Color targetTint = new Color(1f, 0.7f, 0.7f, 1f);

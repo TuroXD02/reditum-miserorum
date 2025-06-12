@@ -9,7 +9,7 @@ public class EliyahuEnemy : EnemyHealth
     [SerializeField] private float respawnDelay = 1f;
 
     [Header("Health & Speed")]
-    [SerializeField] private int fullHealth = 500;
+    [SerializeField] private int fullHealth;
     [SerializeField] private float speedMultiplier = 1.2f;
 
     [Header("Appearance")]

@@ -48,7 +48,7 @@ public class EnemyHealth : MonoBehaviour
         float damageMultiplier = 1f - (armor / 100f);
         int finalDamage = Mathf.CeilToInt(dmg * damageMultiplier);
         hitPoints -= finalDamage;
-        Debug.Log($"{gameObject.name} took {finalDamage} damage, remaining HP: {hitPoints}");
+        
 
         CheckHealthSprite();
 
@@ -64,7 +64,7 @@ public class EnemyHealth : MonoBehaviour
 
         float oldArmor = armor;
         armor = Mathf.Max(armor - amount, 0);
-        Debug.Log($"{gameObject.name} armor reduced from {oldArmor} to {armor} by {amount}");
+       
 
         bool isArmorZero = (armor == 0); // Check if armor reached zero.
 
@@ -81,7 +81,7 @@ public class EnemyHealth : MonoBehaviour
         float damageMultiplier = 1f;
         int finalDamage = Mathf.CeilToInt(dmg * damageMultiplier);
         hitPoints -= finalDamage;
-        Debug.Log($"{gameObject.name} took DOT damage {finalDamage}, remaining HP: {hitPoints}");
+       
 
         CheckHealthSprite();
 
@@ -118,7 +118,7 @@ public class EnemyHealth : MonoBehaviour
             if (sr.sprite != originalSprite)
             {
                 sr.sprite = originalSprite;
-                Debug.Log($"{gameObject.name} reverted to original sprite (HP > 70%)");
+                
             }
         }
         // When health is 70% or lower (lost 30%), switch to the first sprite.
@@ -129,7 +129,7 @@ public class EnemyHealth : MonoBehaviour
                 if (sr.sprite != healthSprites[0])
                 {
                     sr.sprite = healthSprites[0];
-                    Debug.Log($"{gameObject.name} switched to sprite[0] (HP between 70% and 40%)");
+                   
                 }
             }
         }
@@ -141,7 +141,7 @@ public class EnemyHealth : MonoBehaviour
                 if (sr.sprite != healthSprites[1])
                 {
                     sr.sprite = healthSprites[1];
-                    Debug.Log($"{gameObject.name} switched to sprite[1] (HP between 40% and 10%)");
+                    
                 }
             }
         }
@@ -153,7 +153,7 @@ public class EnemyHealth : MonoBehaviour
                 if (sr.sprite != healthSprites[2])
                 {
                     sr.sprite = healthSprites[2];
-                    Debug.Log($"{gameObject.name} switched to sprite[2] (HP <= 10%)");
+                    
                 }
             }
         }

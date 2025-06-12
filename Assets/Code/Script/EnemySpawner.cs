@@ -1,30 +1,36 @@
-
-
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+
+[System.Serializable]
+public class WeightedEnemy
+{
+    public GameObject enemyPrefab;
+    public float weight = 1f;
+}
 
 public class EnemySpawner : MonoBehaviour
 {
     [Header("References")]
     public Transform startPoint;
 
-    [SerializeField] private GameObject[] waveEnemies1;
-    [SerializeField] private GameObject[] waveEnemies2;
-    [SerializeField] private GameObject[] waveEnemies3;
-    [SerializeField] private GameObject[] waveEnemies4;
-    [SerializeField] private GameObject[] waveEnemies5;
-    [SerializeField] private GameObject[] waveEnemies6;
-    [SerializeField] private GameObject[] waveEnemies7;
-    [SerializeField] private GameObject[] waveEnemies8;
-    [SerializeField] private GameObject[] waveEnemies9;
-    [SerializeField] private GameObject[] waveEnemies10;
-    [SerializeField] private GameObject[] waveEnemies11;
-    [SerializeField] private GameObject[] waveEnemies12;
+    [Header("Enemy Waves")]
+    [SerializeField] private WeightedEnemy[] waveEnemies1;
+    [SerializeField] private WeightedEnemy[] waveEnemies2;
+    [SerializeField] private WeightedEnemy[] waveEnemies3;
+    [SerializeField] private WeightedEnemy[] waveEnemies4;
+    [SerializeField] private WeightedEnemy[] waveEnemies5;
+    [SerializeField] private WeightedEnemy[] waveEnemies6;
+    [SerializeField] private WeightedEnemy[] waveEnemies7;
+    [SerializeField] private WeightedEnemy[] waveEnemies8;
+    [SerializeField] private WeightedEnemy[] waveEnemies9;
+    [SerializeField] private WeightedEnemy[] waveEnemies10;
+    [SerializeField] private WeightedEnemy[] waveEnemies11;
+    [SerializeField] private WeightedEnemy[] waveEnemies12;
 
     [Header("Attributes")]
-    [SerializeField] private int baseEnemies = 5;
+    [SerializeField] private float baseWaveWeight = 5f;
     [SerializeField] private float enemiesPerSecond = 1f;
     [SerializeField] private float timeBetweenWaves = 5f;
     [SerializeField] private float difficultyScalingFactor = 1.2f;
@@ -36,19 +42,19 @@ public class EnemySpawner : MonoBehaviour
 
     private int currentWave = 1;
     private float timeSinceLastSpawn = 0f;
-    private int enemiesAlive = 0;
-    private int enemiesLeftToSpawn = 0;
     private float eps = 0f;
     private bool isSpawning = false;
     private Coroutine waveTimeoutCoroutine;
     private bool[] waveIntroduced;
-    private List<GameObject> currentWaveSpawnPool;
+    private List<WeightedEnemy> currentWaveSpawnPool;
+    private float currentWaveWeight;
+    private float currentWaveWeightUsed;
 
     private void Awake()
     {
         onEnemyDestroy.AddListener(EnemyDestroyed);
         waveIntroduced = new bool[12];
-        currentWaveSpawnPool = new List<GameObject>();
+        currentWaveSpawnPool = new List<WeightedEnemy>();
     }
 
     private void Start()
@@ -62,15 +68,13 @@ public class EnemySpawner : MonoBehaviour
 
         timeSinceLastSpawn += Time.deltaTime;
 
-        if (timeSinceLastSpawn >= (1f / eps) && enemiesLeftToSpawn > 0)
+        if (timeSinceLastSpawn >= (1f / eps))
         {
-            SpawnEnemy();
-            enemiesLeftToSpawn--;
-            enemiesAlive++;
+            TrySpawnEnemy();
             timeSinceLastSpawn = 0f;
         }
 
-        if (enemiesAlive <= 0 && enemiesLeftToSpawn <= 0 && isSpawning)
+        if (currentWaveWeightUsed >= currentWaveWeight && isSpawning)
         {
             EndWave();
         }
@@ -78,7 +82,7 @@ public class EnemySpawner : MonoBehaviour
 
     private void EnemyDestroyed()
     {
-        enemiesAlive = Mathf.Max(0, enemiesAlive - 1);
+        // Optionally reduce currentWaveWeightUsed if tracking alive vs. spawned
     }
 
     private void EndWave()
@@ -87,9 +91,7 @@ public class EnemySpawner : MonoBehaviour
         timeSinceLastSpawn = 0f;
 
         if (waveTimeoutCoroutine != null)
-        {
             StopCoroutine(waveTimeoutCoroutine);
-        }
 
         Debug.Log($"[EnemySpawner] Wave {currentWave} ended.");
         currentWave++;
@@ -102,10 +104,12 @@ public class EnemySpawner : MonoBehaviour
         yield return new WaitForSeconds(timeBetweenWaves);
 
         isSpawning = true;
-        enemiesLeftToSpawn = EnemiesPerWave();
         eps = EnemiesPerSecond();
+        currentWaveWeight = GetWaveWeight();
+        currentWaveWeightUsed = 0f;
 
-        // Set up spawn pool for this wave
+        Debug.Log($"[EnemySpawner] Starting Wave {currentWave} with weight budget: {currentWaveWeight:F2}");
+
         SetupWaveSpawnPool();
 
         waveTimeoutCoroutine = StartCoroutine(WaveTimeout());
@@ -118,72 +122,64 @@ public class EnemySpawner : MonoBehaviour
 
         if (!waveIntroduced[tier - 1])
         {
-            // If this tier is being introduced, only use enemies from this tier
             waveIntroduced[tier - 1] = true;
-            GameObject[] newEnemies = GetWaveEnemiesByIndex(tier);
-            if (newEnemies != null && newEnemies.Length > 0)
-            {
+            WeightedEnemy[] newEnemies = GetWaveEnemiesByIndex(tier);
+            if (newEnemies != null)
                 currentWaveSpawnPool.AddRange(newEnemies);
-            }
         }
         else
         {
-            // If no new tier is being introduced, use all previously introduced enemies
             for (int i = 1; i <= tier; i++)
             {
                 if (waveIntroduced[i - 1])
                 {
-                    GameObject[] pool = GetWaveEnemiesByIndex(i);
-                    if (pool != null && pool.Length > 0)
-                    {
+                    WeightedEnemy[] pool = GetWaveEnemiesByIndex(i);
+                    if (pool != null)
                         currentWaveSpawnPool.AddRange(pool);
-                    }
                 }
             }
         }
 
         if (currentWaveSpawnPool.Count == 0)
-        {
             Debug.LogWarning("[EnemySpawner] No enemies available for the current wave!");
-        }
     }
 
     private IEnumerator WaveTimeout()
     {
         yield return new WaitForSeconds(waveTimeout);
         if (isSpawning)
-        {
             EndWave();
-        }
     }
 
-    private void SpawnEnemy()
+    private void TrySpawnEnemy()
     {
-        if (currentWaveSpawnPool.Count == 0)
+        if (currentWaveSpawnPool.Count == 0) return;
+
+        WeightedEnemy candidate;
+        int attempts = 0;
+        do
         {
-            Debug.LogWarning("[EnemySpawner] No enemies to spawn!");
-            return;
+            candidate = currentWaveSpawnPool[Random.Range(0, currentWaveSpawnPool.Count)];
+            attempts++;
         }
+        while (candidate.weight + currentWaveWeightUsed > currentWaveWeight && attempts < 10);
 
-        if (startPoint == null)
+        if (candidate.weight + currentWaveWeightUsed <= currentWaveWeight)
         {
-            Debug.LogError("[EnemySpawner] startPoint is not assigned!");
-            return;
+            Vector3 position = new Vector3(
+                Random.Range(-1f, 1f),
+                Random.Range(startPoint.position.y - 1f, startPoint.position.y + 1f),
+                0f
+            );
+
+            Instantiate(candidate.enemyPrefab, position, Quaternion.identity);
+            currentWaveWeightUsed += candidate.weight;
+
+            Debug.Log($"[EnemySpawner] Spawned {candidate.enemyPrefab.name} (Weight: {candidate.weight}) | Remaining Budget: {currentWaveWeight - currentWaveWeightUsed:F2}");
         }
-
-        int index = Random.Range(0, currentWaveSpawnPool.Count);
-        GameObject prefabToSpawn = currentWaveSpawnPool[index];
-
-        Vector3 position = new Vector3(
-            Random.Range(-1f, 1f),
-            Random.Range(startPoint.position.y - 1f, startPoint.position.y + 1f),
-            0
-        );
-
-        Instantiate(prefabToSpawn, position, Quaternion.identity);
     }
 
-    private GameObject[] GetWaveEnemiesByIndex(int index)
+    private WeightedEnemy[] GetWaveEnemiesByIndex(int index)
     {
         return index switch
         {
@@ -203,9 +199,9 @@ public class EnemySpawner : MonoBehaviour
         };
     }
 
-    private int EnemiesPerWave()
+    private float GetWaveWeight()
     {
-        return Mathf.RoundToInt(baseEnemies * Mathf.Pow(currentWave, difficultyScalingFactor));
+        return baseWaveWeight * Mathf.Pow(currentWave, difficultyScalingFactor);
     }
 
     private float EnemiesPerSecond()
