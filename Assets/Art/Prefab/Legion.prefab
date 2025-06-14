@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 8361791884548257850}
   - component: {fileID: 6356721430580238254}
   - component: {fileID: 1807399354236872914}
-  m_Layer: 6
+  m_Layer: 10
   m_Name: Legion
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -144,7 +144,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hitPoints: 600
-  currencyWorth: 110
+  currencyWorth: 10
   armor: 5
   healthSprites: []
 --- !u!61 &8361791884548257850

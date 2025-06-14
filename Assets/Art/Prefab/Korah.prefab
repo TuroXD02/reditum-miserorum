@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 7332091037549669667}
   - component: {fileID: 6189314551703861056}
   - component: {fileID: 7924125479505806440}
-  m_Layer: 6
+  m_Layer: 10
   m_Name: Korah
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -167,7 +167,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hitPoints: 800
-  currencyWorth: 150
+  currencyWorth: 100
   armor: 20
   healthSprites: []
 --- !u!61 &6189314551703861056

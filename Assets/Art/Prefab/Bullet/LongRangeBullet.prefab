@@ -120,9 +120,9 @@ CircleCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0.008564408}
+  m_Offset: {x: 0, y: 0.008564407}
   serializedVersion: 2
-  m_Radius: 0.13010246
+  m_Radius: 0.10878385
 --- !u!50 &5717294428929755587
 Rigidbody2D:
   serializedVersion: 4
@@ -164,7 +164,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rb: {fileID: 5717294428929755587}
   pivot: {fileID: 6845667556258019549}
-  bulletSpeed: 10
+  afterimagePrefab: {fileID: 3751003408919284658, guid: 99f2fb36c7eae334a999d2480dfeb984, type: 3}
+  bulletSpeed: 15
   damageMultiplier: 100
   startColor: {r: 1, g: 1, b: 1, a: 1}
   endColor: {r: 1, g: 0, b: 0, a: 1}
@@ -174,6 +175,8 @@ MonoBehaviour:
   impactEffectDuration: 0.65
   impactRotationOffset: 90
   maxDistanceThreshold: 0.5
+  afterimageSpawnInterval: 0.005
+  afterimageFadeDuration: 0.05
   target: {fileID: 0}
 --- !u!1 &6845667556258019549
 GameObject:

@@ -17,11 +17,11 @@ TagManager:
   - 
   - Water
   - UI
-  - Enemy
+  - Turret
   - Bullet
   - plot
   - Plancia
-  - Turret
+  - Enemy
   - Ghost
   - DeadEnemy
   - 

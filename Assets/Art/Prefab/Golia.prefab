@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 948588560539055683}
   - component: {fileID: 6440253017690519623}
   - component: {fileID: -5001707411414533551}
-  m_Layer: 6
+  m_Layer: 10
   m_Name: Golia
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -143,7 +143,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hitPoints: 800
-  currencyWorth: 55
+  currencyWorth: 20
   armor: 40
   healthSprites:
   - {fileID: 21300000, guid: 7641b5cc5d1aa834f8d73f6596272f94, type: 3}

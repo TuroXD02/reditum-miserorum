@@ -6,6 +6,7 @@ public class LongRangeBullet : MonoBehaviour
     [Header("References")]
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private GameObject pivot;
+    [SerializeField] private GameObject afterimagePrefab;
 
     [Header("Attributes")]
     [SerializeField] private float bulletSpeed = 10f;
@@ -23,10 +24,16 @@ public class LongRangeBullet : MonoBehaviour
     [SerializeField] private float impactRotationOffset = -90f;
     [SerializeField, Range(0.5f, 1f)] private float maxDistanceThreshold = 0.95f;
 
+    [Header("Afterimage Settings")]
+    [SerializeField] private float afterimageSpawnInterval = 0.05f;
+    [SerializeField] private float afterimageFadeDuration = 0.3f;
+
     private int bulletDamage;
     private Vector2 startPosition;
     private SpriteRenderer spriteRenderer;
     public Transform target;
+
+    private float afterimageTimer = 0f;
 
     private void Start()
     {
@@ -64,6 +71,14 @@ public class LongRangeBullet : MonoBehaviour
         {
             spriteRenderer.color = Color.Lerp(startColor, endColor, factor);
         }
+
+        // Handle afterimage trail
+        afterimageTimer += Time.deltaTime;
+        if (afterimageTimer >= afterimageSpawnInterval)
+        {
+            SpawnAfterimage(distanceTraveled, factor);
+            afterimageTimer = 0f;
+        }
     }
 
     private void FixedUpdate()
@@ -76,10 +91,10 @@ public class LongRangeBullet : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D other)
     {
+        if (rb == null || spriteRenderer == null) return;
+
         float distanceTraveled = Vector2.Distance(startPosition, transform.position);
         int scaledDamage = Mathf.CeilToInt(bulletDamage + (distanceTraveled * damageMultiplier));
-
-
 
         // Apply damage
         EnemyHealth enemyHealth = other.gameObject.GetComponent<EnemyHealth>();
@@ -88,9 +103,8 @@ public class LongRangeBullet : MonoBehaviour
         if (enemyHealth != null) enemyHealth.TakeDamage(scaledDamage);
         if (lussuriaHealth != null) lussuriaHealth.TakeDamage(scaledDamage);
 
-        // Play the correct animation
+        // Impact Effect
         GameObject chosenImpact = impactEffectPrefab;
-
         if ((distanceTraveled / maxDistanceForWhiteness) >= maxDistanceThreshold && maxRangeImpactEffectPrefab != null)
         {
             chosenImpact = maxRangeImpactEffectPrefab;
@@ -100,11 +114,73 @@ public class LongRangeBullet : MonoBehaviour
         {
             Vector2 bulletDir = rb.velocity.normalized;
             float angle = Mathf.Atan2(-bulletDir.y, -bulletDir.x) * Mathf.Rad2Deg + impactRotationOffset;
-
             GameObject impact = Instantiate(chosenImpact, transform.position, Quaternion.Euler(0f, 0f, angle));
             Destroy(impact, impactEffectDuration);
         }
 
+        // Disable bullet effects but keep it alive briefly
+        DisableBulletVisualsAndPhysics();
+
+        // Delay actual destruction
+        StartCoroutine(DestroyAfterDelay(0.5f));
+    }
+    
+    private void DisableBulletVisualsAndPhysics()
+    {
+        if (spriteRenderer != null) spriteRenderer.enabled = false;
+        if (rb != null)
+        {
+            rb.velocity = Vector2.zero;
+            rb.simulated = false;
+        }
+
+        Collider2D col = GetComponent<Collider2D>();
+        if (col != null) col.enabled = false;
+    }
+
+
+    private void SpawnAfterimage(float distanceTraveled, float factor)
+    {
+        if (afterimagePrefab == null || spriteRenderer == null) return;
+
+        GameObject afterimage = Instantiate(afterimagePrefab, transform.position, transform.rotation);
+        afterimage.transform.parent = null;
+
+        SpriteRenderer sr = afterimage.GetComponent<SpriteRenderer>();
+
+        if (sr != null)
+        {
+            sr.sprite = spriteRenderer.sprite;
+            sr.sortingOrder = spriteRenderer.sortingOrder - 1;
+            sr.color = Color.Lerp(startColor, endColor, factor);
+        }
+    }
+
+    private IEnumerator FadeAndDestroy(GameObject obj, SpriteRenderer sr, float duration, Color originalColor)
+    {
+        float timer = 0f;
+
+        while (timer < duration)
+        {
+            if (sr != null)
+            {
+                float alpha = Mathf.Lerp(1f, 0f, timer / duration);
+                sr.color = new Color(originalColor.r, originalColor.g, originalColor.b, alpha);
+            }
+
+            timer += Time.deltaTime;
+            yield return null;
+        }
+
+        if (obj != null)
+            Destroy(obj);
+    }
+    
+    private IEnumerator DestroyAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
         Destroy(gameObject);
     }
+
+
 }

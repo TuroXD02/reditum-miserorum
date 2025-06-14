@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 3546620521611656230}
   - component: {fileID: -270965630215940742}
   - component: {fileID: 2010871307644102623}
-  m_Layer: 6
+  m_Layer: 10
   m_Name: Trent
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -189,7 +189,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hitPoints: 5000
-  currencyWorth: 300
+  currencyWorth: 100
   armor: 30
   healthSprites: []
 --- !u!114 &-270965630215940742

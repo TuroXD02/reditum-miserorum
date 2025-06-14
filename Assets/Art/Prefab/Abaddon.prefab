@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 5940905931845667865}
   - component: {fileID: 1965758664649913363}
   - component: {fileID: 7501763988431608647}
-  m_Layer: 6
+  m_Layer: 10
   m_Name: Abaddon
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -129,7 +129,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rb: {fileID: 4301849705960943921}
-  moveSpeed: 1.5
+  moveSpeed: 3.86
 --- !u!61 &5940905931845667865
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -200,7 +200,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hitPoints: 2000
-  currencyWorth: 300
+  currencyWorth: 80
   armor: 45
   healthSprites: []
   speedReductionPercentage: 0.05

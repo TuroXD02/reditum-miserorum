@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 6698876902876373401}
   - component: {fileID: 2083813648616987168}
   - component: {fileID: 7707696947966580327}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -146,7 +146,7 @@ GameObject:
   - component: {fileID: 6454539859458974751}
   - component: {fileID: 7768916336442781573}
   - component: {fileID: 6610009290260211993}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: Upgrade
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -265,7 +265,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8000185233334386702}
   - component: {fileID: 2521209922725912251}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: SanPietro
   m_TagString: Turret
   m_Icon: {fileID: 0}
@@ -336,7 +336,7 @@ GameObject:
   - component: {fileID: 6096843521973879946}
   - component: {fileID: 4966119909412549445}
   - component: {fileID: 5664079083043673575}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -472,7 +472,7 @@ GameObject:
   - component: {fileID: 2289583285289646787}
   - component: {fileID: 8806641383028809516}
   - component: {fileID: 943812315591209294}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: UpgradeUI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -601,7 +601,7 @@ GameObject:
   - component: {fileID: 3809295736832927774}
   - component: {fileID: 3046884639554663099}
   - component: {fileID: 1913611412722110183}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: BG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -679,7 +679,7 @@ GameObject:
   - component: {fileID: 5797525139780477880}
   - component: {fileID: 8752345784090552817}
   - component: {fileID: 1408176212503177191}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: sell
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -799,7 +799,7 @@ GameObject:
   - component: {fileID: 747532356532216245}
   - component: {fileID: 7179914665854289725}
   - component: {fileID: 8345945323195465163}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: Cost
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -931,7 +931,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 533822673557765447}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: firingPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -963,7 +963,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8252077538646994273}
   - component: {fileID: 8589680523580077789}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: Turret_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1048,7 +1048,7 @@ GameObject:
   - component: {fileID: 2315105395380188681}
   - component: {fileID: 7234149179192918006}
   - component: {fileID: 773803358689311982}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: sell
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1182,7 +1182,7 @@ GameObject:
   - component: {fileID: 4848728244441365461}
   - component: {fileID: 3183795593105634903}
   - component: {fileID: 2809836554533410412}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: Text (TMP) (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1316,7 +1316,7 @@ GameObject:
   - component: {fileID: 6624372447199097057}
   - component: {fileID: 5626359870791677635}
   - component: {fileID: 988468209144299318}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1448,7 +1448,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9209022868361217363}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: turretRotationPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}

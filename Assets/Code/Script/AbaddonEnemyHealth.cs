@@ -43,7 +43,7 @@ public class AbaddonEnemyHealth : EnemyHealth
             float oldSpeed = enemyMovement.moveSpeed;
             float newSpeed = oldSpeed * (1f - speedReductionPercentage);
             enemyMovement.UpdateSpeed(newSpeed);
-            Debug.Log($"{gameObject.name} speed reduced from {oldSpeed} to {newSpeed} due to damage.");
+            
         }
         
         // Increment hit count and check for sprite switch.

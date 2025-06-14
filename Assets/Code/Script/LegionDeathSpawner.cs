@@ -8,11 +8,11 @@ public class LegionDeathSpawner : MonoBehaviour
 
     private void OnDisable()
     {
+        if (LoseScreen.IsSceneUnloading()) return;
         if (!Application.isPlaying) return;
 
         Vector3 deathPosition = transform.position;
 
-        // Get Legion's movement progress if it has an EnemyMovement script
         EnemyMovement legionMovement = GetComponent<EnemyMovement>();
         float legionProgress = legionMovement != null ? legionMovement.GetProgress() : 0f;
 
@@ -20,7 +20,6 @@ public class LegionDeathSpawner : MonoBehaviour
         {
             GameObject spawnedEnemy = Instantiate(spawnPrefab, deathPosition, Quaternion.identity);
 
-            // Transfer movement progress to the spawned minions
             EnemyMovement minionMovement = spawnedEnemy.GetComponent<EnemyMovement>();
             if (minionMovement != null)
             {

@@ -35,7 +35,7 @@ public class PlayerHealthSystem : MonoBehaviour
     {
         if (healthCount < 1)
         {
-            Debug.Log("Game Over");
+            
 
             if (loseScreen != null)
             {
