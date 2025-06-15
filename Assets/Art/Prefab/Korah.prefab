@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 7332091037549669667}
   - component: {fileID: 6189314551703861056}
   - component: {fileID: 7924125479505806440}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: Korah
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -76,8 +76,8 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: 827084425
+  m_SortingLayer: 1
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: c4ed1ca1c53ab774c9f640176b595174, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -169,7 +169,10 @@ MonoBehaviour:
   hitPoints: 800
   currencyWorth: 100
   armor: 20
-  healthSprites: []
+  healthSprites:
+  - {fileID: 21300000, guid: ce8525434e8af76499310b2b50cd25e7, type: 3}
+  - {fileID: 21300000, guid: 7ea1d6c936f2d6b44884f2d9d5c285db, type: 3}
+  - {fileID: 21300000, guid: 4a9d0541f3881784bac6def65cb81139, type: 3}
 --- !u!61 &6189314551703861056
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -202,7 +205,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.13358441, y: 0}
+  m_Offset: {x: 0.083062984, y: 0}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -213,7 +216,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.31049138, y: 1.0594194}
+  m_Size: {x: 0.20944853, y: 1.0594194}
   m_EdgeRadius: 0
 --- !u!114 &7924125479505806440
 MonoBehaviour:

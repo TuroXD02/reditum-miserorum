@@ -74,8 +74,8 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: -449135385
+  m_SortingLayer: 2
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 2493729facc391b488e412efc6c27299, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -165,6 +165,11 @@ MonoBehaviour:
   rb: {fileID: 5478355086916874175}
   pivot: {fileID: 6651918146290785953}
   bulletSpeed: 6.333
+  impactEffects:
+  - {fileID: 4496261956838000734, guid: 78968fa68359a234e81a0c12c08ea72c, type: 3}
+  - {fileID: 3845208457697093352, guid: 78b17260aed6e26429069af212fcba73, type: 3}
+  effectDuration: 0.375
+  rotationOffset: 90
   target: {fileID: 0}
 --- !u!1 &6651918146290785953
 GameObject:

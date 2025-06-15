@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 8361791884548257850}
   - component: {fileID: 6356721430580238254}
   - component: {fileID: 1807399354236872914}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: Legion
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -76,8 +76,8 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: 827084425
+  m_SortingLayer: 1
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 7afc141764c14c4499eec678b00818aa, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -179,7 +179,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.12572154, y: -0.045127332}
+  m_Offset: {x: 0.15391082, y: 0.050716124}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -190,7 +190,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.50668883, y: 0.7529428}
+  m_Size: {x: 0.2811749, y: 0.5612559}
   m_EdgeRadius: 0
 --- !u!114 &6356721430580238254
 MonoBehaviour:

@@ -17,20 +17,53 @@ public class Korah : MonoBehaviour
 
     [Header("Buff Effect Settings")]
     [SerializeField] private GameObject buffEffectPrefab;
-    [SerializeField] private float visualEffectDuration;
+    [SerializeField] private float visualEffectDuration = 1f;
 
     [Header("Tint Settings")]
     [SerializeField] private Color targetTint = new Color(1f, 0.7f, 0.7f, 1f);
     [SerializeField] private float tintLerpDuration = 0.5f;
 
+    private Coroutine boostRoutine;
+    private bool isAlive = true;
+
+    // Track affected enemies and their original tints
+    private Dictionary<EnemyMovement, Color> buffedEnemies = new Dictionary<EnemyMovement, Color>();
+
     private void Start()
     {
-        StartCoroutine(BoostEnemySpeed());
+        isAlive = true;
+        boostRoutine = StartCoroutine(BoostEnemySpeed());
+    }
+
+    private void OnDestroy()
+    {
+        isAlive = false;
+
+        if (boostRoutine != null)
+            StopCoroutine(boostRoutine);
+
+        foreach (var kvp in buffedEnemies)
+        {
+            EnemyMovement enemy = kvp.Key;
+            Color originalColor = kvp.Value;
+
+            if (enemy != null)
+            {
+                enemy.ResetSpeed();
+
+                // Restore original tint
+                SpriteRenderer sr = enemy.GetComponent<SpriteRenderer>();
+                if (sr != null)
+                    sr.color = originalColor;
+            }
+        }
+
+        buffedEnemies.Clear();
     }
 
     private IEnumerator BoostEnemySpeed()
     {
-        while (true)
+        while (isAlive)
         {
             yield return new WaitForSeconds(boostInterval);
 
@@ -45,8 +78,6 @@ public class Korah : MonoBehaviour
             int maxAffected = Mathf.Min(3, allEnemies.Count);
             float boostFactor = Random.Range(minBoostPercent, maxBoostPercent);
 
-            Vector3 originCenter = GetSpriteCenter(transform);
-
             for (int i = 0; i < maxAffected; i++)
             {
                 EnemyMovement enemy = allEnemies[i];
@@ -56,41 +87,78 @@ public class Korah : MonoBehaviour
                     enemy.moveSpeed = enemy.BaseSpeed;
 
                 enemy.moveSpeed *= (1f + boostFactor);
+
+                // Store original color before tinting
+                SpriteRenderer sr = enemy.GetComponent<SpriteRenderer>();
+                if (sr != null && !buffedEnemies.ContainsKey(enemy))
+                {
+                    buffedEnemies.Add(enemy, sr.color);
+                    StartCoroutine(ApplyTemporaryColor(sr, targetTint, effectDuration, tintLerpDuration));
+                }
+
                 StartCoroutine(ResetEnemySpeed(enemy, effectDuration));
 
                 if (buffEffectPrefab != null)
                 {
                     GameObject effect = Instantiate(buffEffectPrefab, enemy.transform.position, Quaternion.identity, enemy.transform);
-                    Destroy(effect, 3f); // Forceful destroy
-                }
-
-                SpriteRenderer sr = enemy.GetComponent<SpriteRenderer>();
-                if (sr != null)
-                {
-                    StartCoroutine(ApplyTemporaryColor(sr, targetTint, effectDuration, tintLerpDuration));
+                    Destroy(effect, visualEffectDuration);
                 }
 
                 if (linkPrefab != null)
                 {
                     GameObject beam = Instantiate(linkPrefab);
-                    Destroy(beam, 3f); // Forceful destroy
+                    Destroy(beam, linkLifetime + 0.2f);
                     StartCoroutine(AnimateLink(beam, transform, enemy.transform, linkLifetime));
                 }
             }
         }
     }
 
-    private Vector3 GetSpriteCenter(Transform objTransform)
+    private IEnumerator ResetEnemySpeed(EnemyMovement enemy, float duration)
     {
-        SpriteRenderer sr = objTransform.GetComponent<SpriteRenderer>();
-        if (sr != null)
-            return sr.bounds.center;
+        yield return new WaitForSeconds(duration);
 
-        BoxCollider2D col = objTransform.GetComponent<BoxCollider2D>();
-        if (col != null)
-            return col.bounds.center;
+        if (enemy != null && isAlive && buffedEnemies.ContainsKey(enemy))
+        {
+            enemy.ResetSpeed();
 
-        return objTransform.position;
+            // Restore color if still active
+            SpriteRenderer sr = enemy.GetComponent<SpriteRenderer>();
+            if (sr != null)
+                sr.color = buffedEnemies[enemy];
+
+            buffedEnemies.Remove(enemy);
+        }
+    }
+
+    private IEnumerator ApplyTemporaryColor(SpriteRenderer renderer, Color newColor, float duration, float fadeDuration)
+    {
+        if (renderer == null) yield break;
+
+        Color originalColor = renderer.color;
+        float t = 0f;
+
+        while (t < fadeDuration)
+        {
+            t += Time.deltaTime;
+            if (renderer == null) yield break;
+            renderer.color = Color.Lerp(originalColor, newColor, t / fadeDuration);
+            yield return null;
+        }
+
+        renderer.color = newColor;
+        yield return new WaitForSeconds(duration - fadeDuration);
+
+        t = 0f;
+        while (t < fadeDuration)
+        {
+            t += Time.deltaTime;
+            if (renderer == null) yield break;
+            renderer.color = Color.Lerp(newColor, originalColor, t / fadeDuration);
+            yield return null;
+        }
+
+        renderer.color = originalColor;
     }
 
     private IEnumerator AnimateLink(GameObject beam, Transform source, Transform target, float duration)
@@ -99,13 +167,12 @@ public class Korah : MonoBehaviour
 
         SpriteRenderer sr = beam.GetComponent<SpriteRenderer>();
         if (sr == null)
-        {
             sr = beam.GetComponentInChildren<SpriteRenderer>();
-            if (sr == null)
-            {
-                Debug.LogError("No SpriteRenderer found in beam or its children.");
-                yield break;
-            }
+
+        if (sr == null)
+        {
+            Debug.LogError("No SpriteRenderer found in beam or its children.");
+            yield break;
         }
 
         float elapsed = 0f;
@@ -130,7 +197,6 @@ public class Korah : MonoBehaviour
             yield return null;
         }
 
-        // Optional fade out
         float fadeDuration = 0.2f;
         float fadeElapsed = 0f;
         Color startColor = sr.color;
@@ -143,45 +209,20 @@ public class Korah : MonoBehaviour
             yield return null;
         }
 
-        // If not already destroyed
         if (beam != null)
             Destroy(beam);
     }
 
-    private IEnumerator ResetEnemySpeed(EnemyMovement enemy, float duration)
+    private Vector3 GetSpriteCenter(Transform objTransform)
     {
-        yield return new WaitForSeconds(duration);
-        if (enemy != null)
-            enemy.ResetSpeed();
-    }
+        SpriteRenderer sr = objTransform.GetComponent<SpriteRenderer>();
+        if (sr != null)
+            return sr.bounds.center;
 
-    private IEnumerator ApplyTemporaryColor(SpriteRenderer renderer, Color newColor, float duration, float fadeDuration)
-    {
-        if (renderer == null) yield break;
+        BoxCollider2D col = objTransform.GetComponent<BoxCollider2D>();
+        if (col != null)
+            return col.bounds.center;
 
-        Color originalColor = renderer.color;
-        float t = 0f;
-
-        while (t < fadeDuration)
-        {
-            t += Time.deltaTime;
-            if (renderer == null) yield break;
-            renderer.color = Color.Lerp(originalColor, newColor, t / fadeDuration);
-            yield return null;
-        }
-
-        if (renderer != null) renderer.color = newColor;
-        yield return new WaitForSeconds(duration - fadeDuration);
-
-        t = 0f;
-        while (t < fadeDuration)
-        {
-            t += Time.deltaTime;
-            if (renderer == null) yield break;
-            renderer.color = Color.Lerp(newColor, originalColor, t / fadeDuration);
-            yield return null;
-        }
-
-        if (renderer != null) renderer.color = originalColor;
+        return objTransform.position;
     }
 }

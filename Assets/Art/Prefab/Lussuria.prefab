@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 1294645826451896528}
   - component: {fileID: 7899843645807127658}
   - component: {fileID: -7973715154411889432}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: Lussuria
   m_TagString: Lussuria
   m_Icon: {fileID: 0}
@@ -75,8 +75,8 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: 827084425
+  m_SortingLayer: 1
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 185401f378eabcf47912e5d5391ef64f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}

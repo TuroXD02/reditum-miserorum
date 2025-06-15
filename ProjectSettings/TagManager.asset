@@ -17,11 +17,11 @@ TagManager:
   - 
   - Water
   - UI
-  - Turret
+  - Enemy
   - Bullet
   - plot
   - Plancia
-  - Enemy
+  - Turret
   - Ghost
   - DeadEnemy
   - 
@@ -56,15 +56,15 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
-  - name: Turret
-    uniqueID: 3845831911
-    locked: 0
-  - name: UI
-    uniqueID: 3845831911
-    locked: 0
   - name: Enemy
     uniqueID: 827084425
     locked: 0
+  - name: Turret
+    uniqueID: 3845831911
+    locked: 0
   - name: Buff
     uniqueID: 3327072123
+    locked: 0
+  - name: UI
+    uniqueID: 3845831911
     locked: 0

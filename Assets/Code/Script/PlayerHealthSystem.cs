@@ -10,6 +10,9 @@ public class PlayerHealthSystem : MonoBehaviour
     [Header("Lose Screen Reference")]
     [SerializeField] private GameObject loseScreen;
 
+    [Header("Life Loss Animation")]
+    [SerializeField] private UIAnimatedSprite lifeLossAnimation;
+
     public void Init()
     {
         healthCount = defaultHealthCount;
@@ -28,6 +31,13 @@ public class PlayerHealthSystem : MonoBehaviour
 
         healthCount--;
         txt_lifeCount.text = healthCount.ToString();
+
+        // Play the hit animation once
+        if (lifeLossAnimation != null)
+        {
+            lifeLossAnimation.PlayOnce();
+        }
+
         CheckHealthCount();
     }
 
@@ -35,26 +45,22 @@ public class PlayerHealthSystem : MonoBehaviour
     {
         if (healthCount < 1)
         {
-            
-
             if (loseScreen != null)
             {
                 loseScreen.SetActive(true);
             }
 
-            // Lower the volume before pausing.
             if (AudioManager.instance != null)
             {
                 AudioManager.instance.FadeToLoseVolume();
             }
 
-            // Slight delay to allow fade-out to be noticeable.
-            Invoke(nameof(PauseGame), 1f);  // Delay game pause by 1 second
+            Invoke(nameof(PauseGame), 1f);
         }
     }
 
     private void PauseGame()
     {
-        Time.timeScale = 0f; // Now pause the game.
+        Time.timeScale = 0f;
     }
 }

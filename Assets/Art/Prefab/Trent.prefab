@@ -16,9 +16,9 @@ GameObject:
   - component: {fileID: 3546620521611656230}
   - component: {fileID: -270965630215940742}
   - component: {fileID: 2010871307644102623}
-  m_Layer: 10
+  m_Layer: 6
   m_Name: Trent
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -76,8 +76,8 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: 827084425
+  m_SortingLayer: 1
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 730b1c4569a4c9c44a0d577bfd4d08d4, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
