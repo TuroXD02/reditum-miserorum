@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 8361791884548257850}
   - component: {fileID: 6356721430580238254}
   - component: {fileID: 1807399354236872914}
+  - component: {fileID: 4014352323274544775}
   m_Layer: 6
   m_Name: Legion
   m_TagString: Enemy
@@ -218,3 +219,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spawnPrefab: {fileID: 5690697279642579138, guid: 96e79b81cc77916408535d90bac771f8, type: 3}
   spawnCount: 10
+--- !u!114 &4014352323274544775
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2705881746648802205}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 468743c519be754409b12d228971fd34, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyID: 4

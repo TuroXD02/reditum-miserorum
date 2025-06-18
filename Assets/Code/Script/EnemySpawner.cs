@@ -52,9 +52,10 @@ public class EnemySpawner : MonoBehaviour
 
     private void Awake()
     {
-        onEnemyDestroy.AddListener(EnemyDestroyed);
         waveIntroduced = new bool[12];
         currentWaveSpawnPool = new List<WeightedEnemy>();
+
+        onEnemyDestroy.AddListener(EnemyDestroyed);
     }
 
     private void Start()
@@ -74,7 +75,7 @@ public class EnemySpawner : MonoBehaviour
             timeSinceLastSpawn = 0f;
         }
 
-        if (currentWaveWeightUsed >= currentWaveWeight && isSpawning)
+        if (currentWaveWeightUsed >= currentWaveWeight)
         {
             EndWave();
         }
@@ -82,7 +83,8 @@ public class EnemySpawner : MonoBehaviour
 
     private void EnemyDestroyed()
     {
-        // Optionally reduce currentWaveWeightUsed if tracking alive vs. spawned
+        // Optional: Count deaths, update UI, etc.
+        Debug.Log("[EnemySpawner] An enemy has been destroyed.");
     }
 
     private void EndWave()
@@ -108,7 +110,7 @@ public class EnemySpawner : MonoBehaviour
         currentWaveWeight = GetWaveWeight();
         currentWaveWeightUsed = 0f;
 
-        Debug.Log($"[EnemySpawner] Starting Wave {currentWave} with weight budget: {currentWaveWeight:F2}");
+        Debug.Log($"[EnemySpawner] Starting Wave {currentWave} | Weight Budget: {currentWaveWeight:F2}");
 
         SetupWaveSpawnPool();
 
@@ -123,9 +125,8 @@ public class EnemySpawner : MonoBehaviour
         if (!waveIntroduced[tier - 1])
         {
             waveIntroduced[tier - 1] = true;
-            WeightedEnemy[] newEnemies = GetWaveEnemiesByIndex(tier);
-            if (newEnemies != null)
-                currentWaveSpawnPool.AddRange(newEnemies);
+            var newEnemies = GetWaveEnemiesByIndex(tier);
+            if (newEnemies != null) currentWaveSpawnPool.AddRange(newEnemies);
         }
         else
         {
@@ -133,22 +134,20 @@ public class EnemySpawner : MonoBehaviour
             {
                 if (waveIntroduced[i - 1])
                 {
-                    WeightedEnemy[] pool = GetWaveEnemiesByIndex(i);
-                    if (pool != null)
-                        currentWaveSpawnPool.AddRange(pool);
+                    var pool = GetWaveEnemiesByIndex(i);
+                    if (pool != null) currentWaveSpawnPool.AddRange(pool);
                 }
             }
         }
 
         if (currentWaveSpawnPool.Count == 0)
-            Debug.LogWarning("[EnemySpawner] No enemies available for the current wave!");
+            Debug.LogWarning("[EnemySpawner] No enemies available for this wave!");
     }
 
     private IEnumerator WaveTimeout()
     {
         yield return new WaitForSeconds(waveTimeout);
-        if (isSpawning)
-            EndWave();
+        if (isSpawning) EndWave();
     }
 
     private void TrySpawnEnemy()
@@ -166,16 +165,16 @@ public class EnemySpawner : MonoBehaviour
 
         if (candidate.weight + currentWaveWeightUsed <= currentWaveWeight)
         {
-            Vector3 position = new Vector3(
+            Vector3 spawnPos = new Vector3(
                 Random.Range(-1f, 1f),
                 Random.Range(startPoint.position.y - 1f, startPoint.position.y + 1f),
                 0f
             );
 
-            Instantiate(candidate.enemyPrefab, position, Quaternion.identity);
+            Instantiate(candidate.enemyPrefab, spawnPos, Quaternion.identity);
             currentWaveWeightUsed += candidate.weight;
 
-            Debug.Log($"[EnemySpawner] Spawned {candidate.enemyPrefab.name} (Weight: {candidate.weight}) | Remaining Budget: {currentWaveWeight - currentWaveWeightUsed:F2}");
+            Debug.Log($"[EnemySpawner] Spawned {candidate.enemyPrefab.name} | Used: {candidate.weight:F2} | Remaining: {currentWaveWeight - currentWaveWeightUsed:F2}");
         }
     }
 

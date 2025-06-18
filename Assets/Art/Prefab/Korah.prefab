@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 7332091037549669667}
   - component: {fileID: 6189314551703861056}
   - component: {fileID: 7924125479505806440}
+  - component: {fileID: 1709103015653607001}
   m_Layer: 6
   m_Name: Korah
   m_TagString: Enemy
@@ -230,3 +231,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a788af8615200a94dbb973589b69fe5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1709103015653607001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5443516837563861859}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 468743c519be754409b12d228971fd34, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyID: 5

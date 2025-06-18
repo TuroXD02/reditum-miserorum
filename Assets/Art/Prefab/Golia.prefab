@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 948588560539055683}
   - component: {fileID: 6440253017690519623}
   - component: {fileID: -5001707411414533551}
+  - component: {fileID: -5427468332332960267}
   m_Layer: 6
   m_Name: Golia
   m_TagString: Enemy
@@ -206,3 +207,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a788af8615200a94dbb973589b69fe5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &-5427468332332960267
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 935788788543515107}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 468743c519be754409b12d228971fd34, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyID: 2

@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 1294645826451896528}
   - component: {fileID: 7899843645807127658}
   - component: {fileID: -7973715154411889432}
+  - component: {fileID: 6011280179246045331}
   m_Layer: 6
   m_Name: Lussuria
   m_TagString: Lussuria
@@ -206,3 +207,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a788af8615200a94dbb973589b69fe5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &6011280179246045331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6753773731279626888}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 468743c519be754409b12d228971fd34, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyID: 6
