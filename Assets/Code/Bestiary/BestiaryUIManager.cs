@@ -4,32 +4,46 @@ using UnityEngine.UI;
 
 public class BestiaryUIManager : MonoBehaviour
 {
-    [Header("UI Elements")]
-    [SerializeField] private GameObject bestiaryMenuPanel;
-    [SerializeField] private Transform gridContainer;
-    [SerializeField] private GameObject entryIconPrefab;
-    [SerializeField] private GameObject detailPanelPrefab;
-    [SerializeField] private Transform detailPanelParent;
-    [SerializeField] private Button closeButton; // ← Optional close button if needed
+    [Header("UI Panels")]
+    [SerializeField] private GameObject bestiaryMenuPanel;      // The main bestiary menu panel
+    [SerializeField] private Transform gridContainer;           // Where enemy icons are spawned
+    [SerializeField] private Transform detailPanelParent;       // Where the detail panel appears
 
-    private List<BestiaryEntry> discoveredEnemies = new();
-    private int currentIndex = -1;
-    private GameObject currentDetailPanel;
+    [Header("Prefabs")]
+    [SerializeField] private GameObject entryIconPrefab;        // Icon button prefab
+    [SerializeField] private GameObject detailPanelPrefab;      // Enemy info panel prefab
+
+    [Header("Optional Buttons")]
+    [SerializeField] private Button closeButton;                // Button to close the entire bestiary menu
+
+    private List<BestiaryEntry> discoveredEnemies = new();      // List of discovered enemies
+    private int currentIndex = -1;                              // Currently viewed enemy in detail panel
+    private GameObject currentDetailPanel;                      // The instantiated detail panel
 
     private void Start()
     {
+        // Start with the bestiary menu closed
         bestiaryMenuPanel.SetActive(false);
 
+        // Hook up close button if assigned
         if (closeButton != null)
+        {
             closeButton.onClick.AddListener(CloseBestiary);
+        }
     }
 
+    /// <summary>
+    /// Opens the bestiary menu and loads discovered enemy entries.
+    /// </summary>
     public void OpenBestiary()
     {
         bestiaryMenuPanel.SetActive(true);
-        RefreshBestiary(); // ← Must be here
+        RefreshBestiary();
     }
 
+    /// <summary>
+    /// Closes the bestiary menu and cleans up UI.
+    /// </summary>
     public void CloseBestiary()
     {
         bestiaryMenuPanel.SetActive(false);
@@ -37,6 +51,9 @@ public class BestiaryUIManager : MonoBehaviour
         CloseDetailPanel();
     }
 
+    /// <summary>
+    /// Regenerates the grid of discovered enemies.
+    /// </summary>
     private void RefreshBestiary()
     {
         ClearGrid();
@@ -44,31 +61,39 @@ public class BestiaryUIManager : MonoBehaviour
 
         foreach (var entry in BestiaryManager.Instance.GetAllEntries())
         {
-            bool isDiscovered = BestiaryManager.Instance.IsDiscovered(entry.enemyID);
-            if (!isDiscovered)
+            if (!BestiaryManager.Instance.IsDiscovered(entry.enemyID))
                 continue;
 
-            GameObject go = Instantiate(entryIconPrefab, gridContainer);
-            var icon = go.GetComponent<BestiaryUIEntry>();
-            icon.Setup(entry, isDiscovered, () => OnEntryClicked(entry));
-
+            GameObject iconObj = Instantiate(entryIconPrefab, gridContainer);
+            var icon = iconObj.GetComponent<BestiaryUIEntry>();
+            icon.Setup(entry, true, () => OnEntryClicked(entry));
             discoveredEnemies.Add(entry);
-            Debug.Log($"[BestiaryUIManager] Discovered: {entry.enemyID}");
         }
     }
 
+    /// <summary>
+    /// Destroys all icon buttons from the grid.
+    /// </summary>
     private void ClearGrid()
     {
         foreach (Transform child in gridContainer)
+        {
             Destroy(child.gameObject);
+        }
     }
 
+    /// <summary>
+    /// Handles clicking on an enemy icon.
+    /// </summary>
     private void OnEntryClicked(BestiaryEntry entry)
     {
         currentIndex = discoveredEnemies.IndexOf(entry);
         ShowDetailPanel(entry);
     }
 
+    /// <summary>
+    /// Instantiates and displays the detail panel for the selected enemy.
+    /// </summary>
     private void ShowDetailPanel(BestiaryEntry entry)
     {
         CloseDetailPanel();
@@ -76,14 +101,24 @@ public class BestiaryUIManager : MonoBehaviour
         currentDetailPanel = Instantiate(detailPanelPrefab, detailPanelParent);
         var detail = currentDetailPanel.GetComponent<BestiaryDetailPanel>();
         detail.Setup(entry, GoToPrevious, GoToNext);
+        detail.SetCloseAction(CloseDetailPanel);
     }
 
+    /// <summary>
+    /// Destroys the currently open detail panel.
+    /// </summary>
     private void CloseDetailPanel()
     {
         if (currentDetailPanel != null)
+        {
             Destroy(currentDetailPanel);
+            currentDetailPanel = null;
+        }
     }
 
+    /// <summary>
+    /// Navigates to the previous discovered enemy in the detail panel.
+    /// </summary>
     private void GoToPrevious()
     {
         if (discoveredEnemies.Count == 0) return;
@@ -92,6 +127,9 @@ public class BestiaryUIManager : MonoBehaviour
         ShowDetailPanel(discoveredEnemies[currentIndex]);
     }
 
+    /// <summary>
+    /// Navigates to the next discovered enemy in the detail panel.
+    /// </summary>
     private void GoToNext()
     {
         if (discoveredEnemies.Count == 0) return;

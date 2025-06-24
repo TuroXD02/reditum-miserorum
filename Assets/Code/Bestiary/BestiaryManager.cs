@@ -18,6 +18,8 @@ public class BestiaryManager : MonoBehaviour
         }
         Instance = this;
     }
+    
+    
 
     public void DiscoverEnemy(string enemyID)
     {
