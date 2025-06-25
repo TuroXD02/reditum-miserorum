@@ -7,13 +7,13 @@ public class TurretAreaDamage : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private Transform turretRotationPoint;   // Point for turret rotation
-    [SerializeField] private LayerMask enemyMask;               // Mask to detect enemies
-    [SerializeField] private GameObject areaBulletPrefab;       // Prefab for area-damage bullet
-    [SerializeField] private Transform firingPoint;             // Firing position
-    [SerializeField] private GameObject upgradeUI;              // Upgrade UI panel
-    [SerializeField] private Button upgradeButton;              // Button to trigger upgrades
+    [SerializeField] private LayerMask enemyMask;             // Mask to detect enemies
+    [SerializeField] private GameObject areaBulletPrefab;     // Prefab for area-damage bullet
+    [SerializeField] private Transform firingPoint;           // Firing position
+    [SerializeField] private GameObject upgradeUI;            // Upgrade UI panel
+    [SerializeField] private Button upgradeButton;            // Button to trigger upgrades
     [SerializeField] private SpriteRenderer turretSpriteRenderer; // For visual changes
-    [SerializeField] private Sprite[] upgradeSprites;           // Sprites for different levels
+    [SerializeField] private Sprite[] upgradeSprites;         // Sprites for different levels
 
     [Header("Attributes")]
     [SerializeField] public float targetingRange;  // Range for acquiring targets
@@ -23,34 +23,41 @@ public class TurretAreaDamage : MonoBehaviour
     [SerializeField] private int bulletDamage;        // Base damage per bullet
     [SerializeField] private float aoeRadius;         // Explosion (AOE) radius for area damage
 
-    // Base values used for calculating upgrades
+    [Header("Audio")]
+    [SerializeField] private AudioSource audioSource; // AudioSource component
+    [SerializeField] private AudioClip shootClip;     // Sound played when turret shoots
+    [SerializeField] private AudioClip placeClip;     // Sound played when turret is placed
+    [SerializeField] private AudioClip upgradeClip;   // Sound played on upgrade
+    [SerializeField] private AudioClip sellClip;      // Sound played when turret is sold
+
+    [Header("Audio Randomization")]
+    [SerializeField] private float volumeMin = 0.9f;
+    [SerializeField] private float volumeMax = 1.1f;
+
     private float bpsBase;
     private float targetingRangeBase;
     private int bulletDamageBase;
     private float aoeRadiusBase;
 
-    private Transform target;      // Current enemy target
-    private float timeUntilFire;   // Timer for firing control
-    private int level = 1;         // Current turret level
+    private Transform target;
+    private float timeUntilFire;
+    private int level = 1;
 
     private void Start()
     {
-        // Store base values for use in upgrade calculations
         bpsBase = bps;
         targetingRangeBase = targetingRange;
         bulletDamageBase = bulletDamage;
         aoeRadiusBase = aoeRadius;
 
-        // Hook up the upgrade method to the upgrade button
         upgradeButton.onClick.AddListener(Upgrade);
 
-        // Optionally, set the initial sprite
         UpdateSprite();
+        PlaySound(placeClip);
     }
 
     private void Update()
     {
-        // If no target, attempt to find one
         if (target == null)
         {
             FindTarget();
@@ -59,14 +66,12 @@ public class TurretAreaDamage : MonoBehaviour
 
         RotateTowardsTarget();
 
-        // If the target has moved out of range, clear it
         if (!IsTargetInRange())
         {
             target = null;
         }
         else
         {
-            // Update firing timer and shoot when ready
             timeUntilFire += Time.deltaTime;
             if (timeUntilFire >= 1f / bps)
             {
@@ -78,10 +83,7 @@ public class TurretAreaDamage : MonoBehaviour
 
     private void Shoot()
     {
-        // Instantiate the area-damage bullet at the firing point
         GameObject bulletObj = Instantiate(areaBulletPrefab, firingPoint.position, Quaternion.identity);
-
-        // Get the AreaDamageBullet script to set its parameters
         AreaDamageBullet bulletScript = bulletObj.GetComponent<AreaDamageBullet>();
         if (bulletScript != null)
         {
@@ -89,11 +91,12 @@ public class TurretAreaDamage : MonoBehaviour
             bulletScript.SetDamage(bulletDamage);
             bulletScript.SetAOERadius(aoeRadius);
         }
+
+        PlaySound(shootClip);
     }
 
     private void FindTarget()
     {
-        // Use an OverlapCircle to find enemies within targetingRange
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, targetingRange, enemyMask);
         if (hits.Length > 0)
         {
@@ -108,16 +111,10 @@ public class TurretAreaDamage : MonoBehaviour
 
     private void RotateTowardsTarget()
     {
-        // Calculate the direction and desired rotation
         Vector3 direction = target.position - transform.position;
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
         Quaternion targetRotation = Quaternion.Euler(new Vector3(0, 0, angle));
-
-        // Smoothly rotate the turret toward the target
-        turretRotationPoint.rotation = Quaternion.RotateTowards(
-            turretRotationPoint.rotation,
-            targetRotation,
-            rotationSpeed * Time.deltaTime);
+        turretRotationPoint.rotation = Quaternion.RotateTowards(turretRotationPoint.rotation, targetRotation, rotationSpeed * Time.deltaTime);
     }
 
     public void OpenUpgradeUI()
@@ -133,14 +130,11 @@ public class TurretAreaDamage : MonoBehaviour
 
     public void Upgrade()
     {
-        // Ensure the player has enough currency to upgrade
-        if (CalculateCost() > LevelManager.main.currency)
-            return;
+        if (CalculateCost() > LevelManager.main.currency) return;
 
         LevelManager.main.SpendCurrency(CalculateCost());
         level++;
 
-        // Recalculate turret attributes based on the new level
         bps = CalculateBPS();
         targetingRange = CalculateRange();
         bulletDamage = CalculateBulletDamage();
@@ -148,9 +142,10 @@ public class TurretAreaDamage : MonoBehaviour
 
         UpdateSprite();
         CloseUpgradeUI();
+
+        PlaySound(upgradeClip);
     }
 
-    // Upgrade cost scales with level (you can adjust the exponent as needed)
     public int CalculateCost()
     {
         return Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 1.2f));
@@ -188,7 +183,20 @@ public class TurretAreaDamage : MonoBehaviour
         }
     }
 
-    // For debugging: visualize the targeting range in the Scene view
+    public void PlaySellSound()
+    {
+        PlaySound(sellClip);
+    }
+
+    private void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+        {
+            float randomVolume = Random.Range(volumeMin, volumeMax);
+            audioSource.PlayOneShot(clip, randomVolume);
+        }
+    }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;

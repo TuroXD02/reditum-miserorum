@@ -15,6 +15,9 @@ MonoBehaviour:
   enemyID: 4
   enemyName: Legion
   enemyIcon: {fileID: 21300000, guid: 9b8fff428388e58488e03149e291d612, type: 3}
-  description: Legion
+  description: Many speak with his voice, and many dwell within his frame. When his
+    body is struck down, it does not bring peace, but rupture. From the place of
+    his fall, lesser demons pour forth, clawing into the world to carry on his unholy
+    work.
   maxHealth: 0
   speed: 0

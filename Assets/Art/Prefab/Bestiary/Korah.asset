@@ -15,6 +15,9 @@ MonoBehaviour:
   enemyID: 5
   enemyName: Korah
   enemyIcon: {fileID: 21300000, guid: 8348fb0222bddec49a40c96231c0bcad, type: 3}
-  description: Korah
+  description: A voice of rebellion and unrest, he marches not alone but as a herald
+    of unrest. Those who draw near him find their pace quickened, stirred by defiance.
+    His presence turns common foes into a rushing horde, pushing the line forward
+    with dangerous haste.
   maxHealth: 0
   speed: 0

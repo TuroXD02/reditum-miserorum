@@ -15,6 +15,9 @@ MonoBehaviour:
   enemyID: 2
   enemyName: "Goliy\u0101\u1E6F"
   enemyIcon: {fileID: 21300000, guid: fb26d58cfbe96554aabdec5b3d14cb2d, type: 3}
-  description: "Goliy\u0101\u1E6F"
+  description: A towering warrior, clad in fragments of heavy armor, he strides forward
+    with the strength of many. Though not fully shielded, his might surpasses that
+    of common men, and his presence alone sows fear. Few stand long before his relentless
+    advance.
   maxHealth: 0
   speed: 0

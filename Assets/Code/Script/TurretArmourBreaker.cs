@@ -6,47 +6,55 @@ using UnityEngine.UI;
 public class TurretArmourBreaker : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private Transform turretRotationPoint; // Rotating part of the turret
-    [SerializeField] private LayerMask enemyMask; // Layer Mask for enemy detection
-    [SerializeField] private GameObject bulletPrefab; // Slash animation bullet
-    [SerializeField] private Transform firingPoint; // Position where slashes originate
-    [SerializeField] private GameObject upgradeUI; // UI for turret upgrades
-    [SerializeField] private Button upgradeButton; // Button for upgrading the turret
-    [SerializeField] private SpriteRenderer turretSpriteRenderer; // Sprite Renderer for the turret
-    [SerializeField] private Sprite[] towerStates; // Sprites for turret levels
+    [SerializeField] private Transform turretRotationPoint;
+    [SerializeField] private LayerMask enemyMask;
+    [SerializeField] private GameObject bulletPrefab;
+    [SerializeField] private Transform firingPoint;
+    [SerializeField] private GameObject upgradeUI;
+    [SerializeField] private Button upgradeButton;
+    [SerializeField] private SpriteRenderer turretSpriteRenderer;
+    [SerializeField] private Sprite[] towerStates;
 
     [Header("Attributes")]
-    [SerializeField] public float targetingRange; // How far the turret can hit enemies
-    [SerializeField] private float rotationSpeed; // Speed of turret rotation
-    [SerializeField] private float attacksPerSecond; // Attack frequency
-    [SerializeField] public int baseUpgradeCost; // Base cost for upgrading
-    [SerializeField] private int attackDamage; // Damage per hit
-    [SerializeField] private int armourReduction; // Amount of armour reduced per hit
+    [SerializeField] public float targetingRange;
+    [SerializeField] private float rotationSpeed;
+    [SerializeField] private float attacksPerSecond;
+    [SerializeField] public int baseUpgradeCost;
+    [SerializeField] private int attackDamage;
+    [SerializeField] private int armourReduction;
 
-    // Private values to track base stats for upgrades
+    [Header("Audio")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip shootClip;
+    [SerializeField] private AudioClip placeClip;
+    [SerializeField] private AudioClip upgradeClip;
+    [SerializeField] private AudioClip sellClip;
+
+    [Header("Audio Randomization")]
+    [SerializeField] private float volumeMin = 0.9f;
+    [SerializeField] private float volumeMax = 1.1f;
+
+    // Base stats for upgrade calculations
     private float baseAttacksPerSecond;
     private float baseTargetingRange;
     private int baseAttackDamage;
     private int baseArmourReduction;
 
-    private Transform target; // Current target enemy
-    private float attackCooldown; // Timer for managing attack speed
-
-    private int level = 1; // Current turret level
+    private Transform target;
+    private float attackCooldown;
+    private int level = 1;
 
     private void Start()
     {
-        // Save base stats for upgrade calculations
         baseAttacksPerSecond = attacksPerSecond;
         baseTargetingRange = targetingRange;
         baseAttackDamage = attackDamage;
         baseArmourReduction = armourReduction;
 
-        // Assign upgrade function to the button
         upgradeButton.onClick.AddListener(Upgrade);
-
-        // Set initial sprite
         UpdateSprite();
+
+        PlaySound(placeClip);
     }
 
     private void Update()
@@ -64,7 +72,6 @@ public class TurretArmourBreaker : MonoBehaviour
         else
         {
             attackCooldown += Time.deltaTime;
-
             if (attackCooldown >= 1f / attacksPerSecond)
             {
                 Attack();
@@ -84,16 +91,16 @@ public class TurretArmourBreaker : MonoBehaviour
             bullet.SetDamage(attackDamage);
             bullet.SetArmourReduction(armourReduction);
 
-            // Scale the slash effect based on targeting range
-            float scaleFactor = targetingRange / 5f; // Adjust as needed
+            float scaleFactor = targetingRange / 5f;
             bullet.transform.localScale = new Vector3(scaleFactor, scaleFactor, 1f);
         }
+
+        PlaySound(shootClip);
     }
 
     private void FindTarget()
     {
         RaycastHit2D[] hits = Physics2D.CircleCastAll(transform.position, targetingRange, Vector2.zero, 0f, enemyMask);
-
         if (hits.Length > 0)
         {
             target = hits[0].transform;
@@ -130,6 +137,8 @@ public class TurretArmourBreaker : MonoBehaviour
 
         UpdateSprite();
         CloseUpgradeUI();
+
+        PlaySound(upgradeClip);
 
         Debug.Log("New APS:" + attacksPerSecond);
         Debug.Log("New Range:" + targetingRange);
@@ -173,5 +182,19 @@ public class TurretArmourBreaker : MonoBehaviour
     private int CalculateArmourReduction()
     {
         return Mathf.RoundToInt(baseArmourReduction * Mathf.Pow(level, 0.3f));
+    }
+
+    public void PlaySellSound()
+    {
+        PlaySound(sellClip);
+    }
+
+    private void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+        {
+            float randomVolume = Random.Range(volumeMin, volumeMax);
+            audioSource.PlayOneShot(clip, randomVolume);
+        }
     }
 }

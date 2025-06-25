@@ -6,62 +6,71 @@ using UnityEngine.UI;
 public class TurretPoison : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private Transform turretRotationPoint; // Point for turret rotation
-    [SerializeField] private LayerMask enemyMask; // Layer to detect enemies
-    [SerializeField] private GameObject poisonBulletPrefab; // Prefab for poison bullets
-    [SerializeField] private Transform firingPoint; // Point to spawn bullets
-    [SerializeField] private GameObject upgradeUI; // Upgrade menu UI
-    [SerializeField] private Button upgradeButton; // Button to handle upgrades
-    [SerializeField] private SpriteRenderer turretSpriteRenderer; // Renderer to change turret sprite
-    [SerializeField] private Sprite[] upgradeSprites; // Array of sprites for turret levels
+    [SerializeField] private Transform turretRotationPoint;
+    [SerializeField] private LayerMask enemyMask;
+    [SerializeField] private GameObject poisonBulletPrefab;
+    [SerializeField] private Transform firingPoint;
+    [SerializeField] private GameObject upgradeUI;
+    [SerializeField] private Button upgradeButton;
+    [SerializeField] private SpriteRenderer turretSpriteRenderer;
+    [SerializeField] private Sprite[] upgradeSprites;
 
     [Header("Attributes")]
-    [SerializeField] public float targetingRange; // Range to detect enemies
-    [SerializeField] private float rotationSpeed; // Speed of turret rotation
-    [SerializeField] private float bps; // Bullets per second
-    [SerializeField] public int baseUpgradeCost; // Base upgrade cost
-    [SerializeField] private int bulletDamage; // Base damage for bullets
+    [SerializeField] public float targetingRange;
+    [SerializeField] private float rotationSpeed;
+    [SerializeField] private float bps;
+    [SerializeField] public int baseUpgradeCost;
+    [SerializeField] private int bulletDamage;
 
-    private float bpsBase; // Base bullet-per-second value
-    private float targetingRangeBase; // Base targeting range value
-    private int bulletDamageBase; // Base damage value for bullets
-    private Transform target; // Current target
-    private float timeUntilFire; // Timer for next fire
-    private int level = 1; // Current level of the turret
+    [Header("Audio")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip shootClip;
+    [SerializeField] private AudioClip placeClip;
+    [SerializeField] private AudioClip upgradeClip;
+    [SerializeField] private AudioClip sellClip;
+
+    [Header("Audio Randomization")]
+    [SerializeField] private float volumeMin = 0.9f;
+    [SerializeField] private float volumeMax = 1.1f;
+
+    private float bpsBase;
+    private float targetingRangeBase;
+    private int bulletDamageBase;
+
+    private Transform target;
+    private float timeUntilFire;
+    private int level = 1;
 
     private void Start()
     {
-        // Store initial values for scaling upgrades
         bpsBase = bps;
         targetingRangeBase = targetingRange;
         bulletDamageBase = bulletDamage;
 
-        // Attach Upgrade method to the button
         upgradeButton.onClick.AddListener(Upgrade);
+        UpdateSprite();
+
+        PlaySound(placeClip);
     }
 
     private void Update()
     {
-        // If no target, find one
         if (target == null)
         {
             FindTarget();
             return;
         }
 
-        // Rotate turret to face target
         Vector3 direction = target.position - transform.position;
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        turretRotationPoint.rotation = Quaternion.Euler(new Vector3(0, 0, angle - 90));
+        turretRotationPoint.rotation = Quaternion.Euler(0, 0, angle - 90);
 
-        // If target is out of range, clear it
         if (!CheckTargetIsInRange())
         {
             target = null;
         }
         else
         {
-            // Manage firing timer
             timeUntilFire += Time.deltaTime;
             if (timeUntilFire >= 1f / bps)
             {
@@ -73,61 +82,51 @@ public class TurretPoison : MonoBehaviour
 
     private void Shoot()
     {
-        // Instantiate a poison bullet
         GameObject bulletObj = Instantiate(poisonBulletPrefab, firingPoint.position, Quaternion.identity);
-
-        // Set target and damage for the bullet
         PoisonBullet bulletScript = bulletObj.GetComponent<PoisonBullet>();
-        bulletScript.SetTarget(target);
-        bulletScript.SetDamage(bulletDamage);
+        if (bulletScript != null)
+        {
+            bulletScript.SetTarget(target);
+            bulletScript.SetDamage(bulletDamage);
+        }
+        else
+        {
+            Debug.LogWarning("PoisonBullet component missing on bullet prefab.");
+        }
+
+        PlaySound(shootClip);
     }
 
     private void FindTarget()
     {
-        // Perform a CircleCastAll to detect enemies in range.
         RaycastHit2D[] hits = Physics2D.CircleCastAll(transform.position, targetingRange, Vector2.zero, 0f, enemyMask);
 
         if (hits.Length > 0)
         {
-            Debug.Log("TurretPoison found " + hits.Length + " enemy(ies) in range:");
-            foreach (RaycastHit2D hit in hits)
-            {
-                Debug.Log("Found enemy: " + hit.transform.name);
-            }
-            // For simplicity, select the first enemy detected.
             target = hits[0].transform;
-        }
-        else
-        {
-            Debug.Log("TurretPoison: No enemies found in range.");
         }
     }
 
     private bool CheckTargetIsInRange()
     {
-        // Check if the current target is within range
         return Vector2.Distance(target.position, transform.position) <= targetingRange;
     }
 
     public void Upgrade()
     {
-        // Check if there is enough currency to upgrade
         if (CalculateCost() > LevelManager.main.currency) return;
 
-        // Spend currency and increase level
         LevelManager.main.SpendCurrency(CalculateCost());
         level++;
 
-        // Update attributes
         bps = CalculateBPS();
         targetingRange = CalculateRange();
         bulletDamage = CalculateBulletDamage();
 
-        // Update the turret's sprite to reflect the new level
         UpdateSprite();
-
-        // Close the upgrade UI
         CloseUpgradeUI();
+
+        PlaySound(upgradeClip);
     }
 
     public int CalculateCost()
@@ -152,14 +151,13 @@ public class TurretPoison : MonoBehaviour
 
     private void UpdateSprite()
     {
-        // Change the turret sprite to match the new level
         if (turretSpriteRenderer != null && upgradeSprites != null && level - 1 < upgradeSprites.Length)
         {
             turretSpriteRenderer.sprite = upgradeSprites[level - 1];
         }
         else
         {
-            Debug.LogWarning("Sprite or sprite array is missing!");
+            Debug.LogWarning("Sprite or sprite array is missing or out of range!");
         }
     }
 
@@ -172,5 +170,19 @@ public class TurretPoison : MonoBehaviour
     {
         upgradeUI.SetActive(false);
         UiManager.main.SetHoveringState(false);
+    }
+
+    public void PlaySellSound()
+    {
+        PlaySound(sellClip);
+    }
+
+    private void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+        {
+            float randomVolume = Random.Range(volumeMin, volumeMax);
+            audioSource.PlayOneShot(clip, randomVolume);
+        }
     }
 }

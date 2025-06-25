@@ -15,6 +15,9 @@ MonoBehaviour:
   enemyID: 7
   enemyName: Abaddon
   enemyIcon: {fileID: 21300000, guid: 7cf3b024a09ef344586c4a01ed4ff085, type: 3}
-  description: Abaddon
+  description: From the depths of the pit comes the Destroyer, swift as the shadow
+    of death. Yet each wound he suffers becomes a weight upon him, slowing his relentless
+    charge. He begins in fury, but if struck often, his pace falters and his threat
+    wanes before the gates.
   maxHealth: 0
   speed: 0

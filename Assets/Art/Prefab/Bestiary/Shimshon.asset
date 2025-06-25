@@ -15,6 +15,9 @@ MonoBehaviour:
   enemyID: 3
   enemyName: Shimshon
   enemyIcon: {fileID: 21300000, guid: 902c1e20aed6e9047ada835a9bf07475, type: 3}
-  description: Shimshon
+  description: Once a juggernaut of divine strength, he now moves with the weight
+    of loss upon him. His locks are shorn, and with them, the spark of immortality
+    has faded. Yet his body remains a fortress of flesh, slow but unyielding, pressing
+    forward through pain and memory.
   maxHealth: 0
   speed: 0

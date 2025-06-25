@@ -15,6 +15,10 @@ MonoBehaviour:
   enemyID: 6
   enemyName: "Shlomit & Y\u0259h\xFB\u1E0F\xEE\u1E6F"
   enemyIcon: {fileID: 21300000, guid: 7aceb0ad822d08b4980ba49f99eb0796, type: 3}
-  description: "Shlomit & Y\u0259h\xFB\u1E0F\xEE\u1E6F"
+  description: Bound in unity and clothed in radiant defense, these two move as one,
+    their shield deflecting all harm with unwavering grace. No blade nor bolt may
+    pierce their barrier, save for the chill of longing and the power that draws
+    them near. Only by slowing their steps or breaking their bond may their guard
+    be undone.
   maxHealth: 0
   speed: 0

@@ -15,6 +15,9 @@ MonoBehaviour:
   enemyID: 8
   enemyName: Eliyahu
   enemyIcon: {fileID: 21300000, guid: 6fdae96ed516bd14194933f9506d3d9d, type: 3}
-  description: Eliyahu
+  description: Clad in the mantle of the prophet, he falls only to rise again, borne
+    aloft by winds unseen. Each return is marked by a sacred gale that clears the
+    air around him, scattering all projectiles and granting him brief sanctuary.
+    As long as his spirit endures, he shall not remain fallen for long.
   maxHealth: 0
   speed: 0
