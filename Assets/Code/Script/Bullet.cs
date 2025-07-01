@@ -24,6 +24,10 @@ public class Bullet : MonoBehaviour
     public void SetDamage(int damage) => bulletDamage = damage;
     public void SetTarget(Transform _target) => target = _target;
 
+    private void Start()
+    {
+        Destroy(gameObject, 12f); // Automatically destroy bullet after 12 seconds
+    }
     private void Update()
     {
         transform.Rotate(0f, 0f, -720f * Time.deltaTime); // Fast spin
@@ -33,8 +37,7 @@ public class Bullet : MonoBehaviour
     {
         if (!target)
         {
-            Destroy(gameObject);
-            return;
+            return; // Don't destroy immediately — allow the bullet to expire after 12s
         }
 
         Vector2 direction = (target.position - transform.position).normalized;

@@ -27,7 +27,6 @@ public class Turret : MonoBehaviour
     [SerializeField] private AudioClip shootClip;
     [SerializeField] private AudioClip placeClip;
     [SerializeField] private AudioClip upgradeClip;
-    [SerializeField] private AudioClip sellClip;
     
     [Header("Audio Randomization")]
     [SerializeField] private float volumeMin = 0.9f;
@@ -160,11 +159,7 @@ public class Turret : MonoBehaviour
     {
         return Mathf.RoundToInt(bulletDamageBase * Mathf.Pow(level, 0.4f));
     }
-
-    public void PlaySellSound()
-    {
-        PlaySound(sellClip);
-    }
+    
 
     private void PlaySound(AudioClip clip)
     {

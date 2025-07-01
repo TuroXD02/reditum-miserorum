@@ -61,28 +61,36 @@ public class TurretPoison : MonoBehaviour
             return;
         }
 
-        Vector3 direction = target.position - transform.position;
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        turretRotationPoint.rotation = Quaternion.Euler(0, 0, angle - 90);
+        RotateTowardsTarget();
 
-        if (!CheckTargetIsInRange())
+        if (!IsTargetInRange())
         {
             target = null;
+            return;
         }
-        else
+
+        timeUntilFire += Time.deltaTime;
+        if (timeUntilFire >= 1f / bps)
         {
-            timeUntilFire += Time.deltaTime;
-            if (timeUntilFire >= 1f / bps)
-            {
-                Shoot();
-                timeUntilFire = 0f;
-            }
+            Shoot();
+            timeUntilFire = 0f;
         }
+    }
+
+    private void RotateTowardsTarget()
+    {
+        Vector3 dir = target.position - transform.position;
+        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        turretRotationPoint.rotation = Quaternion.Euler(0, 0, angle - 90);
     }
 
     private void Shoot()
     {
         GameObject bulletObj = Instantiate(poisonBulletPrefab, firingPoint.position, Quaternion.identity);
+
+        // Auto-destroy after 8 seconds
+        Destroy(bulletObj, 8f);
+
         PoisonBullet bulletScript = bulletObj.GetComponent<PoisonBullet>();
         if (bulletScript != null)
         {
@@ -91,7 +99,7 @@ public class TurretPoison : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("PoisonBullet component missing on bullet prefab.");
+            Debug.LogWarning("Missing PoisonBullet component on bullet prefab.");
         }
 
         PlaySound(shootClip);
@@ -100,23 +108,23 @@ public class TurretPoison : MonoBehaviour
     private void FindTarget()
     {
         RaycastHit2D[] hits = Physics2D.CircleCastAll(transform.position, targetingRange, Vector2.zero, 0f, enemyMask);
-
         if (hits.Length > 0)
         {
             target = hits[0].transform;
         }
     }
 
-    private bool CheckTargetIsInRange()
+    private bool IsTargetInRange()
     {
         return Vector2.Distance(target.position, transform.position) <= targetingRange;
     }
 
     public void Upgrade()
     {
-        if (CalculateCost() > LevelManager.main.currency) return;
+        int cost = CalculateCost();
+        if (cost > LevelManager.main.currency) return;
 
-        LevelManager.main.SpendCurrency(CalculateCost());
+        LevelManager.main.SpendCurrency(cost);
         level++;
 
         bps = CalculateBPS();
@@ -125,7 +133,6 @@ public class TurretPoison : MonoBehaviour
 
         UpdateSprite();
         CloseUpgradeUI();
-
         PlaySound(upgradeClip);
     }
 
@@ -157,7 +164,7 @@ public class TurretPoison : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Sprite or sprite array is missing or out of range!");
+            Debug.LogWarning("Sprite or sprite array missing or index out of range.");
         }
     }
 
@@ -181,8 +188,8 @@ public class TurretPoison : MonoBehaviour
     {
         if (audioSource != null && clip != null)
         {
-            float randomVolume = Random.Range(volumeMin, volumeMax);
-            audioSource.PlayOneShot(clip, randomVolume);
+            float volume = Random.Range(volumeMin, volumeMax);
+            audioSource.PlayOneShot(clip, volume);
         }
     }
 }

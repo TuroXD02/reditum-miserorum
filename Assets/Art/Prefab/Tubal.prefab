@@ -197,7 +197,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 0f15f41dbb6981f4cbb66499dfdc610f, type: 3}
   targetingRange: 1.5
   rotationSpeed: 222
-  attacksPerSecond: 0.95
+  attacksPerSecond: 1.1
   baseUpgradeCost: 150
   attackDamage: 120
   armourReduction: 5

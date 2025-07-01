@@ -48,6 +48,9 @@ public class LongRangeBullet : MonoBehaviour
         {
             Debug.LogError("LongRangeBullet: No SpriteRenderer found!");
         }
+
+        // Auto-destroy after 6 seconds
+        Destroy(gameObject, 6f);
     }
 
     public void SetDamage(int damage)
@@ -62,7 +65,7 @@ public class LongRangeBullet : MonoBehaviour
 
     private void Update()
     {
-        transform.Rotate(0, 0, -2 * Time.deltaTime);
+        transform.Rotate(0, 0, -2f * Time.deltaTime);
 
         float distanceTraveled = Vector2.Distance(startPosition, transform.position);
         float factor = Mathf.Clamp01(distanceTraveled / maxDistanceForWhiteness);
@@ -103,7 +106,7 @@ public class LongRangeBullet : MonoBehaviour
         if (enemyHealth != null) enemyHealth.TakeDamage(scaledDamage);
         if (lussuriaHealth != null) lussuriaHealth.TakeDamage(scaledDamage);
 
-        // Impact Effect
+        // Choose impact effect
         GameObject chosenImpact = impactEffectPrefab;
         if ((distanceTraveled / maxDistanceForWhiteness) >= maxDistanceThreshold && maxRangeImpactEffectPrefab != null)
         {
@@ -118,13 +121,11 @@ public class LongRangeBullet : MonoBehaviour
             Destroy(impact, impactEffectDuration);
         }
 
-        // Disable bullet effects but keep it alive briefly
+        // Disable visuals/physics and schedule destruction
         DisableBulletVisualsAndPhysics();
-
-        // Delay actual destruction
         StartCoroutine(DestroyAfterDelay(0.5f));
     }
-    
+
     private void DisableBulletVisualsAndPhysics()
     {
         if (spriteRenderer != null) spriteRenderer.enabled = false;
@@ -137,7 +138,6 @@ public class LongRangeBullet : MonoBehaviour
         Collider2D col = GetComponent<Collider2D>();
         if (col != null) col.enabled = false;
     }
-
 
     private void SpawnAfterimage(float distanceTraveled, float factor)
     {
@@ -175,12 +175,10 @@ public class LongRangeBullet : MonoBehaviour
         if (obj != null)
             Destroy(obj);
     }
-    
+
     private IEnumerator DestroyAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
         Destroy(gameObject);
     }
-
-
 }

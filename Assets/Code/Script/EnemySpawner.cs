@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using TMPro;
 
 [System.Serializable]
 public class WeightedEnemy
@@ -14,6 +15,7 @@ public class EnemySpawner : MonoBehaviour
 {
     [Header("References")]
     public Transform startPoint;
+    [SerializeField] private TextMeshProUGUI waveText;
 
     [Header("Enemy Waves")]
     [SerializeField] private WeightedEnemy[] waveEnemies1;
@@ -54,12 +56,12 @@ public class EnemySpawner : MonoBehaviour
     {
         waveIntroduced = new bool[12];
         currentWaveSpawnPool = new List<WeightedEnemy>();
-
         onEnemyDestroy.AddListener(EnemyDestroyed);
     }
 
     private void Start()
     {
+        UpdateWaveText(0); // Show 0 before the first wave begins
         StartCoroutine(StartWave());
     }
 
@@ -83,7 +85,6 @@ public class EnemySpawner : MonoBehaviour
 
     private void EnemyDestroyed()
     {
-        // Optional: Count deaths, update UI, etc.
         Debug.Log("[EnemySpawner] An enemy has been destroyed.");
     }
 
@@ -98,6 +99,7 @@ public class EnemySpawner : MonoBehaviour
         Debug.Log($"[EnemySpawner] Wave {currentWave} ended.");
         currentWave++;
 
+        UpdateWaveText(0); // Show 0 during intermission
         StartCoroutine(StartWave());
     }
 
@@ -106,9 +108,11 @@ public class EnemySpawner : MonoBehaviour
         yield return new WaitForSeconds(timeBetweenWaves);
 
         isSpawning = true;
-        eps = EnemiesPerSecond();
-        currentWaveWeight = GetWaveWeight();
+        eps = CalculateEnemiesPerSecond();
+        currentWaveWeight = CalculateWaveWeight();
         currentWaveWeightUsed = 0f;
+
+        UpdateWaveText(currentWave); // Update to actual wave number when it starts
 
         Debug.Log($"[EnemySpawner] Starting Wave {currentWave} | Weight Budget: {currentWaveWeight:F2}");
 
@@ -198,13 +202,21 @@ public class EnemySpawner : MonoBehaviour
         };
     }
 
-    private float GetWaveWeight()
+    private float CalculateWaveWeight()
     {
         return baseWaveWeight * Mathf.Pow(currentWave, difficultyScalingFactor);
     }
 
-    private float EnemiesPerSecond()
+    private float CalculateEnemiesPerSecond()
     {
         return Mathf.Clamp(enemiesPerSecond * Mathf.Pow(currentWave, difficultyScalingFactor), 0f, enemiesPerSecondCap);
+    }
+
+    private void UpdateWaveText(int wave)
+    {
+        if (waveText != null)
+        {
+            waveText.text = wave.ToString();
+        }
     }
 }

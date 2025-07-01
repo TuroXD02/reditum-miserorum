@@ -7,6 +7,5 @@ public class BestiaryEntry : ScriptableObject
     public string enemyName;
     public Sprite enemyIcon;
     [TextArea] public string description;
-    public int maxHealth;
-    public float speed;
+
 }

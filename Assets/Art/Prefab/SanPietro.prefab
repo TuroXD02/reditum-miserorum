@@ -325,12 +325,13 @@ MonoBehaviour:
   rotationSpeed: 200
   bps: 0.75
   baseUpgradeCost: 50
-  bulletDamage: 15
+  bulletDamage: 25
   audioSource: {fileID: 8545613116631395616}
-  shootClip: {fileID: 8300000, guid: 599b43aaa6e76824b84bf161642a1ccc, type: 3}
+  shootClip: {fileID: 8300000, guid: a3c5112f77d228749a710167d20e5953, type: 3}
   placeClip: {fileID: 0}
   upgradeClip: {fileID: 0}
-  sellClip: {fileID: 0}
+  volumeMin: 0.9
+  volumeMax: 1.1
 --- !u!82 &8545613116631395616
 AudioSource:
   m_ObjectHideFlags: 0
