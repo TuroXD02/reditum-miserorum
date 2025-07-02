@@ -97,9 +97,8 @@ public class EnemySpawner : MonoBehaviour
             StopCoroutine(waveTimeoutCoroutine);
 
         Debug.Log($"[EnemySpawner] Wave {currentWave} ended.");
-        currentWave++;
 
-        UpdateWaveText(0); // Show 0 during intermission
+        currentWave++; // Move this before updating text
         StartCoroutine(StartWave());
     }
 
@@ -112,14 +111,14 @@ public class EnemySpawner : MonoBehaviour
         currentWaveWeight = CalculateWaveWeight();
         currentWaveWeightUsed = 0f;
 
-        UpdateWaveText(currentWave); // Update to actual wave number when it starts
+        UpdateWaveText(currentWave); // Correct place to show actual wave number
 
         Debug.Log($"[EnemySpawner] Starting Wave {currentWave} | Weight Budget: {currentWaveWeight:F2}");
 
         SetupWaveSpawnPool();
-
         waveTimeoutCoroutine = StartCoroutine(WaveTimeout());
     }
+
 
     private void SetupWaveSpawnPool()
     {

@@ -605,7 +605,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 7531a3421f6e5d342b233142a4eda8cf, type: 3}
   targetingRange: 5
   rotationSpeed: 5
-  bps: 0.2
+  bps: 0.455
   baseUpgradeCost: 150
   bulletDamage: 300
   aoeRadius: 1.5

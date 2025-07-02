@@ -735,12 +735,13 @@ MonoBehaviour:
   baseUpgradeCost: 200
   bulletDamage: 1
   audioSource: {fileID: -5458740587483401118}
-  shootClip: {fileID: 0}
+  shootClip: {fileID: 8300000, guid: 2aa02e82fbacd524fb37abc7ab882ef0, type: 3}
   placeClip: {fileID: 0}
   upgradeClip: {fileID: 0}
   sellClip: {fileID: 0}
   volumeMin: 0.9
   volumeMax: 1.1
+  shootSoundDelay: 0.369
 --- !u!82 &-5458740587483401118
 AudioSource:
   m_ObjectHideFlags: 0

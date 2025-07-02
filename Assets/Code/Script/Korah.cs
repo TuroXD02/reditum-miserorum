@@ -178,8 +178,11 @@ public class Korah : MonoBehaviour
         float elapsed = 0f;
         float scaleMultiplier = 4f;
 
+        // Animate link position, rotation, and scale
         while (elapsed < duration)
         {
+            if (beam == null || source == null || target == null) yield break;
+
             elapsed += Time.deltaTime;
 
             Vector3 start = GetSpriteCenter(source);
@@ -197,18 +200,26 @@ public class Korah : MonoBehaviour
             yield return null;
         }
 
+        // Fade out the beam
         float fadeDuration = 0.2f;
         float fadeElapsed = 0f;
-        Color startColor = sr.color;
-        Color endColor = new Color(startColor.r, startColor.g, startColor.b, 0f);
 
-        while (fadeElapsed < fadeDuration)
+        if (sr != null)
         {
-            fadeElapsed += Time.deltaTime;
-            sr.color = Color.Lerp(startColor, endColor, fadeElapsed / fadeDuration);
-            yield return null;
+            Color startColor = sr.color;
+            Color endColor = new Color(startColor.r, startColor.g, startColor.b, 0f);
+
+            while (fadeElapsed < fadeDuration)
+            {
+                if (sr == null || beam == null) yield break;
+
+                fadeElapsed += Time.deltaTime;
+                sr.color = Color.Lerp(startColor, endColor, fadeElapsed / fadeDuration);
+                yield return null;
+            }
         }
 
+        // Final safety check before destruction
         if (beam != null)
             Destroy(beam);
     }

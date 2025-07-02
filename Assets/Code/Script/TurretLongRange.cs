@@ -5,53 +5,54 @@ using UnityEngine.UI;
 
 public class TurretLongRange : MonoBehaviour
 {
+    // === EXISTING FIELDS ===
     [Header("References")]
-    [SerializeField] private Transform turretRotationPoint; // Point for turret rotation
-    [SerializeField] private LayerMask enemyMask; // Layer containing enemies
-    [SerializeField] private GameObject bulletPrefab; // Bullet prefab to shoot
-    [SerializeField] private Transform firingPoint; // Point from which bullets are fired
-    [SerializeField] private GameObject upgradeUI; // UI for turret upgrades
-    [SerializeField] private Button upgradeButton; // Button for upgrading
-    [SerializeField] private SpriteRenderer turretSpriteRenderer; // Reference to SpriteRenderer for visual changes
-    [SerializeField] private Sprite[] upgradeSprites; // Array of sprites representing turret levels
+    [SerializeField] private Transform turretRotationPoint;
+    [SerializeField] private LayerMask enemyMask;
+    [SerializeField] private GameObject bulletPrefab;
+    [SerializeField] private Transform firingPoint;
+    [SerializeField] private GameObject upgradeUI;
+    [SerializeField] private Button upgradeButton;
+    [SerializeField] private SpriteRenderer turretSpriteRenderer;
+    [SerializeField] private Sprite[] upgradeSprites;
 
     [Header("Attributes")]
-    [SerializeField] public float targetingRange; // Range to detect enemies
-    [SerializeField] private float rotationSpeed; // Speed of turret rotation
-    [SerializeField] private float bps; // Bullets per second
-    [SerializeField] public int baseUpgradeCost; // Base cost of upgrades
-    [SerializeField] private int bulletDamage; // Bullet damage value
+    [SerializeField] public float targetingRange;
+    [SerializeField] private float rotationSpeed;
+    [SerializeField] private float bps;
+    [SerializeField] public int baseUpgradeCost;
+    [SerializeField] private int bulletDamage;
 
     [Header("Audio")]
-    [SerializeField] private AudioSource audioSource; // AudioSource component
-    [SerializeField] private AudioClip shootClip; // Sound played when turret shoots
-    [SerializeField] private AudioClip placeClip; // Sound played when turret is placed
-    [SerializeField] private AudioClip upgradeClip; // Sound played on upgrade
-    [SerializeField] private AudioClip sellClip; // Sound played when turret is sold
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip shootClip;
+    [SerializeField] private AudioClip placeClip;
+    [SerializeField] private AudioClip upgradeClip;
+    [SerializeField] private AudioClip sellClip;
 
     [Header("Audio Randomization")]
     [SerializeField] private float volumeMin = 0.9f;
     [SerializeField] private float volumeMax = 1.1f;
 
-    private float bpsBase; // Base bullets-per-second value
-    private float targetingRangeBase; // Base targeting range value
-    private int bulletDamageBase; // Base bullet damage value
+    [Header("Shooting Timing")]
+    [SerializeField] private float shootSoundDelay = 0.1f; // Time before actual shot when the sound plays
 
-    private Transform target; // Reference to the current target
-    private float timeUntilFire; // Timer to manage fire rate
+    // === PRIVATE FIELDS ===
+    private float bpsBase;
+    private float targetingRangeBase;
+    private int bulletDamageBase;
 
-    private int level = 1; // Current level of the turret
+    private Transform target;
+    private float timeUntilFire;
+    private int level = 1;
 
     private void Start()
     {
-        // Save base values for upgrades
         bpsBase = bps;
         targetingRangeBase = targetingRange;
         bulletDamageBase = bulletDamage;
 
-        // Attach the upgrade method to the upgrade button
         upgradeButton.onClick.AddListener(Upgrade);
-
         UpdateSprite();
         PlaySound(placeClip);
     }
@@ -76,20 +77,23 @@ public class TurretLongRange : MonoBehaviour
 
             if (timeUntilFire >= 1f / bps)
             {
-                Shoot();
+                StartCoroutine(ShootWithSoundDelay(shootSoundDelay));
                 timeUntilFire = 0f;
             }
         }
     }
 
-    private void Shoot()
+    private IEnumerator ShootWithSoundDelay(float delay)
     {
+        if (shootClip != null)
+            PlaySound(shootClip); // Play immediately (before bullet fires)
+
+        yield return new WaitForSeconds(delay);
+
         GameObject bulletObj = Instantiate(bulletPrefab, firingPoint.position, Quaternion.identity);
         LongRangeBullet bulletScript = bulletObj.GetComponent<LongRangeBullet>();
         bulletScript.SetTarget(target);
         bulletScript.SetDamage(bulletDamage);
-
-        PlaySound(shootClip);
     }
 
     private void FindTarget()
@@ -137,29 +141,13 @@ public class TurretLongRange : MonoBehaviour
 
         UpdateSprite();
         CloseUpgradeUI();
-
         PlaySound(upgradeClip);
     }
 
-    public int CalculateCost()
-    {
-        return Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 1f));
-    }
-
-    private float CalculateBPS()
-    {
-        return bpsBase * Mathf.Pow(level, 0.2f);
-    }
-
-    private float CalculateRange()
-    {
-        return targetingRangeBase * Mathf.Pow(level, 0.4f);
-    }
-
-    private int CalculateBulletDamage()
-    {
-        return Mathf.RoundToInt(bulletDamageBase * Mathf.Pow(level, 0.55f));
-    }
+    public int CalculateCost() => Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 1f));
+    private float CalculateBPS() => bpsBase * Mathf.Pow(level, 0.2f);
+    private float CalculateRange() => targetingRangeBase * Mathf.Pow(level, 0.4f);
+    private int CalculateBulletDamage() => Mathf.RoundToInt(bulletDamageBase * Mathf.Pow(level, 0.55f));
 
     private void UpdateSprite()
     {
