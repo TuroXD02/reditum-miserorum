@@ -610,7 +610,7 @@ MonoBehaviour:
   bulletDamage: 300
   aoeRadius: 1.5
   audioSource: {fileID: -5645646770255471586}
-  shootClip: {fileID: 0}
+  shootClip: {fileID: 8300000, guid: 2ac0ea773de5dc7408652c9b883b5d15, type: 3}
   placeClip: {fileID: 0}
   upgradeClip: {fileID: 0}
   sellClip: {fileID: 0}

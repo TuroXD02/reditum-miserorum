@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class PoisonBullet : MonoBehaviour
 {
@@ -24,6 +25,11 @@ public class PoisonBullet : MonoBehaviour
     [SerializeField] private GameObject poisonVfxPrefab;
     [SerializeField] private Color poisonOverlayColor = new Color(0.7f, 1f, 0.7f, 1f);
     [SerializeField] private float poisonTintFadeDuration = 0.5f;
+
+    [Header("Impact Sound")]
+    [SerializeField] private AudioClip impactSound;
+    [SerializeField] private float soundVolume = 1f;
+    [SerializeField] private AudioMixerGroup sfxMixerGroup;
 
     public void SetTarget(Transform _target) => target = _target;
 
@@ -55,6 +61,8 @@ public class PoisonBullet : MonoBehaviour
         hasHitTarget = true;
         rb.velocity = Vector2.zero;
 
+        PlayHitSound();
+
         if (target.TryGetComponent(out EnemyHealth enemy))
         {
             StartCoroutine(ApplyPoisonDamageOverTime(enemy));
@@ -68,6 +76,23 @@ public class PoisonBullet : MonoBehaviour
 
         HideBullet();
         Destroy(gameObject, poisonDuration);
+    }
+
+    private void PlayHitSound()
+    {
+        if (impactSound == null) return;
+
+        GameObject audioObj = new GameObject("TempPoisonHitSound");
+        audioObj.transform.position = transform.position;
+
+        AudioSource audioSource = audioObj.AddComponent<AudioSource>();
+        audioSource.clip = impactSound;
+        audioSource.volume = soundVolume;
+        audioSource.outputAudioMixerGroup = sfxMixerGroup;
+        audioSource.spatialBlend = 0f;
+        audioSource.Play();
+
+        Destroy(audioObj, impactSound.length);
     }
 
     private IEnumerator ApplyPoisonDamageOverTime(EnemyHealth enemy)

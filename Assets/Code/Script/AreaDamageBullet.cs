@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Audio;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class AreaDamageBullet : MonoBehaviour
@@ -23,6 +24,8 @@ public class AreaDamageBullet : MonoBehaviour
 
     [Header("Explosion Sound")]
     [SerializeField] private AudioClip explosionSound;
+    [SerializeField] private float explosionVolume = 1f;
+    [SerializeField] private AudioMixerGroup sfxMixerGroup;
 
     // Setters
     public void SetDamage(int dmg) => damage = dmg;
@@ -49,19 +52,13 @@ public class AreaDamageBullet : MonoBehaviour
         if (hasExploded) return;
         hasExploded = true;
 
-        // Play explosion sound
-        AudioSource audioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
-        if (explosionSound != null)
-        {
-            audioSource.PlayOneShot(explosionSound);
-        }
+        PlayExplosionSound();
 
         // Apply AoE Damage
         Collider2D[] hitColliders = Physics2D.OverlapCircleAll(transform.position, aoeRadius);
         foreach (Collider2D col in hitColliders)
         {
-            EnemyHealth enemyHealth = col.GetComponent<EnemyHealth>();
-            if (enemyHealth != null)
+            if (col.TryGetComponent(out EnemyHealth enemyHealth))
             {
                 enemyHealth.TakeDamage(damage);
             }
@@ -72,14 +69,28 @@ public class AreaDamageBullet : MonoBehaviour
         if (TryGetComponent(out Collider2D col2D)) col2D.enabled = false;
         if (TryGetComponent(out Rigidbody2D rb)) rb.velocity = Vector2.zero;
 
-        // Create explosion outline
+        // Create explosion outline and animation
         CreateExplosionOutline();
-
-        // Create explosion animation
         CreateExplosionAnimation(sr);
 
-        // Cleanup
         StartCoroutine(EndExplosionEffect());
+    }
+
+    private void PlayExplosionSound()
+    {
+        if (explosionSound == null) return;
+
+        GameObject tempAudioObj = new GameObject("TempExplosionSound");
+        tempAudioObj.transform.position = transform.position;
+
+        AudioSource audioSource = tempAudioObj.AddComponent<AudioSource>();
+        audioSource.clip = explosionSound;
+        audioSource.volume = explosionVolume;
+        audioSource.outputAudioMixerGroup = sfxMixerGroup;
+        audioSource.spatialBlend = 0f;
+        audioSource.Play();
+
+        Destroy(tempAudioObj, explosionSound.length);
     }
 
     private void CreateExplosionOutline()

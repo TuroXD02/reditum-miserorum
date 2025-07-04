@@ -202,7 +202,7 @@ MonoBehaviour:
   attackDamage: 120
   armourReduction: 5
   audioSource: {fileID: -2813971204738349120}
-  shootClip: {fileID: 0}
+  shootClip: {fileID: 8300000, guid: 7e325c7618959fe40b11c701bde6047f, type: 3}
   placeClip: {fileID: 0}
   upgradeClip: {fileID: 0}
   sellClip: {fileID: 0}

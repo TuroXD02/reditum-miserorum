@@ -171,6 +171,9 @@ MonoBehaviour:
   poisonVfxPrefab: {fileID: 8819224582256602449, guid: 8d899dc4dcbb81b44a4bdc99757ff662, type: 3}
   poisonOverlayColor: {r: 0.7, g: 1, b: 0.7, a: 1}
   poisonTintFadeDuration: 0.5
+  impactSound: {fileID: 8300000, guid: d4aac10faeeaf544c87ab064ae3d2cde, type: 3}
+  soundVolume: 1
+  sfxMixerGroup: {fileID: -6875069860267149466, guid: 0ecce08098d0f89428ede069e0e13620, type: 2}
 --- !u!1 &6651918146290785953
 GameObject:
   m_ObjectHideFlags: 0

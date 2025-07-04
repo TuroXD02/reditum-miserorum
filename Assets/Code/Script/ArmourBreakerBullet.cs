@@ -1,5 +1,5 @@
-using System.Collections;
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class ArmourBreakerBullet : MonoBehaviour
 {
@@ -18,6 +18,7 @@ public class ArmourBreakerBullet : MonoBehaviour
     [Header("Audio Settings")]
     [SerializeField] private AudioClip impactSound;
     [SerializeField] private float soundVolume = 1f;
+    [SerializeField] private AudioMixerGroup sfxMixerGroup; // 🔊 Route to SFX mixer
 
     private Animator anim;
     private SpriteRenderer sr;
@@ -25,6 +26,7 @@ public class ArmourBreakerBullet : MonoBehaviour
 
     private float timer = 0f;
     private bool hasHit = false;
+    private AudioSource audioSource;
 
     private void Awake()
     {
@@ -39,14 +41,17 @@ public class ArmourBreakerBullet : MonoBehaviour
         {
             spriteWidth = sr.sprite.bounds.size.x;
             if (spriteWidth <= 0f)
-            {
                 Debug.LogWarning("ArmourBreakerBullet: Sprite width is invalid.");
-            }
         }
         else
         {
             Debug.LogWarning("ArmourBreakerBullet: No SpriteRenderer found.");
         }
+
+        // Setup audio source
+        audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+        audioSource.outputAudioMixerGroup = sfxMixerGroup;
     }
 
     private void Start()
@@ -96,18 +101,23 @@ public class ArmourBreakerBullet : MonoBehaviour
         transform.position = startPosition + direction * (distance / 2);
     }
 
-    private void PlayImpactSound()
+    // 👇 Call this from an Animation Event at the right frame
+    public void PlayImpactSound()
     {
-        if (impactSound == null) return;
+        if (impactSound == null || sfxMixerGroup == null) return;
 
-        AudioSource audioSource = GetComponent<AudioSource>();
-        if (audioSource == null)
-        {
-            audioSource = gameObject.AddComponent<AudioSource>();
-            audioSource.playOnAwake = false;
-        }
+        // Create a temporary GameObject at the impact position
+        GameObject tempAudio = new GameObject("TempImpactSound");
+        tempAudio.transform.position = transform.position;
 
-        audioSource.PlayOneShot(impactSound, soundVolume);
+        AudioSource tempSource = tempAudio.AddComponent<AudioSource>();
+        tempSource.clip = impactSound;
+        tempSource.volume = soundVolume;
+        tempSource.outputAudioMixerGroup = sfxMixerGroup;
+        tempSource.spatialBlend = 0f; // Set to 1f if 3D audio is needed
+
+        tempSource.Play();
+        Destroy(tempAudio, impactSound.length);
     }
 
     private void HitTarget()
@@ -117,31 +127,26 @@ public class ArmourBreakerBullet : MonoBehaviour
 
         if (target != null)
         {
-            // Play impact sound
-            PlayImpactSound();
-
-            // Apply to EnemyHealth
-            EnemyHealth enemyHealth = target.GetComponent<EnemyHealth>();
-            if (enemyHealth != null)
+            // Damage to regular enemies
+            if (target.TryGetComponent(out EnemyHealth enemyHealth))
             {
                 enemyHealth.TakeDamage(damage);
                 enemyHealth.ReduceArmour(armourReduction);
             }
 
-            // Apply to LussuriaHealth
-            LussuriaHealth lussuriaHealth = target.GetComponent<LussuriaHealth>();
-            if (lussuriaHealth != null)
+            // Damage to bosses
+            if (target.TryGetComponent(out LussuriaHealth bossHealth))
             {
-                lussuriaHealth.TakeDamage(damage);
-                lussuriaHealth.ReduceArmour(armourReduction);
+                bossHealth.TakeDamage(damage);
+                bossHealth.ReduceArmour(armourReduction);
             }
         }
 
-        // Give time for the audio to play before destroy (optional delay)
-        Destroy(gameObject, 0.05f);
+        // Allow time for animation and sound to finish
+        Destroy(gameObject, 0.1f);
     }
 
-    // Public Setters
+    // Public setters
     public void SetDamage(int dmg) => damage = dmg;
     public void SetArmourReduction(int reduction) => armourReduction = reduction;
     public void SetTarget(Transform targetTransform) => target = targetTransform;

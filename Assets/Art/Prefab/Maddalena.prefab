@@ -157,7 +157,7 @@ MonoBehaviour:
   enemyBlueColor: {r: 0.7, g: 0.7, b: 1, a: 1}
   tintLerpDuration: 0.3
   audioSource: {fileID: 7542073577806218659}
-  freezeClip: {fileID: 8300000, guid: 244a75b569dafe14a95423ec9ed52f85, type: 3}
+  freezeClip: {fileID: 8300000, guid: 3eaece57b1fcd77458145247565789cd, type: 3}
   upgradeClip: {fileID: 0}
   placedClip: {fileID: 0}
   volumeMin: 0.9

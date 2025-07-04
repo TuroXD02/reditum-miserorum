@@ -170,6 +170,9 @@ MonoBehaviour:
   - {fileID: 3845208457697093352, guid: 78b17260aed6e26429069af212fcba73, type: 3}
   effectDuration: 0.375
   rotationOffset: 90
+  impactSound: {fileID: 8300000, guid: ffaa692e1a3620b428de12590a9570e4, type: 3}
+  impactVolume: 1
+  sfxMixerGroup: {fileID: -6875069860267149466, guid: 0ecce08098d0f89428ede069e0e13620, type: 2}
   target: {fileID: 0}
 --- !u!1 &6651918146290785953
 GameObject:

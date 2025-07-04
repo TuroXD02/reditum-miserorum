@@ -164,3 +164,6 @@ MonoBehaviour:
   bulletSpeed: 10
   explosionAnimatorController: {fileID: 9100000, guid: c60bbe8cdcad66741b7a5056417a4128, type: 2}
   explosionDuration: 1
+  explosionOutlineColor: {r: 1, g: 1, b: 1, a: 1}
+  explosionOutlineWidth: 0.03
+  explosionSound: {fileID: 8300000, guid: f88ed7f4f4c59c54b9144674936abf67, type: 3}

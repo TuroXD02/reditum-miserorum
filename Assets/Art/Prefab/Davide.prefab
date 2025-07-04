@@ -735,7 +735,7 @@ MonoBehaviour:
   baseUpgradeCost: 200
   bulletDamage: 1
   audioSource: {fileID: -5458740587483401118}
-  shootClip: {fileID: 8300000, guid: 2aa02e82fbacd524fb37abc7ab882ef0, type: 3}
+  shootClip: {fileID: 8300000, guid: ffe18c13fdc5cf744888b12d98d779f7, type: 3}
   placeClip: {fileID: 0}
   upgradeClip: {fileID: 0}
   sellClip: {fileID: 0}

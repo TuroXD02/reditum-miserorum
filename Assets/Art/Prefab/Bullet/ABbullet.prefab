@@ -46,9 +46,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6e6c260431aeba42a504a0e053def6c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bulletDuration: 0.26
+  bulletDuration: 0.21
   swipeAnimatorController: {fileID: 9100000, guid: 1d042db68f7ba4840be81109a608b9f8, type: 2}
   baseBulletSize: 1
+  impactSound: {fileID: 8300000, guid: e7b122ab8f3c168438987c1165229256, type: 3}
+  soundVolume: 1
+  sfxMixerGroup: {fileID: -6875069860267149466, guid: 0ecce08098d0f89428ede069e0e13620, type: 2}
 --- !u!95 &-1799195714544112809
 Animator:
   serializedVersion: 5
