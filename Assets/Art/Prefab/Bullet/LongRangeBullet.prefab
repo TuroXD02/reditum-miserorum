@@ -170,11 +170,15 @@ MonoBehaviour:
   startColor: {r: 1, g: 1, b: 1, a: 1}
   endColor: {r: 1, g: 0, b: 0, a: 1}
   maxDistanceForWhiteness: 10
-  impactEffectPrefab: {fileID: 7501192240954958659, guid: 5f4c53b569df3b34baca2bebd6e75e6d, type: 3}
+  normalImpactEffectPrefab: {fileID: 7501192240954958659, guid: 5f4c53b569df3b34baca2bebd6e75e6d, type: 3}
   maxRangeImpactEffectPrefab: {fileID: 3732404309996073873, guid: caee0374f0a7e154589b421ffeb6c7bf, type: 3}
-  impactEffectDuration: 0.65
+  impactEffectDuration: 0.5
   impactRotationOffset: 90
   maxDistanceThreshold: 0.5
+  normalImpactSound: {fileID: 8300000, guid: 0dcf964d9333ed448a05cb7567a47905, type: 3}
+  maxRangeImpactSound: {fileID: 8300000, guid: 0560ecc807343d24e84759c8254391a6, type: 3}
+  impactVolume: 1
+  sfxMixerGroup: {fileID: -6875069860267149466, guid: 0ecce08098d0f89428ede069e0e13620, type: 2}
   afterimageSpawnInterval: 0.005
   afterimageFadeDuration: 0.05
   target: {fileID: 0}

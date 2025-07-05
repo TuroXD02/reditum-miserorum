@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class LongRangeBullet : MonoBehaviour
 {
@@ -17,12 +18,18 @@ public class LongRangeBullet : MonoBehaviour
     [SerializeField] private Color endColor = Color.red;
     [SerializeField] private float maxDistanceForWhiteness = 6f;
 
-    [Header("Impact Settings")]
-    [SerializeField] private GameObject impactEffectPrefab;
+    [Header("Impact VFX")]
+    [SerializeField] private GameObject normalImpactEffectPrefab;
     [SerializeField] private GameObject maxRangeImpactEffectPrefab;
     [SerializeField] private float impactEffectDuration = 2f;
     [SerializeField] private float impactRotationOffset = -90f;
     [SerializeField, Range(0.5f, 1f)] private float maxDistanceThreshold = 0.95f;
+
+    [Header("Impact SFX")]
+    [SerializeField] private AudioClip normalImpactSound;
+    [SerializeField] private AudioClip maxRangeImpactSound;
+    [SerializeField] private float impactVolume = 1f;
+    [SerializeField] private AudioMixerGroup sfxMixerGroup;
 
     [Header("Afterimage Settings")]
     [SerializeField] private float afterimageSpawnInterval = 0.05f;
@@ -49,19 +56,11 @@ public class LongRangeBullet : MonoBehaviour
             Debug.LogError("LongRangeBullet: No SpriteRenderer found!");
         }
 
-        // Auto-destroy after 6 seconds
         Destroy(gameObject, 6f);
     }
 
-    public void SetDamage(int damage)
-    {
-        bulletDamage = damage;
-    }
-
-    public void SetTarget(Transform _target)
-    {
-        target = _target;
-    }
+    public void SetDamage(int damage) => bulletDamage = damage;
+    public void SetTarget(Transform _target) => target = _target;
 
     private void Update()
     {
@@ -75,7 +74,6 @@ public class LongRangeBullet : MonoBehaviour
             spriteRenderer.color = Color.Lerp(startColor, endColor, factor);
         }
 
-        // Handle afterimage trail
         afterimageTimer += Time.deltaTime;
         if (afterimageTimer >= afterimageSpawnInterval)
         {
@@ -99,32 +97,51 @@ public class LongRangeBullet : MonoBehaviour
         float distanceTraveled = Vector2.Distance(startPosition, transform.position);
         int scaledDamage = Mathf.CeilToInt(bulletDamage + (distanceTraveled * damageMultiplier));
 
-        // Apply damage
-        EnemyHealth enemyHealth = other.gameObject.GetComponent<EnemyHealth>();
-        LussuriaHealth lussuriaHealth = other.gameObject.GetComponent<LussuriaHealth>();
+        if (other.gameObject.TryGetComponent(out EnemyHealth enemyHealth))
+            enemyHealth.TakeDamage(scaledDamage);
 
-        if (enemyHealth != null) enemyHealth.TakeDamage(scaledDamage);
-        if (lussuriaHealth != null) lussuriaHealth.TakeDamage(scaledDamage);
+        if (other.gameObject.TryGetComponent(out LussuriaHealth lussuriaHealth))
+            lussuriaHealth.TakeDamage(scaledDamage);
 
-        // Choose impact effect
-        GameObject chosenImpact = impactEffectPrefab;
-        if ((distanceTraveled / maxDistanceForWhiteness) >= maxDistanceThreshold && maxRangeImpactEffectPrefab != null)
-        {
-            chosenImpact = maxRangeImpactEffectPrefab;
-        }
+        bool isMaxRange = (distanceTraveled / maxDistanceForWhiteness) >= maxDistanceThreshold;
+        PlayImpactEffectAndSound(isMaxRange);
 
-        if (chosenImpact != null)
-        {
-            Vector2 bulletDir = rb.velocity.normalized;
-            float angle = Mathf.Atan2(-bulletDir.y, -bulletDir.x) * Mathf.Rad2Deg + impactRotationOffset;
-            GameObject impact = Instantiate(chosenImpact, transform.position, Quaternion.Euler(0f, 0f, angle));
-            Destroy(impact, impactEffectDuration);
-        }
-
-        // Disable visuals/physics and schedule destruction
         DisableBulletVisualsAndPhysics();
         StartCoroutine(DestroyAfterDelay(0.5f));
     }
+
+    private void PlayImpactEffectAndSound(bool isMaxRange)
+    {
+        GameObject chosenVFX = isMaxRange ? maxRangeImpactEffectPrefab : normalImpactEffectPrefab;
+        AudioClip chosenSFX = isMaxRange ? maxRangeImpactSound : normalImpactSound;
+
+        // 🎇 Spawn VFX
+        if (chosenVFX != null)
+        {
+            Vector2 bulletDir = rb.velocity.normalized;
+            float angle = Mathf.Atan2(-bulletDir.y, -bulletDir.x) * Mathf.Rad2Deg + impactRotationOffset;
+            GameObject impact = Instantiate(chosenVFX, transform.position, Quaternion.Euler(0f, 0f, angle));
+            Destroy(impact, impactEffectDuration);
+        }
+
+        // 🎵 Play SFX immediately with PlayOneShot
+        if (chosenSFX != null && sfxMixerGroup != null)
+        {
+            GameObject tempAudio = new GameObject("TempImpactSFX");
+            tempAudio.transform.position = transform.position;
+
+            AudioSource source = tempAudio.AddComponent<AudioSource>();
+            source.outputAudioMixerGroup = sfxMixerGroup;
+            source.volume = impactVolume;
+            source.spatialBlend = 0f; // 2D sound, set to 1f if you want 3D positioning
+
+            // Play instantly and independently
+            source.PlayOneShot(chosenSFX);
+
+            Destroy(tempAudio, chosenSFX.length + 0.2f); // wait slightly longer
+        }
+    }
+
 
     private void DisableBulletVisualsAndPhysics()
     {
@@ -147,33 +164,12 @@ public class LongRangeBullet : MonoBehaviour
         afterimage.transform.parent = null;
 
         SpriteRenderer sr = afterimage.GetComponent<SpriteRenderer>();
-
         if (sr != null)
         {
             sr.sprite = spriteRenderer.sprite;
             sr.sortingOrder = spriteRenderer.sortingOrder - 1;
             sr.color = Color.Lerp(startColor, endColor, factor);
         }
-    }
-
-    private IEnumerator FadeAndDestroy(GameObject obj, SpriteRenderer sr, float duration, Color originalColor)
-    {
-        float timer = 0f;
-
-        while (timer < duration)
-        {
-            if (sr != null)
-            {
-                float alpha = Mathf.Lerp(1f, 0f, timer / duration);
-                sr.color = new Color(originalColor.r, originalColor.g, originalColor.b, alpha);
-            }
-
-            timer += Time.deltaTime;
-            yield return null;
-        }
-
-        if (obj != null)
-            Destroy(obj);
     }
 
     private IEnumerator DestroyAfterDelay(float delay)
