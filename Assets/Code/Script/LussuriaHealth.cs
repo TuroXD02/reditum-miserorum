@@ -10,19 +10,28 @@ public class LussuriaHealth : MonoBehaviour
     [SerializeField] private float baseArmor = 100f;
     [SerializeField] private float armor;
 
+    [Header("Armor Sprite Settings")]
+    [SerializeField] private Sprite highEffectiveArmorSprite;
+    [SerializeField] private Sprite lowEffectiveArmorSprite;
+    [SerializeField] private Sprite armorZeroSprite;
+
+    [Header("Audio")]
+    [SerializeField] private AudioClip damageSound;
+
+
+    [Header("Death Prefab")]
+    [SerializeField] private GameObject deathPrefab;
+
     public bool IsDestroyed => isDestroyed;
     private bool isDestroyed = false;
     private float previousEffectiveArmor;
     private EnemyMovement enemyMovement;
     public int HitPoints => hitPoints;
 
-    [Header("Armor Sprite Settings")]
-    [SerializeField] private Sprite highEffectiveArmorSprite;
-    [SerializeField] private Sprite lowEffectiveArmorSprite;
-    [SerializeField] private Sprite armorZeroSprite;
-
     private SpriteRenderer sr;
     private Sprite originalSprite;
+
+    private AudioSource audioSource;
 
     private void Start()
     {
@@ -31,6 +40,10 @@ public class LussuriaHealth : MonoBehaviour
         originalSprite = sr != null ? sr.sprite : null;
         armor = baseArmor;
         previousEffectiveArmor = armor;
+
+        audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 0f;
     }
 
     private void Update() => UpdateArmorBasedOnSpeed();
@@ -62,6 +75,10 @@ public class LussuriaHealth : MonoBehaviour
 
     public virtual void TakeDamage(int dmg)
     {
+        if (isDestroyed) return;
+
+        PlayDamageSound();
+
         int finalDamage = Mathf.CeilToInt(dmg * (1f - armor / 100f));
         hitPoints -= finalDamage;
         CheckArmorSprite();
@@ -71,6 +88,9 @@ public class LussuriaHealth : MonoBehaviour
     public virtual void TakeDamageDOTLU(int dmg)
     {
         if (isDestroyed) return;
+
+        PlayDamageSound();
+
         hitPoints -= dmg;
         CheckArmorSprite();
         if (hitPoints <= 0) Kill();
@@ -85,10 +105,29 @@ public class LussuriaHealth : MonoBehaviour
 
     private void Kill()
     {
+        if (isDestroyed) return;
         isDestroyed = true;
+
         EnemySpawner.onEnemyDestroy.Invoke();
         LevelManager.main?.IncreaseCurrency(currencyWorth);
+
+
+
+        if (deathPrefab != null)
+        {
+            Instantiate(deathPrefab, transform.position, transform.rotation);
+        }
+
         Destroy(gameObject);
     }
-}
 
+    private void PlayDamageSound()
+    {
+        if (damageSound != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(damageSound);
+        }
+    }
+
+
+}

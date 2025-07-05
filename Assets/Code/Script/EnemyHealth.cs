@@ -12,10 +12,19 @@ public class EnemyHealth : MonoBehaviour
     [Header("Health Sprite Settings")]
     [SerializeField] private Sprite[] healthSprites;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip damageSound;
+
+
+    [Header("Death Prefab")]
+    [SerializeField] private GameObject deathPrefab;
+
     protected bool isDestroyed = false;
     protected int fullHealth;
     private SpriteRenderer sr;
     private Sprite originalSprite;
+
+    private AudioSource audioSource;
 
     public virtual int HitPoints => hitPoints;
     public bool IsDestroyed => isDestroyed;
@@ -25,23 +34,36 @@ public class EnemyHealth : MonoBehaviour
         fullHealth = hitPoints;
         sr = GetComponent<SpriteRenderer>();
         originalSprite = sr != null ? sr.sprite : null;
+
+        // Setup AudioSource for playing sounds
+        audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 0f; // 2D sound
     }
 
     public virtual void TakeDamage(int dmg)
     {
         if (isDestroyed) return;
+
+        PlayDamageSound();
+
         float damageMultiplier = 1f - (armor / 100f);
         int finalDamage = Mathf.CeilToInt(dmg * damageMultiplier);
         hitPoints -= finalDamage;
         CheckHealthSprite();
+
         if (hitPoints <= 0) EnemyDestroyed();
     }
 
     public virtual void TakeDamageDOT(int dmg)
     {
         if (isDestroyed) return;
+
+        PlayDamageSound();
+
         hitPoints -= dmg;
         CheckHealthSprite();
+
         if (hitPoints <= 0) EnemyDestroyed();
     }
 
@@ -54,9 +76,19 @@ public class EnemyHealth : MonoBehaviour
 
     protected virtual void EnemyDestroyed()
     {
+        if (isDestroyed) return;
         isDestroyed = true;
+
         EnemySpawner.onEnemyDestroy.Invoke();
         LevelManager.main?.IncreaseCurrency(currencyWorth);
+
+       
+
+        if (deathPrefab != null)
+        {
+            Instantiate(deathPrefab, transform.position, transform.rotation);
+        }
+
         Destroy(gameObject);
     }
 
@@ -69,4 +101,14 @@ public class EnemyHealth : MonoBehaviour
         else if (fraction > 0.1f && healthSprites.Length >= 2) sr.sprite = healthSprites[1];
         else if (healthSprites.Length >= 3) sr.sprite = healthSprites[2];
     }
+
+    private void PlayDamageSound()
+    {
+        if (damageSound != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(damageSound);
+        }
+    }
+
+
 }
