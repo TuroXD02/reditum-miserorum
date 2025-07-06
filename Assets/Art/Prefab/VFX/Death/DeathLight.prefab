@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 6209995378077680214}
   - component: {fileID: 1755654916943786960}
   m_Layer: 0
-  m_Name: LazzaroDeath
+  m_Name: DeathLight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -97,7 +97,7 @@ Animator:
   m_GameObject: {fileID: 8096301400012045698}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: e8612ba6dcb497546958e22d46b145c3, type: 2}
+  m_Controller: {fileID: 9100000, guid: 6ebb9ecafd6305f49a9465b924f7c572, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -216,5 +216,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7999896131b79d24c917a44baada9a02, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  deathAudioClip: {fileID: 8300000, guid: f88ed7f4f4c59c54b9144674936abf67, type: 3}
+  deathAudioClip: {fileID: 8300000, guid: f4a68fcc5520f104c8a124c848f6f0d7, type: 3}
   audioVolume: 1

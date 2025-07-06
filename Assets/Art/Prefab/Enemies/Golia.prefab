@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 6440253017690519623}
   - component: {fileID: -5001707411414533551}
   - component: {fileID: -5427468332332960267}
+  - component: {fileID: -8118047307607576703}
   m_Layer: 6
   m_Name: Golia
   m_TagString: Enemy
@@ -150,6 +151,8 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 7641b5cc5d1aa834f8d73f6596272f94, type: 3}
   - {fileID: 21300000, guid: ad66359bb6552e84e97f867637a08904, type: 3}
   - {fileID: 21300000, guid: 42ccce9c64879f24e84186f1df7717fd, type: 3}
+  damageSound: {fileID: 0}
+  deathPrefab: {fileID: 8096301400012045698, guid: c36861e5fb2d4c44e9a102fb1ba9c77c, type: 3}
 --- !u!61 &6440253017690519623
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -220,3 +223,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyID: 2
+--- !u!114 &-8118047307607576703
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 935788788543515107}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f4e377ee17ed1f4e9dae4c00c4caaae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  detectionRadius: 3
+  requiredNearbyCount: 3
+  speedMultiplier: 1.25
+  checkInterval: 0.5
