@@ -130,7 +130,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rb: {fileID: 4301849705960943921}
-  moveSpeed: 3.86
+  moveSpeed: 3
 --- !u!61 &5940905931845667865
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -204,6 +204,8 @@ MonoBehaviour:
   currencyWorth: 80
   armor: 45
   healthSprites: []
+  damageSound: {fileID: 0}
+  deathPrefab: {fileID: 8096301400012045698, guid: 8426402bae0ce974389f6c64031e2252, type: 3}
   speedReductionPercentage: 0.05
   hitSprites:
   - {fileID: 21300000, guid: a473a36fe8bf0b049a38372751f3031d, type: 3}

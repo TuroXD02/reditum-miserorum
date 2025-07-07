@@ -5,44 +5,40 @@ using TMPro;
 public class MusicSettingsMenu : MonoBehaviour
 {
     [Header("UI Elements")]
-    [SerializeField] private Slider volumeSlider;         // Assign via the Inspector.
-    [SerializeField] private TextMeshProUGUI volumeText;    // Optional: displays volume percentage.
-    [SerializeField] private Button closeButton;            // Button to close the settings menu.
+    [SerializeField] private Slider volumeSlider;
+    [SerializeField] private TextMeshProUGUI volumeText;
+    [SerializeField] private Button closeButton;
 
     private void Start()
     {
         if (AudioManager.instance == null)
         {
-            Debug.LogError("MusicSettingsMenu: AudioManager instance not found!");
+            Debug.LogError("MusicSettingsMenu: AudioManager not found!");
             return;
         }
-        
-        // Initialize the slider with the current volume.
-        volumeSlider.value = AudioManager.instance.targetVolume;
-        UpdateVolumeText(volumeSlider.value);
-        
-        // Add a listener to update music volume in real time.
+
+        float savedVolume = PlayerPrefs.GetFloat("MusicVolume", 1f);
+        volumeSlider.value = savedVolume;
+        UpdateVolumeText(savedVolume);
+
         volumeSlider.onValueChanged.AddListener(OnVolumeChanged);
-        
-        // Add a listener to close the menu.
+
         if (closeButton != null)
             closeButton.onClick.AddListener(CloseMenu);
     }
 
     private void OnVolumeChanged(float value)
     {
-        if (AudioManager.instance != null)
-        {
-            AudioManager.instance.SetVolume(value);
-            UpdateVolumeText(value);
-        }
+        AudioManager.instance.SetVolumeLinear(value);
+        UpdateVolumeText(value);
     }
 
     private void UpdateVolumeText(float value)
     {
         if (volumeText != null)
         {
-            volumeText.text = Mathf.RoundToInt(value * 100f) + "%";
+            int percent = Mathf.RoundToInt(value * 100f);
+            volumeText.text = percent + "%";
         }
     }
 

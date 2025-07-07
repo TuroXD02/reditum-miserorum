@@ -162,6 +162,7 @@ MonoBehaviour:
   placedClip: {fileID: 0}
   volumeMin: 0.9
   volumeMax: 1.1
+  sfxMixerGroup: {fileID: -6875069860267149466, guid: 0ecce08098d0f89428ede069e0e13620, type: 2}
 --- !u!82 &7542073577806218659
 AudioSource:
   m_ObjectHideFlags: 0

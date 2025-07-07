@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 6209995378077680214}
   - component: {fileID: 1755654916943786960}
   m_Layer: 0
-  m_Name: DeathLight
+  m_Name: DeathHeavy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -76,7 +76,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -38494004, guid: 8d2bcf6a7c60b31459ff7ef30c6b6992, type: 3}
+  m_Sprite: {fileID: -517064140, guid: 8cf812df90ee3ae4b981b7019df287dd, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -97,7 +97,7 @@ Animator:
   m_GameObject: {fileID: 8096301400012045698}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 6ebb9ecafd6305f49a9465b924f7c572, type: 2}
+  m_Controller: {fileID: 9100000, guid: aac4c01a995a96e418d18a18ae044d84, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -216,5 +216,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7999896131b79d24c917a44baada9a02, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  deathAudioClip: {fileID: 8300000, guid: f4a68fcc5520f104c8a124c848f6f0d7, type: 3}
+  deathAudioClip: {fileID: 8300000, guid: ebbc47a97fb92e44c953aab71b03225e, type: 3}
   audioVolume: 1

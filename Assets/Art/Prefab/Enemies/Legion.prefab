@@ -148,6 +148,8 @@ MonoBehaviour:
   currencyWorth: 10
   armor: 5
   healthSprites: []
+  damageSound: {fileID: 0}
+  deathPrefab: {fileID: 8096301400012045698, guid: c36861e5fb2d4c44e9a102fb1ba9c77c, type: 3}
 --- !u!61 &8361791884548257850
 BoxCollider2D:
   m_ObjectHideFlags: 0

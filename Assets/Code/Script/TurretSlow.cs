@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Audio;
 
 public class TurretSlow : MonoBehaviour
 {
@@ -38,8 +39,8 @@ public class TurretSlow : MonoBehaviour
     [SerializeField] private AudioClip placedClip;
     [SerializeField] private float volumeMin = 0.9f;
     [SerializeField] private float volumeMax = 1.1f;
+    [SerializeField] private AudioMixerGroup sfxMixerGroup;
 
-    // Internal
     private float apsBase;
     private float timeUntilFire;
     private int level = 1;
@@ -52,8 +53,7 @@ public class TurretSlow : MonoBehaviour
         apsBase = aps;
         upgradeButton.onClick.AddListener(Upgrade);
 
-        if (placedClip != null)
-            PlaySound(placedClip);
+        PlaySound(placedClip);
     }
 
     private void Update()
@@ -69,87 +69,68 @@ public class TurretSlow : MonoBehaviour
     private void Freeze()
     {
         RaycastHit2D[] hits = Physics2D.CircleCastAll(transform.position, targetingRange, Vector2.zero, 0f, enemyMask);
-        if (hits.Length > 0)
+        foreach (RaycastHit2D hit in hits)
         {
-            foreach (RaycastHit2D hit in hits)
+            if (hit.transform.GetComponent<SlowImmunity>() != null)
             {
-                if (hit.transform.GetComponent<SlowImmunity>() != null)
+                Debug.Log($"{hit.transform.name} is immune to slow. Skipping slow effect.");
+                continue;
+            }
+
+            EnemyMovement em = hit.transform.GetComponent<EnemyMovement>();
+            if (em != null)
+            {
+                em.UpdateSpeed(0.1f);
+                lastSlowHitTime[em] = Time.time;
+
+                if (!activeResetCoroutines.ContainsKey(em))
                 {
-                    Debug.Log($"{hit.transform.name} is immune to slow. Skipping slow effect.");
-                    continue;
+                    Coroutine resetCoroutine = StartCoroutine(ResetEnemySpeed(em, freezeTime));
+                    activeResetCoroutines.Add(em, resetCoroutine);
                 }
 
-                EnemyMovement em = hit.transform.GetComponent<EnemyMovement>();
-                if (em != null)
+                if (enemyVisualEffectPrefab != null)
                 {
-                    em.UpdateSpeed(0.1f);
-                    lastSlowHitTime[em] = Time.time;
-                    Debug.Log($"[{hit.transform.name}] Slow hit at time {Time.time}");
-
-                    if (!activeResetCoroutines.ContainsKey(em))
-                    {
-                        Coroutine resetCoroutine = StartCoroutine(ResetEnemySpeed(em, freezeTime));
-                        activeResetCoroutines.Add(em, resetCoroutine);
-                    }
-
-                    if (enemyVisualEffectPrefab != null)
-                    {
-                        GameObject effect = Instantiate(enemyVisualEffectPrefab, hit.transform.position, Quaternion.identity, hit.transform);
-                        Destroy(effect, enemyEffectDuration);
-                    }
-
-                    EnemySlowEffect slowEffect = hit.transform.GetComponent<EnemySlowEffect>();
-                    if (slowEffect == null)
-                        slowEffect = hit.transform.gameObject.AddComponent<EnemySlowEffect>();
-
-                    slowEffect.ApplySlowEffect(enemyBlueColor, tintLerpDuration, freezeTime);
+                    GameObject effect = Instantiate(enemyVisualEffectPrefab, hit.transform.position, Quaternion.identity, hit.transform);
+                    Destroy(effect, enemyEffectDuration);
                 }
+
+                EnemySlowEffect slowEffect = em.GetComponent<EnemySlowEffect>() ?? em.gameObject.AddComponent<EnemySlowEffect>();
+                slowEffect.ApplySlowEffect(enemyBlueColor, tintLerpDuration, freezeTime);
             }
         }
 
         if (freezeEffectPrefab != null)
         {
             GameObject turretEffect = Instantiate(freezeEffectPrefab, transform.position, Quaternion.identity, transform);
-            Animator effectAnim = turretEffect.GetComponent<Animator>();
-            if (effectAnim != null && freezeAnimatorController != null)
+            if (turretEffect.TryGetComponent(out Animator effectAnim) && freezeAnimatorController != null)
                 effectAnim.runtimeAnimatorController = freezeAnimatorController;
 
-            float scaleFactor = targetingRange / 2f;
-            turretEffect.transform.localScale = new Vector3(scaleFactor, scaleFactor, 1f);
+            turretEffect.transform.localScale = new Vector3(targetingRange / 2f, targetingRange / 2f, 1f);
             Destroy(turretEffect, freezeEffectDuration);
         }
 
-        if (freezeClip != null)
-            PlaySound(freezeClip);
+        PlaySound(freezeClip);
     }
 
     private IEnumerator ResetEnemySpeed(EnemyMovement enemy, float duration)
     {
-        while (true)
+        while (lastSlowHitTime.ContainsKey(enemy) && Time.time < lastSlowHitTime[enemy] + duration)
         {
-            if (lastSlowHitTime.ContainsKey(enemy))
-            {
-                if (Time.time >= lastSlowHitTime[enemy] + duration)
-                {
-                    enemy.ResetSpeed();
-                    Debug.Log($"{enemy.gameObject.name} speed reset at time {Time.time}");
-                    lastSlowHitTime.Remove(enemy);
-                    break;
-                }
-            }
-            else break;
-
             yield return null;
         }
 
-        if (activeResetCoroutines.ContainsKey(enemy))
-            activeResetCoroutines.Remove(enemy);
+        if (enemy != null)
+        {
+            enemy.ResetSpeed();
+            Debug.Log($"{enemy.name} speed reset at {Time.time}");
+        }
+
+        lastSlowHitTime.Remove(enemy);
+        activeResetCoroutines.Remove(enemy);
     }
 
-    public void OpenUpgradeUI()
-    {
-        upgradeUI.SetActive(true);
-    }
+    public void OpenUpgradeUI() => upgradeUI.SetActive(true);
 
     public void CloseUpgradeUI()
     {
@@ -168,42 +149,31 @@ public class TurretSlow : MonoBehaviour
         UpdateSprite();
         CloseUpgradeUI();
 
-        if (upgradeClip != null)
-            PlaySound(upgradeClip);
-
-        Debug.Log("New APS: " + aps);
-        Debug.Log("New Range: " + targetingRange);
-        Debug.Log("New Cost: " + CalculateCost());
+        PlaySound(upgradeClip);
     }
 
-    public int CalculateCost()
-    {
-        return Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 1.3f));
-    }
+    public int CalculateCost() => Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 1.3f));
 
-    private float CalculateAttackSpeed()
-    {
-        return apsBase * Mathf.Pow(level, 0.1f);
-    }
+    private float CalculateAttackSpeed() => apsBase * Mathf.Pow(level, 0.1f);
 
-    private float CalculateRange()
-    {
-        return targetingRange * Mathf.Pow(level, 0.12f);
-    }
+    private float CalculateRange() => targetingRange * Mathf.Pow(level, 0.12f);
 
     private void UpdateSprite()
     {
         if (turretSpriteRenderer != null && upgradeSprites != null && level - 1 < upgradeSprites.Length)
             turretSpriteRenderer.sprite = upgradeSprites[level - 1];
         else
-            Debug.LogWarning("Sprite or sprite array is missing!");
+            Debug.LogWarning("Sprite or upgradeSprites missing");
     }
 
     private void PlaySound(AudioClip clip)
     {
-        if (audioSource != null && clip != null)
+        if (clip == null) return;
+
+        float volume = Random.Range(volumeMin, volumeMax);
+        if (audioSource != null)
         {
-            float volume = Random.Range(volumeMin, volumeMax);
+            audioSource.outputAudioMixerGroup = sfxMixerGroup;
             audioSource.PlayOneShot(clip, volume);
         }
     }

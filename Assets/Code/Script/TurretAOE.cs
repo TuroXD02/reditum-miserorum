@@ -2,37 +2,37 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Audio;
 
 public class TurretAreaDamage : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private Transform turretRotationPoint;   // Point for turret rotation
-    [SerializeField] private LayerMask enemyMask;             // Mask to detect enemies
-    [SerializeField] private GameObject areaBulletPrefab;     // Prefab for area-damage bullet
-    [SerializeField] private Transform firingPoint;           // Firing position
-    [SerializeField] private GameObject upgradeUI;            // Upgrade UI panel
-    [SerializeField] private Button upgradeButton;            // Button to trigger upgrades
-    [SerializeField] private SpriteRenderer turretSpriteRenderer; // For visual changes
-    [SerializeField] private Sprite[] upgradeSprites;         // Sprites for different levels
+    [SerializeField] private Transform turretRotationPoint;
+    [SerializeField] private LayerMask enemyMask;
+    [SerializeField] private GameObject areaBulletPrefab;
+    [SerializeField] private Transform firingPoint;
+    [SerializeField] private GameObject upgradeUI;
+    [SerializeField] private Button upgradeButton;
+    [SerializeField] private SpriteRenderer turretSpriteRenderer;
+    [SerializeField] private Sprite[] upgradeSprites;
 
     [Header("Attributes")]
-    [SerializeField] public float targetingRange;  // Range for acquiring targets
-    [SerializeField] private float rotationSpeed;   // How quickly the turret rotates
-    [SerializeField] private float bps;             // Bullets per second (firing rate)
-    [SerializeField] public int baseUpgradeCost;     // Base cost to upgrade
-    [SerializeField] private int bulletDamage;        // Base damage per bullet
-    [SerializeField] private float aoeRadius;         // Explosion (AOE) radius for area damage
+    [SerializeField] public float targetingRange;
+    [SerializeField] private float rotationSpeed;
+    [SerializeField] private float bps;
+    [SerializeField] public int baseUpgradeCost;
+    [SerializeField] private int bulletDamage;
+    [SerializeField] private float aoeRadius;
 
     [Header("Audio")]
-    [SerializeField] private AudioSource audioSource; // AudioSource component
-    [SerializeField] private AudioClip shootClip;     // Sound played when turret shoots
-    [SerializeField] private AudioClip placeClip;     // Sound played when turret is placed
-    [SerializeField] private AudioClip upgradeClip;   // Sound played on upgrade
-    [SerializeField] private AudioClip sellClip;      // Sound played when turret is sold
-
-    [Header("Audio Randomization")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip shootClip;
+    [SerializeField] private AudioClip placeClip;
+    [SerializeField] private AudioClip upgradeClip;
+    [SerializeField] private AudioClip sellClip;
     [SerializeField] private float volumeMin = 0.9f;
     [SerializeField] private float volumeMax = 1.1f;
+    [SerializeField] private AudioMixerGroup sfxMixerGroup;
 
     private float bpsBase;
     private float targetingRangeBase;
@@ -51,7 +51,6 @@ public class TurretAreaDamage : MonoBehaviour
         aoeRadiusBase = aoeRadius;
 
         upgradeButton.onClick.AddListener(Upgrade);
-
         UpdateSprite();
         PlaySound(placeClip);
     }
@@ -113,14 +112,11 @@ public class TurretAreaDamage : MonoBehaviour
     {
         Vector3 direction = target.position - transform.position;
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
-        Quaternion targetRotation = Quaternion.Euler(new Vector3(0, 0, angle));
+        Quaternion targetRotation = Quaternion.Euler(0, 0, angle);
         turretRotationPoint.rotation = Quaternion.RotateTowards(turretRotationPoint.rotation, targetRotation, rotationSpeed * Time.deltaTime);
     }
 
-    public void OpenUpgradeUI()
-    {
-        upgradeUI.SetActive(true);
-    }
+    public void OpenUpgradeUI() => upgradeUI.SetActive(true);
 
     public void CloseUpgradeUI()
     {
@@ -146,30 +142,12 @@ public class TurretAreaDamage : MonoBehaviour
         PlaySound(upgradeClip);
     }
 
-    public int CalculateCost()
-    {
-        return Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 1.2f));
-    }
+    public int CalculateCost() => Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 1.2f));
 
-    private float CalculateBPS()
-    {
-        return bpsBase * Mathf.Pow(level, 0.3f);
-    }
-
-    private float CalculateRange()
-    {
-        return targetingRangeBase * Mathf.Pow(level, 0.2f);
-    }
-
-    private int CalculateBulletDamage()
-    {
-        return Mathf.RoundToInt(bulletDamageBase * Mathf.Pow(level, 0.5f));
-    }
-
-    private float CalculateAOERadius()
-    {
-        return aoeRadiusBase * Mathf.Pow(level, 0.3f);
-    }
+    private float CalculateBPS() => bpsBase * Mathf.Pow(level, 0.3f);
+    private float CalculateRange() => targetingRangeBase * Mathf.Pow(level, 0.2f);
+    private int CalculateBulletDamage() => Mathf.RoundToInt(bulletDamageBase * Mathf.Pow(level, 0.5f));
+    private float CalculateAOERadius() => aoeRadiusBase * Mathf.Pow(level, 0.3f);
 
     private void UpdateSprite()
     {
@@ -190,11 +168,11 @@ public class TurretAreaDamage : MonoBehaviour
 
     private void PlaySound(AudioClip clip)
     {
-        if (audioSource != null && clip != null)
-        {
-            float randomVolume = Random.Range(volumeMin, volumeMax);
-            audioSource.PlayOneShot(clip, randomVolume);
-        }
+        if (clip == null || audioSource == null) return;
+
+        float randomVolume = Random.Range(volumeMin, volumeMax);
+        audioSource.outputAudioMixerGroup = sfxMixerGroup;
+        audioSource.PlayOneShot(clip, randomVolume);
     }
 
     private void OnDrawGizmosSelected()

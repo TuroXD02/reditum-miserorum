@@ -1,11 +1,10 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Audio;
 
 public class TurretLongRange : MonoBehaviour
 {
-    // === EXISTING FIELDS ===
     [Header("References")]
     [SerializeField] private Transform turretRotationPoint;
     [SerializeField] private LayerMask enemyMask;
@@ -29,15 +28,16 @@ public class TurretLongRange : MonoBehaviour
     [SerializeField] private AudioClip placeClip;
     [SerializeField] private AudioClip upgradeClip;
     [SerializeField] private AudioClip sellClip;
+    [SerializeField] private AudioMixerGroup audioMixerGroup;
 
     [Header("Audio Randomization")]
     [SerializeField] private float volumeMin = 0.9f;
     [SerializeField] private float volumeMax = 1.1f;
 
     [Header("Shooting Timing")]
-    [SerializeField] private float shootSoundDelay = 0.1f; // Time before actual shot when the sound plays
+    [SerializeField] private float shootSoundDelay = 0.1f;
 
-    // === PRIVATE FIELDS ===
+    // Internal state
     private float bpsBase;
     private float targetingRangeBase;
     private int bulletDamageBase;
@@ -67,7 +67,7 @@ public class TurretLongRange : MonoBehaviour
 
         RotateTowardsTarget();
 
-        if (!CheckTargetIsInRange())
+        if (!IsTargetInRange())
         {
             target = null;
         }
@@ -77,23 +77,30 @@ public class TurretLongRange : MonoBehaviour
 
             if (timeUntilFire >= 1f / bps)
             {
-                StartCoroutine(ShootWithSoundDelay(shootSoundDelay));
+                StartCoroutine(ShootWithDelay(shootSoundDelay));
                 timeUntilFire = 0f;
             }
         }
     }
 
-    private IEnumerator ShootWithSoundDelay(float delay)
+    private IEnumerator ShootWithDelay(float delay)
     {
-        if (shootClip != null)
-            PlaySound(shootClip); // Play immediately (before bullet fires)
+        PlaySound(shootClip); // Play shoot sound immediately
 
         yield return new WaitForSeconds(delay);
 
         GameObject bulletObj = Instantiate(bulletPrefab, firingPoint.position, Quaternion.identity);
         LongRangeBullet bulletScript = bulletObj.GetComponent<LongRangeBullet>();
-        bulletScript.SetTarget(target);
-        bulletScript.SetDamage(bulletDamage);
+
+        if (bulletScript != null)
+        {
+            bulletScript.SetTarget(target);
+            bulletScript.SetDamage(bulletDamage);
+        }
+        else
+        {
+            Debug.LogWarning("Missing LongRangeBullet component on bullet prefab.");
+        }
     }
 
     private void FindTarget()
@@ -105,16 +112,17 @@ public class TurretLongRange : MonoBehaviour
         }
     }
 
-    private bool CheckTargetIsInRange()
+    private bool IsTargetInRange()
     {
         return Vector2.Distance(target.position, transform.position) <= targetingRange;
     }
 
     private void RotateTowardsTarget()
     {
-        float angle = Mathf.Atan2(target.position.y - transform.position.y, target.position.x - transform.position.x) * Mathf.Rad2Deg - 90f;
-        Quaternion targetRotation = Quaternion.Euler(new Vector3(0f, 0f, angle));
-        turretRotationPoint.rotation = Quaternion.RotateTowards(turretRotationPoint.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+        Vector3 direction = target.position - transform.position;
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
+        Quaternion desiredRotation = Quaternion.Euler(0, 0, angle);
+        turretRotationPoint.rotation = Quaternion.RotateTowards(turretRotationPoint.rotation, desiredRotation, rotationSpeed * Time.deltaTime);
     }
 
     public void OpenUpgradeUI()
@@ -130,9 +138,10 @@ public class TurretLongRange : MonoBehaviour
 
     public void Upgrade()
     {
-        if (CalculateCost() > LevelManager.main.currency) return;
+        int cost = CalculateCost();
+        if (cost > LevelManager.main.currency) return;
 
-        LevelManager.main.SpendCurrency(CalculateCost());
+        LevelManager.main.SpendCurrency(cost);
         level++;
 
         bps = CalculateBPS();
@@ -157,7 +166,7 @@ public class TurretLongRange : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Sprite or sprite array is missing!");
+            Debug.LogWarning("Sprite or upgrade sprite array missing or index out of bounds.");
         }
     }
 
@@ -171,6 +180,7 @@ public class TurretLongRange : MonoBehaviour
         if (audioSource != null && clip != null)
         {
             float randomVolume = Random.Range(volumeMin, volumeMax);
+            audioSource.outputAudioMixerGroup = audioMixerGroup;
             audioSource.PlayOneShot(clip, randomVolume);
         }
     }

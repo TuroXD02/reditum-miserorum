@@ -131,7 +131,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rb: {fileID: 323328514385424175}
-  moveSpeed: 1.5
+  moveSpeed: 1.4
 --- !u!114 &948588560539055683
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -152,7 +152,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: ad66359bb6552e84e97f867637a08904, type: 3}
   - {fileID: 21300000, guid: 42ccce9c64879f24e84186f1df7717fd, type: 3}
   damageSound: {fileID: 0}
-  deathPrefab: {fileID: 8096301400012045698, guid: c36861e5fb2d4c44e9a102fb1ba9c77c, type: 3}
+  deathPrefab: {fileID: 8096301400012045698, guid: 1fa5ad6e445a36249b68c3059bea438b, type: 3}
 --- !u!61 &6440253017690519623
 BoxCollider2D:
   m_ObjectHideFlags: 0

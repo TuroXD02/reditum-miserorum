@@ -7,23 +7,22 @@ public class PauseMenu : MonoBehaviour
 {
     [Header("UI Elements")]
     [SerializeField] private GameObject pausePanel;    // The pause menu panel.
-    [SerializeField] private Slider musicSlider;         // Slider for music volume.
-    [SerializeField] private Slider sfxSlider;           // Slider for SFX volume.
-    [SerializeField] private Button resumeButton;        // Button to resume the game.
-    [SerializeField] private Button mainMenuButton;      // Button to go to the main menu.
-    [SerializeField] private Button quitButton;          // Button to quit the game.
-    [SerializeField] private Button pauseButton;         // Extra button to open the pause menu.
+    [SerializeField] private Slider musicSlider;       // Slider for music volume.
+    [SerializeField] private Slider sfxSlider;         // Slider for SFX volume.
+    [SerializeField] private Button resumeButton;      // Button to resume the game.
+    [SerializeField] private Button mainMenuButton;    // Button to go to the main menu.
+    [SerializeField] private Button quitButton;        // Button to quit the game.
+    [SerializeField] private Button pauseButton;       // Extra button to open the pause menu.
 
     [Header("Mixer Settings")]
-    [SerializeField] private AudioMixer audioMixer;        // Reference to your AudioMixer asset.
-    public string musicParameter = "Music";               // Exposed parameter for music.
-    public string sfxParameter = "SFX";                   // Exposed parameter for SFX.
+    [SerializeField] private AudioMixer audioMixer;    // Reference to your AudioMixer asset.
+    public string musicParameter = "Music";            // Exposed parameter for music.
+    public string sfxParameter = "SFX";                // Exposed parameter for SFX.
 
     private bool isPaused = false;
 
     private void Start()
     {
-       
         // Ensure the pause panel starts inactive.
         if (pausePanel != null)
         {
@@ -34,22 +33,24 @@ public class PauseMenu : MonoBehaviour
             Debug.LogWarning("[PauseMenu] pausePanel is not assigned!");
         }
 
-        // Initialize the music slider using the current AudioManager volume.
-        if (AudioManager.instance != null)
+        // Initialize the music slider from AudioMixer.
+        float currentMusicDB;
+        if (audioMixer.GetFloat(musicParameter, out currentMusicDB))
         {
-            musicSlider.value = AudioManager.instance.targetVolume;
+            float musicLinear = Mathf.InverseLerp(-80f, 0f, currentMusicDB);
+            musicSlider.value = Mathf.Sqrt(musicLinear); // inverse of exponential used later
         }
         else
         {
-            Debug.LogWarning("[PauseMenu] AudioManager instance not found!");
+            Debug.LogWarning("[PauseMenu] Could not get Music parameter from AudioMixer.");
         }
-        
+
         // Initialize the SFX slider from AudioMixer.
         float currentSfxDB;
         if (audioMixer.GetFloat(sfxParameter, out currentSfxDB))
         {
             float sfxLinear = Mathf.InverseLerp(-80f, 0f, currentSfxDB);
-            sfxSlider.value = sfxLinear;
+            sfxSlider.value = Mathf.Sqrt(sfxLinear);
         }
         else
         {
@@ -71,7 +72,6 @@ public class PauseMenu : MonoBehaviour
 
     private void Update()
     {
-        // Debug log to verify Update is being called.
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             Debug.Log("[PauseMenu] Escape key detected.");
@@ -107,15 +107,14 @@ public class PauseMenu : MonoBehaviour
 
     public void SetMusicVolume(float value)
     {
-        if (AudioManager.instance != null)
-        {
-            AudioManager.instance.SetVolume(value);
-        }
+        float dB = (value > 0.0001f) ? Mathf.Lerp(-40f, 0f, Mathf.Pow(value, 0.25f)) : -80f;
+        audioMixer.SetFloat(musicParameter, dB);
     }
 
     public void SetSFXVolume(float value)
     {
-        float dB = Mathf.Lerp(-80f, 0f, value);
+        float dB = (value > 0.0001f) ? Mathf.Lerp(-40f, 0f, Mathf.Pow(value, 0.25f)) : -80f;
         audioMixer.SetFloat(sfxParameter, dB);
     }
+
 }

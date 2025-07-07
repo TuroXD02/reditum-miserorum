@@ -130,7 +130,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rb: {fileID: 997277418226607014}
-  moveSpeed: 5
+  moveSpeed: 4
 --- !u!114 &1294645826451896528
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -150,6 +150,8 @@ MonoBehaviour:
   highEffectiveArmorSprite: {fileID: 21300000, guid: eace1d934c434cf4bbf228a873bfb89d, type: 3}
   lowEffectiveArmorSprite: {fileID: 21300000, guid: 185401f378eabcf47912e5d5391ef64f, type: 3}
   armorZeroSprite: {fileID: 0}
+  damageSound: {fileID: 0}
+  deathPrefab: {fileID: 8096301400012045698, guid: c36861e5fb2d4c44e9a102fb1ba9c77c, type: 3}
 --- !u!61 &7899843645807127658
 BoxCollider2D:
   m_ObjectHideFlags: 0

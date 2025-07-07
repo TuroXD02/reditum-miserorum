@@ -739,6 +739,7 @@ MonoBehaviour:
   placeClip: {fileID: 0}
   upgradeClip: {fileID: 0}
   sellClip: {fileID: 0}
+  audioMixerGroup: {fileID: -6875069860267149466, guid: 0ecce08098d0f89428ede069e0e13620, type: 2}
   volumeMin: 0.9
   volumeMax: 1.1
   shootSoundDelay: 0.369

@@ -1,7 +1,7 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Audio;
 
 public class TurretPoison : MonoBehaviour
 {
@@ -28,11 +28,13 @@ public class TurretPoison : MonoBehaviour
     [SerializeField] private AudioClip placeClip;
     [SerializeField] private AudioClip upgradeClip;
     [SerializeField] private AudioClip sellClip;
+    [SerializeField] private AudioMixerGroup mixerGroup;
 
     [Header("Audio Randomization")]
     [SerializeField] private float volumeMin = 0.9f;
     [SerializeField] private float volumeMax = 1.1f;
 
+    // Internal state
     private float bpsBase;
     private float targetingRangeBase;
     private int bulletDamageBase;
@@ -87,8 +89,6 @@ public class TurretPoison : MonoBehaviour
     private void Shoot()
     {
         GameObject bulletObj = Instantiate(poisonBulletPrefab, firingPoint.position, Quaternion.identity);
-
-        // Auto-destroy after 8 seconds
         Destroy(bulletObj, 8f);
 
         PoisonBullet bulletScript = bulletObj.GetComponent<PoisonBullet>();
@@ -136,25 +136,10 @@ public class TurretPoison : MonoBehaviour
         PlaySound(upgradeClip);
     }
 
-    public int CalculateCost()
-    {
-        return Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 0.8f));
-    }
-
-    private float CalculateBPS()
-    {
-        return bpsBase * Mathf.Pow(level, 1f);
-    }
-
-    private float CalculateRange()
-    {
-        return targetingRangeBase * Mathf.Pow(level, 0.55f);
-    }
-
-    private int CalculateBulletDamage()
-    {
-        return Mathf.RoundToInt(bulletDamageBase * Mathf.Pow(level, 1.5f));
-    }
+    public int CalculateCost() => Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 0.8f));
+    private float CalculateBPS() => bpsBase * Mathf.Pow(level, 1f);
+    private float CalculateRange() => targetingRangeBase * Mathf.Pow(level, 0.55f);
+    private int CalculateBulletDamage() => Mathf.RoundToInt(bulletDamageBase * Mathf.Pow(level, 1.5f));
 
     private void UpdateSprite()
     {
@@ -168,10 +153,7 @@ public class TurretPoison : MonoBehaviour
         }
     }
 
-    public void OpenUpgradeUI()
-    {
-        upgradeUI.SetActive(true);
-    }
+    public void OpenUpgradeUI() => upgradeUI.SetActive(true);
 
     public void CloseUpgradeUI()
     {
@@ -179,16 +161,14 @@ public class TurretPoison : MonoBehaviour
         UiManager.main.SetHoveringState(false);
     }
 
-    public void PlaySellSound()
-    {
-        PlaySound(sellClip);
-    }
+    public void PlaySellSound() => PlaySound(sellClip);
 
     private void PlaySound(AudioClip clip)
     {
         if (audioSource != null && clip != null)
         {
             float volume = Random.Range(volumeMin, volumeMax);
+            audioSource.outputAudioMixerGroup = mixerGroup;
             audioSource.PlayOneShot(clip, volume);
         }
     }

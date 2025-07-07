@@ -154,7 +154,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rb: {fileID: 2952451899876673789}
-  moveSpeed: 3
+  moveSpeed: 2
 --- !u!114 &7332091037549669667
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -174,6 +174,8 @@ MonoBehaviour:
   - {fileID: 21300000, guid: ce8525434e8af76499310b2b50cd25e7, type: 3}
   - {fileID: 21300000, guid: 7ea1d6c936f2d6b44884f2d9d5c285db, type: 3}
   - {fileID: 21300000, guid: 4a9d0541f3881784bac6def65cb81139, type: 3}
+  damageSound: {fileID: 0}
+  deathPrefab: {fileID: 8096301400012045698, guid: 1fa5ad6e445a36249b68c3059bea438b, type: 3}
 --- !u!61 &6189314551703861056
 BoxCollider2D:
   m_ObjectHideFlags: 0

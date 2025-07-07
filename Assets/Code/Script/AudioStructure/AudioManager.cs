@@ -1,25 +1,22 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
 
 [RequireComponent(typeof(AudioSource))]
 public class AudioManager : MonoBehaviour
 {
-    public static AudioManager instance;  // Singleton instance
+    public static AudioManager instance;
 
     [Header("Audio Settings")]
-    public AudioClip backgroundMusic;       // Background music clip (assign in Inspector).
-    [Range(0f, 1f)]
-    public float targetVolume = 1f;         // Normal volume level (default 1 = 100%).
-    public float fadeInDuration = 15f;      // Duration of fade-in effect.
-    public float fadeOutDuration = 5f;      // Duration of fade-out effect.
-    public float loseVolume = 0.2f;         // Volume level after losing.
-    public bool playOnAwake = true;         // Should music start on scene load?
+    public AudioClip backgroundMusic;
+    public float fadeInDuration = 15f;
+    public float fadeOutDuration = 5f;
+    public float loseVolume = 0.2f;
+    public bool playOnAwake = true;
 
     [Header("Mixer Settings")]
-    public AudioMixer audioMixer;           // Reference to your AudioMixer asset.
-    public string musicVolumeParameter = "Music"; // Exposed parameter name in the AudioMixer.
+    public AudioMixer audioMixer;
+    public string musicVolumeParameter = "Music";
 
     private AudioSource audioSource;
     private const string VolumePrefKey = "MusicVolume";
@@ -29,7 +26,7 @@ public class AudioManager : MonoBehaviour
         if (instance == null)
         {
             instance = this;
-            DontDestroyOnLoad(gameObject);  // Persist across scenes.
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -44,34 +41,15 @@ public class AudioManager : MonoBehaviour
 
         if (backgroundMusic == null)
         {
-            Debug.LogError("No background music assigned in AudioManager!");
+            Debug.LogError("No background music assigned!");
             return;
         }
 
-        // Check if a volume has been saved; if not, default to full volume (1f).
-        if (!PlayerPrefs.HasKey(VolumePrefKey))
-        {
-            targetVolume = 1f;
-            PlayerPrefs.SetFloat(VolumePrefKey, targetVolume);
-            PlayerPrefs.Save();
-            Debug.Log("No saved volume found, defaulting to 1 (100%).");
-        }
-        else
-        {
-            targetVolume = PlayerPrefs.GetFloat(VolumePrefKey, 1f);
-            targetVolume = Mathf.Clamp01(targetVolume);
-            
-        }
+        float savedVolume = PlayerPrefs.GetFloat(VolumePrefKey, 1f);
+        SetVolumeLinear(savedVolume);
 
         audioSource.clip = backgroundMusic;
         audioSource.loop = true;
-        audioSource.volume = targetVolume;
-
-        if (audioMixer != null)
-        {
-            float dB = (targetVolume > 0) ? Mathf.Log10(targetVolume) * 20 : -80f;
-            audioMixer.SetFloat(musicVolumeParameter, dB);
-        }
 
         if (playOnAwake)
         {
@@ -79,30 +57,33 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Sets the music volume in real time and saves the value.
-    /// </summary>
-    /// <param name="vol">Volume value from 0 to 1.</param>
-    public void SetVolume(float vol)
+    public void SetVolumeLinear(float linearValue)
     {
-        targetVolume = Mathf.Clamp01(vol);
-        if (audioSource != null)
+        linearValue = Mathf.Clamp01(linearValue);
+
+        float dB;
+        if (linearValue <= 0.0001f)
+            dB = -80f;
+        else
         {
-            audioSource.volume = targetVolume;
+            float adjusted = Mathf.Lerp(0.0001f, 1f, linearValue);
+            dB = Mathf.Log10(adjusted) * 20f;
         }
+
         if (audioMixer != null)
         {
-            float dB = (targetVolume > 0) ? Mathf.Log10(targetVolume) * 20 : -80f;
             audioMixer.SetFloat(musicVolumeParameter, dB);
         }
-        PlayerPrefs.SetFloat(VolumePrefKey, targetVolume);
+
+        if (audioSource != null)
+        {
+            audioSource.volume = linearValue;
+        }
+
+        PlayerPrefs.SetFloat(VolumePrefKey, linearValue);
         PlayerPrefs.Save();
-        Debug.Log("Volume set to: " + targetVolume);
     }
 
-    /// <summary>
-    /// Resets the music by fading in from 0 volume.
-    /// </summary>
     public void ResetMusic()
     {
         if (audioSource != null)
@@ -114,72 +95,46 @@ public class AudioManager : MonoBehaviour
             audioSource.Play();
             StartCoroutine(FadeInMusic());
         }
-        else
-        {
-            Debug.LogError("AudioSource is not assigned in AudioManager!");
-        }
     }
 
     private IEnumerator FadeInMusic()
     {
         float elapsed = 0f;
+        float targetVolume = PlayerPrefs.GetFloat(VolumePrefKey, 1f);
+
         while (elapsed < fadeInDuration)
         {
             elapsed += Time.deltaTime;
-            float newVolume = Mathf.Lerp(0f, targetVolume, elapsed / fadeInDuration);
-            audioSource.volume = newVolume;
-            if (audioMixer != null)
-            {
-                float dB = (newVolume > 0) ? Mathf.Log10(newVolume) * 20 : -80f;
-                audioMixer.SetFloat(musicVolumeParameter, dB);
-            }
+            float currentVolume = Mathf.Lerp(0f, targetVolume, elapsed / fadeInDuration);
+            SetVolumeLinear(currentVolume);
             yield return null;
         }
-        audioSource.volume = targetVolume;
-        if (audioMixer != null)
-        {
-            float dB = (targetVolume > 0) ? Mathf.Log10(targetVolume) * 20 : -80f;
-            audioMixer.SetFloat(musicVolumeParameter, dB);
-        }
+
+        SetVolumeLinear(targetVolume);
     }
 
     private IEnumerator FadeOutMusic()
     {
-        float elapsed = 0f;
         float startVolume = audioSource.volume;
+        float elapsed = 0f;
+
         while (elapsed < fadeOutDuration)
         {
             elapsed += Time.unscaledDeltaTime;
-            float newVolume = Mathf.Lerp(startVolume, loseVolume, elapsed / fadeOutDuration);
-            audioSource.volume = newVolume;
-            if (audioMixer != null)
-            {
-                float dB = (newVolume > 0) ? Mathf.Log10(newVolume) * 20 : -80f;
-                audioMixer.SetFloat(musicVolumeParameter, dB);
-            }
+            float currentVolume = Mathf.Lerp(startVolume, loseVolume, elapsed / fadeOutDuration);
+            SetVolumeLinear(currentVolume);
             yield return null;
         }
-        audioSource.volume = loseVolume;
-        if (audioMixer != null)
-        {
-            float dB = (loseVolume > 0) ? Mathf.Log10(loseVolume) * 20 : -80f;
-            audioMixer.SetFloat(musicVolumeParameter, dB);
-        }
+
+        SetVolumeLinear(loseVolume);
     }
 
-    /// <summary>
-    /// Starts the fade-out effect when the game is lost.
-    /// </summary>
     public void FadeToLoseVolume()
     {
         if (audioSource != null)
         {
             StopAllCoroutines();
             StartCoroutine(FadeOutMusic());
-        }
-        else
-        {
-            Debug.LogError("AudioSource is not assigned in AudioManager!");
         }
     }
 }
