@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -26,13 +27,20 @@ public class LevelManager : MonoBehaviour
     [SerializeField] private GameObject armorZeroEffectPrefab;
     [SerializeField] private float effectDuration = 2f;
 
-    // LineRenderer range preview
     [Header("Ghost Range Preview")]
     [SerializeField] private int circleSegments = 60;
     [SerializeField] private Color circleColor = Color.cyan;
     private LineRenderer ghostRangeLR;
 
-    // --- Armor Change Event ---
+    [Header("Armor Change Sounds")]
+    [SerializeField] private AudioClip armorUpSound;
+    [SerializeField] private AudioClip armorDownSound;
+    [SerializeField] private AudioClip armorZeroSound;
+    [SerializeField] private AudioSource armorAudioSourcePrefab;
+    [SerializeField] private int maxSimultaneousArmorSounds = 5;
+
+    private readonly List<AudioSource> activeArmorAudioSources = new();
+
     public delegate void ArmorChangeEvent(Transform target, bool armorUp, bool isArmorZero);
     public static event ArmorChangeEvent OnArmorChanged;
 
@@ -52,8 +60,7 @@ public class LevelManager : MonoBehaviour
     {
         currency = 1000;
         GetComponent<PlayerHealthSystem>().Init();
-        ClearSelectedTurret(); // <-- Ensure no ghost is selected at start
-    
+        ClearSelectedTurret();
     }
 
     private void Update()
@@ -61,8 +68,8 @@ public class LevelManager : MonoBehaviour
         UpdateTurretGhostPosition();
     }
 
-    // Currency
     public void IncreaseCurrency(int amount) => currency += amount;
+
     public bool SpendCurrency(int amount)
     {
         if (amount <= currency)
@@ -72,20 +79,18 @@ public class LevelManager : MonoBehaviour
         }
         return false;
     }
+
     public void AddCurrency(int amount) => IncreaseCurrency(amount);
 
-    // Ghost turret preview
     public void SetSelectedTurret(GameObject turretPrefab)
     {
         ClearSelectedTurret();
-
         if (turretPrefab == null) return;
 
         turretGhost = Instantiate(turretPrefab);
         turretGhost.name = turretPrefab.name + "_Ghost";
         ghostOriginalScale = turretGhost.transform.localScale;
 
-        // semi-transparent
         var sr = turretGhost.GetComponentInChildren<SpriteRenderer>();
         if (sr != null)
         {
@@ -94,7 +99,6 @@ public class LevelManager : MonoBehaviour
             sr.color = c;
         }
 
-        // add LineRenderer for range
         ghostRangeLR = turretGhost.AddComponent<LineRenderer>();
         ghostRangeLR.loop = true;
         ghostRangeLR.positionCount = circleSegments + 1;
@@ -109,34 +113,32 @@ public class LevelManager : MonoBehaviour
     {
         if (turretGhost == null) return;
 
-        // follow mouse
-        Vector3 m = Input.mousePosition; m.z = 10f;
+        Vector3 m = Input.mousePosition;
+        m.z = 10f;
         var cam = Camera.main;
         if (cam == null) return;
+
         Vector3 world = cam.ScreenToWorldPoint(m);
         turretGhost.transform.position = new Vector3(world.x, world.y, 0f);
 
-        // scale ghost
         float resScale = Screen.width / baseResolutionWidth;
         turretGhost.transform.localScale = ghostOriginalScale * resScale * ghostScaleMultiplier * ghostScaleModifier;
 
-        // update range circle
         if (ghostRangeLR != null)
         {
             float range = 0f;
-            // detect range from common turret scripts:
-            if (turretGhost.TryGetComponent<TurretSlow>(out var slow))              range = slow.targetingRange;
-            else if (turretGhost.TryGetComponent<TurretPoison>(out var poison))     range = poison.targetingRange;
-            else if (turretGhost.TryGetComponent<TurretLongRange>(out var lr))      range = lr.targetingRange;
-            else if (turretGhost.TryGetComponent<TurretAreaDamage>(out var area))   range = area.targetingRange;
-            else if (turretGhost.TryGetComponent<TurretArmourBreaker>(out var ab))  range = ab.targetingRange;
-            else if (turretGhost.TryGetComponent<Turret>(out var basic))            range = basic.targetingRange;
-            // draw circle
+            if (turretGhost.TryGetComponent<TurretSlow>(out var slow)) range = slow.targetingRange;
+            else if (turretGhost.TryGetComponent<TurretPoison>(out var poison)) range = poison.targetingRange;
+            else if (turretGhost.TryGetComponent<TurretLongRange>(out var lr)) range = lr.targetingRange;
+            else if (turretGhost.TryGetComponent<TurretAreaDamage>(out var area)) range = area.targetingRange;
+            else if (turretGhost.TryGetComponent<TurretArmourBreaker>(out var ab)) range = ab.targetingRange;
+            else if (turretGhost.TryGetComponent<Turret>(out var basic)) range = basic.targetingRange;
+
             float angleStep = 360f / circleSegments;
             for (int i = 0; i <= circleSegments; i++)
             {
                 float angle = Mathf.Deg2Rad * (i * angleStep);
-                Vector3 pos = new Vector3(Mathf.Cos(angle) * range, Mathf.Sin(angle) * range, 0f) 
+                Vector3 pos = new Vector3(Mathf.Cos(angle) * range, Mathf.Sin(angle) * range, 0f)
                               + turretGhost.transform.position;
                 ghostRangeLR.SetPosition(i, pos);
             }
@@ -151,21 +153,79 @@ public class LevelManager : MonoBehaviour
         ghostRangeLR = null;
     }
 
-    // Armor change handler
     private void HandleArmorChangeEvent(Transform target, bool armorUp, bool isArmorZero)
     {
         if (target == null) return;
+
         GameObject prefab = isArmorZero
             ? armorZeroEffectPrefab
             : (armorUp ? armorIncreasedEffectPrefab : armorReducedEffectPrefab);
+
         if (prefab != null)
         {
             var fx = Instantiate(prefab, target.position, Quaternion.identity, target);
             Destroy(fx, effectDuration);
         }
+
+        AudioClip clipToPlay = null;
+        if (isArmorZero && armorZeroSound != null) clipToPlay = armorZeroSound;
+        else if (armorUp && armorUpSound != null) clipToPlay = armorUpSound;
+        else if (!armorUp && armorDownSound != null) clipToPlay = armorDownSound;
+
+        if (clipToPlay != null && armorAudioSourcePrefab != null)
+        {
+            PlayArmorSound(clipToPlay, target.position);
+        }
     }
 
-    // Called by enemies
+    private void PlayArmorSound(AudioClip clip, Vector3 position)
+    {
+        AudioSource newSource = Instantiate(armorAudioSourcePrefab, position, Quaternion.identity);
+        newSource.spatialBlend = 1f; // Ensure it's 3D
+        newSource.PlayOneShot(clip);
+        activeArmorAudioSources.Add(newSource);
+
+        StartCoroutine(CleanupAudioSourceAfterPlay(newSource, clip.length));
+        AdjustArmorSoundVolumes();
+    }
+
+    private IEnumerator CleanupAudioSourceAfterPlay(AudioSource source, float duration)
+    {
+        yield return new WaitForSeconds(duration);
+        if (activeArmorAudioSources.Contains(source))
+        {
+            activeArmorAudioSources.Remove(source);
+        }
+        if (source != null)
+        {
+            Destroy(source.gameObject);
+        }
+    }
+
+    private void AdjustArmorSoundVolumes()
+    {
+        int count = activeArmorAudioSources.Count;
+
+        for (int i = 0; i < count; i++)
+        {
+            float volumeFactor = Mathf.Lerp(1f, 0.2f, (float)i / count);
+            if (activeArmorAudioSources[i] != null)
+            {
+                activeArmorAudioSources[i].volume = volumeFactor;
+            }
+        }
+
+        if (count > maxSimultaneousArmorSounds)
+        {
+            for (int i = 0; i < count - maxSimultaneousArmorSounds; i++)
+            {
+                if (activeArmorAudioSources[i] != null)
+                    Destroy(activeArmorAudioSources[i].gameObject);
+            }
+            activeArmorAudioSources.RemoveRange(0, count - maxSimultaneousArmorSounds);
+        }
+    }
+
     public void PlayArmorChangeEffect(Transform target, bool armorUp, bool isArmorZero = false)
     {
         OnArmorChanged?.Invoke(target, armorUp, isArmorZero);
