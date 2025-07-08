@@ -177,7 +177,7 @@ MonoBehaviour:
   maxDistanceThreshold: 0.5
   normalImpactSound: {fileID: 8300000, guid: 0dcf964d9333ed448a05cb7567a47905, type: 3}
   maxRangeImpactSound: {fileID: 8300000, guid: 0560ecc807343d24e84759c8254391a6, type: 3}
-  impactVolume: 1
+  impactVolume: 0.7
   sfxMixerGroup: {fileID: -6875069860267149466, guid: 0ecce08098d0f89428ede069e0e13620, type: 2}
   afterimageSpawnInterval: 0.005
   afterimageFadeDuration: 0.05

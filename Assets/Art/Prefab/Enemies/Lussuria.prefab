@@ -143,14 +143,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8712597fcadc5c8439b037f14517509e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hitPoints: 110
+  hitPoints: 188
   currencyWorth: 80
-  baseArmor: 100
+  baseArmor: 98
   armor: 100
   highEffectiveArmorSprite: {fileID: 21300000, guid: eace1d934c434cf4bbf228a873bfb89d, type: 3}
-  lowEffectiveArmorSprite: {fileID: 21300000, guid: 185401f378eabcf47912e5d5391ef64f, type: 3}
-  armorZeroSprite: {fileID: 0}
-  damageSound: {fileID: 0}
+  lowEffectiveArmorSprite: {fileID: 21300000, guid: 1ec24681e7a18af45bc456afcf69c46a, type: 3}
+  armorZeroSprite: {fileID: 21300000, guid: 185401f378eabcf47912e5d5391ef64f, type: 3}
+  damageSound: {fileID: 8300000, guid: feb6a10a0d91bbd43a8a6601a435b0ce, type: 3}
+  damageSoundLowArmor: {fileID: 8300000, guid: 7229bda7bb1c126488c09768c5ca9dce, type: 3}
+  noArmor: {fileID: 8300000, guid: 265a39083c86ad24e8cb067ce72256d5, type: 3}
   deathPrefab: {fileID: 8096301400012045698, guid: c36861e5fb2d4c44e9a102fb1ba9c77c, type: 3}
 --- !u!61 &7899843645807127658
 BoxCollider2D:

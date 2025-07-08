@@ -17,6 +17,8 @@ public class LussuriaHealth : MonoBehaviour
 
     [Header("Audio")]
     [SerializeField] private AudioClip damageSound;
+    [SerializeField] private AudioClip damageSoundLowArmor;
+    [SerializeField] private AudioClip noArmor;
 
 
     [Header("Death Prefab")]
@@ -123,11 +125,22 @@ public class LussuriaHealth : MonoBehaviour
 
     private void PlayDamageSound()
     {
-        if (damageSound != null && audioSource != null)
+        if (audioSource == null) return;
+
+        if (armor > 96f && damageSound != null)
         {
             audioSource.PlayOneShot(damageSound);
         }
+        else if (armor <= 96f && damageSoundLowArmor != null)
+        {
+            audioSource.PlayOneShot(damageSoundLowArmor);
+        }
+        else if (armor <= 50f && noArmor != null)
+        {
+            audioSource.PlayOneShot(noArmor);
+        }
     }
+
 
 
 }

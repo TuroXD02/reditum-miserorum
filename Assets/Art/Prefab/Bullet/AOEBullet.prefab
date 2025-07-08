@@ -167,5 +167,5 @@ MonoBehaviour:
   explosionOutlineColor: {r: 1, g: 1, b: 1, a: 1}
   explosionOutlineWidth: 0.03
   explosionSound: {fileID: 8300000, guid: f88ed7f4f4c59c54b9144674936abf67, type: 3}
-  explosionVolume: 1
+  explosionVolume: 2
   sfxMixerGroup: {fileID: -6875069860267149466, guid: 0ecce08098d0f89428ede069e0e13620, type: 2}
