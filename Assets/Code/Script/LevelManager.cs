@@ -1,7 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Events;
 
 public class LevelManager : MonoBehaviour
 {
@@ -27,20 +25,22 @@ public class LevelManager : MonoBehaviour
     [SerializeField] private GameObject armorZeroEffectPrefab;
     [SerializeField] private float effectDuration = 2f;
 
+    [Header("Armor Change Sounds")]
+    [SerializeField] private AudioClip armorUpSound;
+    [SerializeField] private AudioClip armorDownSound;
+    [SerializeField] private AudioClip armorZeroSound;
+
+    [SerializeField] private GameObject armorAudioSourcePrefab;
+    [SerializeField] private int maxSimultaneousSounds = 5;
+
+    private readonly List<AudioSource> activeArmorSources = new();
+
     [Header("Ghost Range Preview")]
     [SerializeField] private int circleSegments = 60;
     [SerializeField] private Color circleColor = Color.cyan;
     private LineRenderer ghostRangeLR;
 
-    [Header("Armor Change Sounds")]
-    [SerializeField] private AudioClip armorUpSound;
-    [SerializeField] private AudioClip armorDownSound;
-    [SerializeField] private AudioClip armorZeroSound;
-    [SerializeField] private AudioSource armorAudioSourcePrefab;
-    [SerializeField] private int maxSimultaneousArmorSounds = 5;
-
-    private readonly List<AudioSource> activeArmorAudioSources = new();
-
+    // --- Armor Change Event ---
     public delegate void ArmorChangeEvent(Transform target, bool armorUp, bool isArmorZero);
     public static event ArmorChangeEvent OnArmorChanged;
 
@@ -68,8 +68,8 @@ public class LevelManager : MonoBehaviour
         UpdateTurretGhostPosition();
     }
 
+    // Currency
     public void IncreaseCurrency(int amount) => currency += amount;
-
     public bool SpendCurrency(int amount)
     {
         if (amount <= currency)
@@ -82,6 +82,7 @@ public class LevelManager : MonoBehaviour
 
     public void AddCurrency(int amount) => IncreaseCurrency(amount);
 
+    // Ghost turret preview
     public void SetSelectedTurret(GameObject turretPrefab)
     {
         ClearSelectedTurret();
@@ -113,11 +114,9 @@ public class LevelManager : MonoBehaviour
     {
         if (turretGhost == null) return;
 
-        Vector3 m = Input.mousePosition;
-        m.z = 10f;
+        Vector3 m = Input.mousePosition; m.z = 10f;
         var cam = Camera.main;
         if (cam == null) return;
-
         Vector3 world = cam.ScreenToWorldPoint(m);
         turretGhost.transform.position = new Vector3(world.x, world.y, 0f);
 
@@ -127,19 +126,18 @@ public class LevelManager : MonoBehaviour
         if (ghostRangeLR != null)
         {
             float range = 0f;
-            if (turretGhost.TryGetComponent<TurretSlow>(out var slow)) range = slow.targetingRange;
-            else if (turretGhost.TryGetComponent<TurretPoison>(out var poison)) range = poison.targetingRange;
-            else if (turretGhost.TryGetComponent<TurretLongRange>(out var lr)) range = lr.targetingRange;
-            else if (turretGhost.TryGetComponent<TurretAreaDamage>(out var area)) range = area.targetingRange;
-            else if (turretGhost.TryGetComponent<TurretArmourBreaker>(out var ab)) range = ab.targetingRange;
-            else if (turretGhost.TryGetComponent<Turret>(out var basic)) range = basic.targetingRange;
+            if (turretGhost.TryGetComponent<TurretSlow>(out var slow))              range = slow.targetingRange;
+            else if (turretGhost.TryGetComponent<TurretPoison>(out var poison))     range = poison.targetingRange;
+            else if (turretGhost.TryGetComponent<TurretLongRange>(out var lr))      range = lr.targetingRange;
+            else if (turretGhost.TryGetComponent<TurretAreaDamage>(out var area))   range = area.targetingRange;
+            else if (turretGhost.TryGetComponent<TurretArmourBreaker>(out var ab))  range = ab.targetingRange;
+            else if (turretGhost.TryGetComponent<Turret>(out var basic))            range = basic.targetingRange;
 
             float angleStep = 360f / circleSegments;
             for (int i = 0; i <= circleSegments; i++)
             {
                 float angle = Mathf.Deg2Rad * (i * angleStep);
-                Vector3 pos = new Vector3(Mathf.Cos(angle) * range, Mathf.Sin(angle) * range, 0f)
-                              + turretGhost.transform.position;
+                Vector3 pos = new Vector3(Mathf.Cos(angle) * range, Mathf.Sin(angle) * range, 0f) + turretGhost.transform.position;
                 ghostRangeLR.SetPosition(i, pos);
             }
         }
@@ -168,64 +166,57 @@ public class LevelManager : MonoBehaviour
         }
 
         AudioClip clipToPlay = null;
-        if (isArmorZero && armorZeroSound != null) clipToPlay = armorZeroSound;
-        else if (armorUp && armorUpSound != null) clipToPlay = armorUpSound;
-        else if (!armorUp && armorDownSound != null) clipToPlay = armorDownSound;
+        if (isArmorZero && armorZeroSound != null)
+            clipToPlay = armorZeroSound;
+        else if (armorUp && armorUpSound != null)
+            clipToPlay = armorUpSound;
+        else if (!armorUp && armorDownSound != null)
+            clipToPlay = armorDownSound;
 
-        if (clipToPlay != null && armorAudioSourcePrefab != null)
-        {
-            PlayArmorSound(clipToPlay, target.position);
-        }
+        PlayArmorSound(clipToPlay);
     }
 
-    private void PlayArmorSound(AudioClip clip, Vector3 position)
+    private void PlayArmorSound(AudioClip clip)
     {
-        AudioSource newSource = Instantiate(armorAudioSourcePrefab, position, Quaternion.identity);
-        newSource.spatialBlend = 1f; // Ensure it's 3D
-        newSource.PlayOneShot(clip);
-        activeArmorAudioSources.Add(newSource);
-
-        StartCoroutine(CleanupAudioSourceAfterPlay(newSource, clip.length));
-        AdjustArmorSoundVolumes();
-    }
-
-    private IEnumerator CleanupAudioSourceAfterPlay(AudioSource source, float duration)
-    {
-        yield return new WaitForSeconds(duration);
-        if (activeArmorAudioSources.Contains(source))
+        if (clip == null || armorAudioSourcePrefab == null)
         {
-            activeArmorAudioSources.Remove(source);
+            Debug.LogWarning("Missing AudioClip or AudioSource prefab.");
+            return;
         }
-        if (source != null)
+
+        // Clean up old sources
+        activeArmorSources.RemoveAll(src => src == null || !src.isPlaying);
+
+        // Create new instance
+        var audioObj = Instantiate(armorAudioSourcePrefab, transform);
+        var newSource = audioObj.GetComponent<AudioSource>();
+        if (newSource == null)
         {
-            Destroy(source.gameObject);
+            Debug.LogError("Prefab is missing AudioSource component.");
+            Destroy(audioObj);
+            return;
         }
-    }
 
-    private void AdjustArmorSoundVolumes()
-    {
-        int count = activeArmorAudioSources.Count;
+        newSource.clip = clip;
+        newSource.volume = 1f;
+        newSource.Play();
 
+        Destroy(audioObj, clip.length + 0.1f);
+        activeArmorSources.Add(newSource);
+
+        // Lower older ones
+        int count = activeArmorSources.Count;
         for (int i = 0; i < count; i++)
         {
-            float volumeFactor = Mathf.Lerp(1f, 0.2f, (float)i / count);
-            if (activeArmorAudioSources[i] != null)
+            if (activeArmorSources[i] != null)
             {
-                activeArmorAudioSources[i].volume = volumeFactor;
+                float volumeFactor = Mathf.Clamp01(1f - ((float)(count - i) / maxSimultaneousSounds));
+                activeArmorSources[i].volume = volumeFactor;
             }
-        }
-
-        if (count > maxSimultaneousArmorSounds)
-        {
-            for (int i = 0; i < count - maxSimultaneousArmorSounds; i++)
-            {
-                if (activeArmorAudioSources[i] != null)
-                    Destroy(activeArmorAudioSources[i].gameObject);
-            }
-            activeArmorAudioSources.RemoveRange(0, count - maxSimultaneousArmorSounds);
         }
     }
 
+    // External call
     public void PlayArmorChangeEffect(Transform target, bool armorUp, bool isArmorZero = false)
     {
         OnArmorChanged?.Invoke(target, armorUp, isArmorZero);
