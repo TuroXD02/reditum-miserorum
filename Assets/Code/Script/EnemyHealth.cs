@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class EnemyHealth : MonoBehaviour
 {
@@ -14,7 +15,7 @@ public class EnemyHealth : MonoBehaviour
 
     [Header("Audio")]
     [SerializeField] private AudioClip damageSound;
-
+    [SerializeField] private AudioMixerGroup audioMixerGroup; // Optional override
 
     [Header("Death Prefab")]
     [SerializeField] private GameObject deathPrefab;
@@ -35,10 +36,25 @@ public class EnemyHealth : MonoBehaviour
         sr = GetComponent<SpriteRenderer>();
         originalSprite = sr != null ? sr.sprite : null;
 
-        // Setup AudioSource for playing sounds
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
-        audioSource.spatialBlend = 0f; // 2D sound
+        audioSource.spatialBlend = 0f;
+
+        // Automatically assign "SFX" AudioMixerGroup if not set manually
+        if (audioMixerGroup == null)
+        {
+            AudioMixer mixer = Resources.Load<AudioMixer>("Audio/MainMixer"); // Make sure path and name match
+            if (mixer != null)
+            {
+                AudioMixerGroup[] groups = mixer.FindMatchingGroups("SFX");
+                if (groups.Length > 0)
+                {
+                    audioMixerGroup = groups[0];
+                }
+            }
+        }
+
+        audioSource.outputAudioMixerGroup = audioMixerGroup;
     }
 
     public virtual void TakeDamage(int dmg)
@@ -82,8 +98,6 @@ public class EnemyHealth : MonoBehaviour
         EnemySpawner.onEnemyDestroy.Invoke();
         LevelManager.main?.IncreaseCurrency(currencyWorth);
 
-       
-
         if (deathPrefab != null)
         {
             Instantiate(deathPrefab, transform.position, transform.rotation);
@@ -109,6 +123,4 @@ public class EnemyHealth : MonoBehaviour
             audioSource.PlayOneShot(damageSound);
         }
     }
-
-
 }

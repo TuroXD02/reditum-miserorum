@@ -20,17 +20,25 @@ public class AreaDamageBullet : MonoBehaviour
     [SerializeField] private float explosionOutlineWidth = 0.03f;
     private const int circleSegments = 50;
     private LineRenderer explosionLR;
-    private bool hasExploded = false;
 
     [Header("Explosion Sound")]
     [SerializeField] private AudioClip explosionSound;
     [SerializeField] private float explosionVolume = 1f;
     [SerializeField] private AudioMixerGroup sfxMixerGroup;
 
-    // Setters
+    [Header("Lifetime")]
+    [SerializeField] private float selfDestructTime = 6f;
+
+    private bool hasExploded = false;
+
     public void SetDamage(int dmg) => damage = dmg;
     public void SetAOERadius(float radius) => aoeRadius = radius;
     public void SetTarget(Transform targetTransform) => target = targetTransform;
+
+    private void Start()
+    {
+        StartCoroutine(SelfDestructTimer());
+    }
 
     private void FixedUpdate()
     {
@@ -41,20 +49,25 @@ public class AreaDamageBullet : MonoBehaviour
             Vector2 direction = (target.position - transform.position).normalized;
             GetComponent<Rigidbody2D>().velocity = direction * bulletSpeed;
         }
-        else
-        {
-            Destroy(gameObject);
-        }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (hasExploded) return;
+
+        if (collision.collider.GetComponent<EnemyHealth>() != null)
+        {
+            Explode();
+        }
+    }
+
+    private void Explode()
+    {
         hasExploded = true;
 
         PlayExplosionSound();
 
-        // Apply AoE Damage
+        // AoE damage
         Collider2D[] hitColliders = Physics2D.OverlapCircleAll(transform.position, aoeRadius);
         foreach (Collider2D col in hitColliders)
         {
@@ -64,16 +77,46 @@ public class AreaDamageBullet : MonoBehaviour
             }
         }
 
-        // Disable bullet visuals and physics
+        // Disable visuals/physics
         if (TryGetComponent(out SpriteRenderer sr)) sr.enabled = false;
         if (TryGetComponent(out Collider2D col2D)) col2D.enabled = false;
         if (TryGetComponent(out Rigidbody2D rb)) rb.velocity = Vector2.zero;
 
-        // Create explosion outline and animation
         CreateExplosionOutline();
-        CreateExplosionAnimation(sr);
+        CreateExplosionAnimation();
 
         StartCoroutine(EndExplosionEffect());
+    }
+
+    private IEnumerator EndExplosionEffect()
+    {
+        float waitTime = explosionDuration * 0.05f;
+        yield return new WaitForSeconds(waitTime);
+
+        float fadeDuration = explosionDuration - waitTime;
+        float elapsed = 0f;
+        Color initialColor = explosionLR.startColor;
+
+        while (elapsed < fadeDuration)
+        {
+            float t = elapsed / fadeDuration;
+            Color faded = new Color(initialColor.r, initialColor.g, initialColor.b, Mathf.Lerp(initialColor.a, 0f, t));
+            explosionLR.startColor = faded;
+            explosionLR.endColor = faded;
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        Destroy(gameObject);
+    }
+
+    private IEnumerator SelfDestructTimer()
+    {
+        yield return new WaitForSeconds(selfDestructTime);
+        if (!hasExploded)
+        {
+            Explode();
+        }
     }
 
     private void PlayExplosionSound()
@@ -114,45 +157,19 @@ public class AreaDamageBullet : MonoBehaviour
         }
     }
 
-    private void CreateExplosionAnimation(SpriteRenderer originalSR)
+    private void CreateExplosionAnimation()
     {
         GameObject explosionObj = new GameObject("ExplosionAnimation");
         explosionObj.transform.parent = transform;
         explosionObj.transform.localPosition = Vector3.zero;
 
-        var explosionSR = explosionObj.AddComponent<SpriteRenderer>();
-        if (originalSR != null)
-        {
-            explosionSR.sortingLayerName = originalSR.sortingLayerName;
-            explosionSR.sortingOrder = originalSR.sortingOrder + 1;
-        }
+        var sr = explosionObj.AddComponent<SpriteRenderer>();
+        sr.sortingOrder = 99;
 
         var animator = explosionObj.AddComponent<Animator>();
         animator.runtimeAnimatorController = explosionAnimatorController;
-    }
 
-    private IEnumerator EndExplosionEffect()
-    {
-        float waitTime = explosionDuration * 0.05f;
-        yield return new WaitForSeconds(waitTime);
-
-        float fadeDuration = explosionDuration - waitTime;
-        float elapsed = 0f;
-        Color initialColor = explosionLR.startColor;
-
-        while (elapsed < fadeDuration)
-        {
-            float t = elapsed / fadeDuration;
-            Color newColor = new Color(initialColor.r, initialColor.g, initialColor.b, Mathf.Lerp(initialColor.a, 0f, t));
-            explosionLR.startColor = newColor;
-            explosionLR.endColor = newColor;
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-
-        explosionLR.startColor = explosionLR.endColor = new Color(initialColor.r, initialColor.g, initialColor.b, 0f);
-        yield return new WaitForSeconds(0.05f);
-        Destroy(gameObject);
+        Destroy(explosionObj, explosionDuration);
     }
 
     private void OnDrawGizmosSelected()

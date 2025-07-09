@@ -1,10 +1,12 @@
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class DeathEffect : MonoBehaviour
 {
     [Header("Audio Settings")]
     [SerializeField] private AudioClip deathAudioClip;
     [SerializeField, Range(0f, 1f)] private float audioVolume = 1f;
+    [SerializeField] private AudioMixerGroup audioMixerGroup; // Optional override
 
     private AudioSource audioSource;
     private Animator animator;
@@ -15,6 +17,23 @@ public class DeathEffect : MonoBehaviour
         audioSource.clip = deathAudioClip;
         audioSource.volume = audioVolume;
         audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 0f; // 2D audio
+
+        // If no mixer group assigned, try to find and assign "SFX" group
+        if (audioMixerGroup == null)
+        {
+            AudioMixer mixer = Resources.Load<AudioMixer>("Audio/MainMixer"); // Must be placed in Resources/Audio
+            if (mixer != null)
+            {
+                AudioMixerGroup[] groups = mixer.FindMatchingGroups("SFX");
+                if (groups.Length > 0)
+                {
+                    audioMixerGroup = groups[0];
+                }
+            }
+        }
+
+        audioSource.outputAudioMixerGroup = audioMixerGroup;
 
         animator = GetComponent<Animator>();
     }
@@ -34,7 +53,6 @@ public class DeathEffect : MonoBehaviour
         float audioLength = deathAudioClip != null ? deathAudioClip.length : 0f;
         float animationLength = animator != null ? GetAnimationLength() : 0f;
 
-        // Wait for the longer duration between audio and animation before destroying
         float destroyDelay = Mathf.Max(audioLength, animationLength);
         Destroy(gameObject, destroyDelay);
     }
@@ -48,6 +66,7 @@ public class DeathEffect : MonoBehaviour
         {
             return clipInfo[0].clip.length;
         }
+
         return 0f;
     }
 }

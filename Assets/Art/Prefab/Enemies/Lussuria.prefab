@@ -153,6 +153,7 @@ MonoBehaviour:
   damageSound: {fileID: 8300000, guid: feb6a10a0d91bbd43a8a6601a435b0ce, type: 3}
   damageSoundLowArmor: {fileID: 8300000, guid: 7229bda7bb1c126488c09768c5ca9dce, type: 3}
   noArmor: {fileID: 8300000, guid: 265a39083c86ad24e8cb067ce72256d5, type: 3}
+  audioMixerGroup: {fileID: -6875069860267149466, guid: 0ecce08098d0f89428ede069e0e13620, type: 2}
   deathPrefab: {fileID: 8096301400012045698, guid: c36861e5fb2d4c44e9a102fb1ba9c77c, type: 3}
 --- !u!61 &7899843645807127658
 BoxCollider2D:

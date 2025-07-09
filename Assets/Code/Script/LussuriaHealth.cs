@@ -19,6 +19,8 @@ public class LussuriaHealth : MonoBehaviour
     [SerializeField] private AudioClip damageSound;
     [SerializeField] private AudioClip damageSoundLowArmor;
     [SerializeField] private AudioClip noArmor;
+    [SerializeField] private UnityEngine.Audio.AudioMixerGroup audioMixerGroup;
+
 
 
     [Header("Death Prefab")]
@@ -42,6 +44,7 @@ public class LussuriaHealth : MonoBehaviour
         originalSprite = sr != null ? sr.sprite : null;
         armor = baseArmor;
         previousEffectiveArmor = armor;
+        audioSource.outputAudioMixerGroup = audioMixerGroup;
 
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;

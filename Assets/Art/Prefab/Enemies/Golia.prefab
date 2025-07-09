@@ -152,6 +152,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: ad66359bb6552e84e97f867637a08904, type: 3}
   - {fileID: 21300000, guid: 42ccce9c64879f24e84186f1df7717fd, type: 3}
   damageSound: {fileID: 0}
+  audioMixerGroup: {fileID: -6875069860267149466, guid: 0ecce08098d0f89428ede069e0e13620, type: 2}
   deathPrefab: {fileID: 8096301400012045698, guid: 1fa5ad6e445a36249b68c3059bea438b, type: 3}
 --- !u!61 &6440253017690519623
 BoxCollider2D:

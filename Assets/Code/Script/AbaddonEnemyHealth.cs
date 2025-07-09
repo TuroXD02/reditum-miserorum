@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class AbaddonEnemyHealth : EnemyHealth
 {
@@ -15,8 +16,13 @@ public class AbaddonEnemyHealth : EnemyHealth
     private int hitsPerSpriteSwitch = 20;
     private int totalHitCount = 0;
 
+    [Header("Audio Settings")]
+    [SerializeField] private AudioClip damageSound;
+    [SerializeField] private AudioMixerGroup audioMixerGroup;
+
     private EnemyMovement enemyMovement;
     private SpriteRenderer spriteRenderer;
+    private AudioSource audioSource;
 
     private void Start()
     {
@@ -31,26 +37,34 @@ public class AbaddonEnemyHealth : EnemyHealth
         {
             Debug.LogError($"{gameObject.name}: Missing SpriteRenderer component!");
         }
+
+        // Setup AudioSource
+        audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 0f;
+        audioSource.outputAudioMixerGroup = audioMixerGroup;
     }
 
     public override void TakeDamage(int dmg)
     {
         if (isDestroyed) return;
-        
-        // First, reduce speed.
+
+        // Play damage sound
+        PlayDamageSound();
+
+        // Reduce speed
         if (enemyMovement != null)
         {
             float oldSpeed = enemyMovement.moveSpeed;
             float newSpeed = oldSpeed * (1f - speedReductionPercentage);
             enemyMovement.UpdateSpeed(newSpeed);
-            
         }
-        
-        // Increment hit count and check for sprite switch.
+
+        // Handle sprite switching
         totalHitCount++;
         CheckAndSwitchSprite();
-        
-        // Then, apply damage.
+
+        // Apply damage
         base.TakeDamage(dmg);
     }
 
@@ -58,7 +72,10 @@ public class AbaddonEnemyHealth : EnemyHealth
     {
         if (isDestroyed) return;
 
-        // First, reduce speed.
+        // Play damage sound
+        PlayDamageSound();
+
+        // Reduce speed
         if (enemyMovement != null)
         {
             float oldSpeed = enemyMovement.moveSpeed;
@@ -66,19 +83,15 @@ public class AbaddonEnemyHealth : EnemyHealth
             enemyMovement.UpdateSpeed(newSpeed);
             Debug.Log($"{gameObject.name} speed reduced from {oldSpeed} to {newSpeed} due to DOT damage.");
         }
-        
-        // Increment hit count and check for sprite switch.
+
+        // Handle sprite switching
         totalHitCount++;
         CheckAndSwitchSprite();
-        
-        // Then, apply DOT damage.
+
+        // Apply DOT damage
         base.TakeDamageDOT(dmg);
     }
 
-    /// <summary>
-    /// Checks if the total hit count is a multiple of hitsPerSpriteSwitch.
-    /// If so, cycles to the next sprite in the hitSprites array.
-    /// </summary>
     private void CheckAndSwitchSprite()
     {
         if (hitSprites != null && hitSprites.Length > 0 && totalHitCount % hitsPerSpriteSwitch == 0)
@@ -89,6 +102,14 @@ public class AbaddonEnemyHealth : EnemyHealth
                 spriteRenderer.sprite = hitSprites[spriteIndex];
                 Debug.Log($"{gameObject.name} switched sprite to index {spriteIndex} after {totalHitCount} hits.");
             }
+        }
+    }
+
+    private void PlayDamageSound()
+    {
+        if (audioSource != null && damageSound != null)
+        {
+            audioSource.PlayOneShot(damageSound);
         }
     }
 }
