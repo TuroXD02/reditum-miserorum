@@ -2,12 +2,12 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Audio;
 
-[RequireComponent(typeof(AudioSource))]
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager instance;
 
     [Header("Audio Settings")]
+    [SerializeField] private AudioSource assignedAudioSource;  // ← Drag the actual AudioSource here
     public AudioClip backgroundMusic;
     public float fadeInDuration = 15f;
     public float fadeOutDuration = 5f;
@@ -33,15 +33,21 @@ public class AudioManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+
+        // Use assigned source if available
+        audioSource = assignedAudioSource != null ? assignedAudioSource : GetComponent<AudioSource>();
+
+        if (audioSource == null)
+        {
+            Debug.LogError("[AudioManager] No AudioSource assigned or found.");
+        }
     }
 
     private void Start()
     {
-        audioSource = GetComponent<AudioSource>();
-
-        if (backgroundMusic == null)
+        if (backgroundMusic == null || audioSource == null)
         {
-            Debug.LogError("No background music assigned!");
+            Debug.LogWarning("[AudioManager] Missing AudioSource or backgroundMusic.");
             return;
         }
 
@@ -61,14 +67,7 @@ public class AudioManager : MonoBehaviour
     {
         linearValue = Mathf.Clamp01(linearValue);
 
-        float dB;
-        if (linearValue <= 0.0001f)
-            dB = -80f;
-        else
-        {
-            float adjusted = Mathf.Lerp(0.0001f, 1f, linearValue);
-            dB = Mathf.Log10(adjusted) * 20f;
-        }
+        float dB = (linearValue <= 0.0001f) ? -80f : Mathf.Log10(Mathf.Lerp(0.0001f, 1f, linearValue)) * 20f;
 
         if (audioMixer != null)
         {

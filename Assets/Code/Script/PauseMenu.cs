@@ -1,71 +1,61 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
 
 public class PauseMenu : MonoBehaviour
 {
     [Header("UI Elements")]
-    [SerializeField] private GameObject pausePanel;    // The pause menu panel.
-    [SerializeField] private Slider musicSlider;       // Slider for music volume.
-    [SerializeField] private Slider sfxSlider;         // Slider for SFX volume.
-    [SerializeField] private Button resumeButton;      // Button to resume the game.
-    [SerializeField] private Button mainMenuButton;    // Button to go to the main menu.
-    [SerializeField] private Button quitButton;        // Button to quit the game.
-    [SerializeField] private Button pauseButton;       // Extra button to open the pause menu.
-
-    [Header("Mixer Settings")]
-    [SerializeField] private AudioMixer audioMixer;    // Reference to your AudioMixer asset.
-    public string musicParameter = "Music";            // Exposed parameter for music.
-    public string sfxParameter = "SFX";                // Exposed parameter for SFX.
+    [SerializeField] private GameObject pausePanel;
+    [SerializeField] private Slider musicSlider;
+    [SerializeField] private Slider sfxSlider;
+    [SerializeField] private Button resumeButton;
+    [SerializeField] private Button mainMenuButton;
+    [SerializeField] private Button quitButton;
+    [SerializeField] private Button pauseButton;
 
     private bool isPaused = false;
 
     private void Start()
     {
-        // Ensure the pause panel starts inactive.
         if (pausePanel != null)
-        {
             pausePanel.SetActive(false);
-        }
-        else
+
+        InitializeSliders();
+        AddListeners();
+    }
+
+    private void InitializeSliders()
+    {
+        if (musicSlider != null)
         {
-            Debug.LogWarning("[PauseMenu] pausePanel is not assigned!");
+            float savedMusic = PlayerPrefs.GetFloat("MusicVolume", 1f);
+            musicSlider.value = savedMusic;
         }
 
-        // Initialize the music slider from AudioMixer.
-        float currentMusicDB;
-        if (audioMixer.GetFloat(musicParameter, out currentMusicDB))
+        if (sfxSlider != null)
         {
-            float musicLinear = Mathf.InverseLerp(-80f, 0f, currentMusicDB);
-            musicSlider.value = Mathf.Sqrt(musicLinear); // inverse of exponential used later
+            float savedSFX = PlayerPrefs.GetFloat("SFXVolume", 1f);
+            sfxSlider.value = savedSFX;
         }
-        else
-        {
-            Debug.LogWarning("[PauseMenu] Could not get Music parameter from AudioMixer.");
-        }
+    }
 
-        // Initialize the SFX slider from AudioMixer.
-        float currentSfxDB;
-        if (audioMixer.GetFloat(sfxParameter, out currentSfxDB))
-        {
-            float sfxLinear = Mathf.InverseLerp(-80f, 0f, currentSfxDB);
-            sfxSlider.value = Mathf.Sqrt(sfxLinear);
-        }
-        else
-        {
-            Debug.LogWarning("[PauseMenu] Could not get SFX parameter from AudioMixer.");
-        }
+    private void AddListeners()
+    {
+        if (musicSlider != null)
+            musicSlider.onValueChanged.AddListener(SetMusicVolume);
 
-        // Add listeners.
-        musicSlider.onValueChanged.AddListener(SetMusicVolume);
-        sfxSlider.onValueChanged.AddListener(SetSFXVolume);
+        if (sfxSlider != null)
+            sfxSlider.onValueChanged.AddListener(SetSFXVolume);
+
         if (resumeButton != null)
             resumeButton.onClick.AddListener(ResumeGame);
+
         if (mainMenuButton != null)
             mainMenuButton.onClick.AddListener(() => SceneManager.LoadScene("MainMenu"));
+
         if (quitButton != null)
             quitButton.onClick.AddListener(Application.Quit);
+
         if (pauseButton != null)
             pauseButton.onClick.AddListener(TogglePauseMenu);
     }
@@ -74,7 +64,6 @@ public class PauseMenu : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            Debug.Log("[PauseMenu] Escape key detected.");
             TogglePauseMenu();
         }
     }
@@ -83,38 +72,32 @@ public class PauseMenu : MonoBehaviour
     {
         isPaused = !isPaused;
         if (pausePanel != null)
-        {
             pausePanel.SetActive(isPaused);
-        }
-        else
-        {
-            Debug.LogWarning("[PauseMenu] pausePanel is not assigned!");
-        }
+
         Time.timeScale = isPaused ? 0f : 1f;
-        Debug.Log("[PauseMenu] Pause toggled. isPaused = " + isPaused);
     }
 
     public void ResumeGame()
     {
         isPaused = false;
         if (pausePanel != null)
-        {
             pausePanel.SetActive(false);
-        }
+
         Time.timeScale = 1f;
-        Debug.Log("[PauseMenu] Game resumed.");
     }
 
     public void SetMusicVolume(float value)
     {
-        float dB = (value > 0.0001f) ? Mathf.Lerp(-40f, 0f, Mathf.Pow(value, 0.25f)) : -80f;
-        audioMixer.SetFloat(musicParameter, dB);
+        if (AudioManager.instance != null)
+        {
+            AudioManager.instance.SetVolumeLinear(value);
+        }
     }
 
     public void SetSFXVolume(float value)
     {
-        float dB = (value > 0.0001f) ? Mathf.Lerp(-40f, 0f, Mathf.Pow(value, 0.25f)) : -80f;
-        audioMixer.SetFloat(sfxParameter, dB);
+        // Optional: handle SFX via a central SFXManager or exposed AudioMixer parameter.
+        PlayerPrefs.SetFloat("SFXVolume", Mathf.Clamp01(value));
+        PlayerPrefs.Save();
     }
-
 }
