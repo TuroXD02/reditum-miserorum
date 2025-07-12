@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.Audio;
 
 public class PauseMenu : MonoBehaviour
 {
@@ -12,6 +13,11 @@ public class PauseMenu : MonoBehaviour
     [SerializeField] private Button mainMenuButton;
     [SerializeField] private Button quitButton;
     [SerializeField] private Button pauseButton;
+
+    [Header("Audio Mixer")]
+    [SerializeField] private AudioMixer audioMixer;
+    [SerializeField] private string musicVolumeParam = "Music";
+    [SerializeField] private string sfxVolumeParam = "SFX";
 
     private bool isPaused = false;
 
@@ -26,17 +32,14 @@ public class PauseMenu : MonoBehaviour
 
     private void InitializeSliders()
     {
-        if (musicSlider != null)
-        {
-            float savedMusic = PlayerPrefs.GetFloat("MusicVolume", 1f);
-            musicSlider.value = savedMusic;
-        }
+        float savedMusic = PlayerPrefs.GetFloat("MusicVolume", 1f);
+        float savedSFX = PlayerPrefs.GetFloat("SFXVolume", 1f);
 
-        if (sfxSlider != null)
-        {
-            float savedSFX = PlayerPrefs.GetFloat("SFXVolume", 1f);
-            sfxSlider.value = savedSFX;
-        }
+        musicSlider.value = savedMusic;
+        sfxSlider.value = savedSFX;
+
+        SetMusicVolume(savedMusic);
+        SetSFXVolume(savedSFX);
     }
 
     private void AddListeners()
@@ -88,15 +91,29 @@ public class PauseMenu : MonoBehaviour
 
     public void SetMusicVolume(float value)
     {
+        if (audioMixer != null)
+        {
+            float dB = Mathf.Approximately(value, 0f) ? -80f : Mathf.Log10(value) * 20f;
+            audioMixer.SetFloat(musicVolumeParam, dB);
+        }
+
+        PlayerPrefs.SetFloat("MusicVolume", Mathf.Clamp01(value));
+        PlayerPrefs.Save();
+
         if (AudioManager.instance != null)
         {
-            AudioManager.instance.SetVolumeLinear(value);
+            AudioManager.instance.SetVolumeLinear(value); // Keep background music in sync
         }
     }
 
     public void SetSFXVolume(float value)
     {
-        // Optional: handle SFX via a central SFXManager or exposed AudioMixer parameter.
+        if (audioMixer != null)
+        {
+            float dB = Mathf.Approximately(value, 0f) ? -80f : Mathf.Log10(value) * 20f;
+            audioMixer.SetFloat(sfxVolumeParam, dB);
+        }
+
         PlayerPrefs.SetFloat("SFXVolume", Mathf.Clamp01(value));
         PlayerPrefs.Save();
     }
