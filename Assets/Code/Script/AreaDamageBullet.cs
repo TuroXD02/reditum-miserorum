@@ -30,32 +30,34 @@ public class AreaDamageBullet : MonoBehaviour
     [SerializeField] private float selfDestructTime = 6f;
 
     private bool hasExploded = false;
+    private Rigidbody2D rb;
 
+    // Setup methods
     public void SetDamage(int dmg) => damage = dmg;
     public void SetAOERadius(float radius) => aoeRadius = radius;
     public void SetTarget(Transform targetTransform) => target = targetTransform;
 
     private void Start()
     {
+        rb = GetComponent<Rigidbody2D>();
         StartCoroutine(SelfDestructTimer());
     }
 
     private void FixedUpdate()
     {
-        if (hasExploded) return;
+        if (hasExploded || target == null) return;
 
-        if (target != null)
-        {
-            Vector2 direction = (target.position - transform.position).normalized;
-            GetComponent<Rigidbody2D>().velocity = direction * bulletSpeed;
-        }
+        Vector2 direction = (target.position - transform.position).normalized;
+        rb.velocity = direction * bulletSpeed;
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (hasExploded) return;
 
-        if (collision.collider.GetComponent<EnemyHealth>() != null)
+        // Check for valid targets
+        if (collision.collider.GetComponent<EnemyHealth>() != null ||
+            collision.collider.GetComponent<LussuriaHealth>() != null)
         {
             Explode();
         }
@@ -65,23 +67,28 @@ public class AreaDamageBullet : MonoBehaviour
     {
         hasExploded = true;
 
-        PlayExplosionSound();
-
-        // AoE damage
-        Collider2D[] hitColliders = Physics2D.OverlapCircleAll(transform.position, aoeRadius);
-        foreach (Collider2D col in hitColliders)
-        {
-            if (col.TryGetComponent(out EnemyHealth enemyHealth))
-            {
-                enemyHealth.TakeDamage(damage);
-            }
-        }
+        // Stop motion
+        rb.velocity = Vector2.zero;
 
         // Disable visuals/physics
         if (TryGetComponent(out SpriteRenderer sr)) sr.enabled = false;
         if (TryGetComponent(out Collider2D col2D)) col2D.enabled = false;
-        if (TryGetComponent(out Rigidbody2D rb)) rb.velocity = Vector2.zero;
 
+        // Damage logic
+        Collider2D[] hitColliders = Physics2D.OverlapCircleAll(transform.position, aoeRadius);
+        foreach (Collider2D col in hitColliders)
+        {
+            if (col.TryGetComponent(out EnemyHealth enemy))
+            {
+                enemy.TakeDamage(damage);
+            }
+            else if (col.TryGetComponent(out LussuriaHealth lussuria))
+            {
+                lussuria.TakeDamage(damage);
+            }
+        }
+
+        PlayExplosionSound();
         CreateExplosionOutline();
         CreateExplosionAnimation();
 
