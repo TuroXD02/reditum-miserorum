@@ -41,6 +41,7 @@ public class TurretSlow : MonoBehaviour
     [SerializeField] private float volumeMax = 1.1f;
     [SerializeField] private AudioMixerGroup sfxMixerGroup;
 
+    public int GetLevel() => level;
     private float apsBase;
     private float timeUntilFire;
     private int level = 1;

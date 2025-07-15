@@ -37,6 +37,7 @@ public class TurretLongRange : MonoBehaviour
     [Header("Shooting Timing")]
     [SerializeField] private float shootSoundDelay = 0.1f;
 
+    public int GetLevel() => level;
     // Internal state
     private float bpsBase;
     private float targetingRangeBase;

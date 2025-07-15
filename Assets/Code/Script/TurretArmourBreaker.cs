@@ -34,6 +34,7 @@ public class TurretArmourBreaker : MonoBehaviour
     [SerializeField] private float volumeMin = 0.9f;
     [SerializeField] private float volumeMax = 1.1f;
 
+    public int GetLevel() => level;
     // Base stats for upgrade calculations
     private float baseAttacksPerSecond;
     private float baseTargetingRange;

@@ -8,30 +8,86 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private Rigidbody2D rb;
 
     [Header("Attributes")]
-    [SerializeField] public float moveSpeed;         // Current speed.
-    private float baseSpeed;                         // The original speed.
-    public float BaseSpeed { get { return baseSpeed; } } // Exposed base speed.
+    [SerializeField] public float moveSpeed = 1f; // Use Inspector value as initial base speed
+    private float baseSpeed;
+    public float BaseSpeed => baseSpeed;
 
-    private Transform target;                        // Current waypoint target.
-    private int pathIndex = 0;                       // Index in LevelManager.main.path.
+    private Transform target;
+    private int pathIndex = 0;
+
+    private float zeroSpeedTimer = 0f;
+    private const float resetDelay = 5f;
+
+    private void Awake()
+    {
+        if (rb == null)
+            rb = GetComponent<Rigidbody2D>();
+
+        baseSpeed = moveSpeed; // Cache the true original speed for reset purposes
+    }
 
     private void Start()
     {
-        baseSpeed = moveSpeed;
-        target = LevelManager.main.path[pathIndex];  
+        if (LevelManager.main == null || LevelManager.main.path == null || LevelManager.main.path.Length == 0)
+        {
+            Debug.LogError("LevelManager or path not initialized!");
+            enabled = false;
+            return;
+        }
+
+        target = LevelManager.main.path[pathIndex];
+
+        if (baseSpeed <= 0f)
+        {
+            Debug.LogWarning($"{gameObject.name} spawned with baseSpeed = {baseSpeed}. Enemy may not move.");
+        }
     }
 
     private void Update()
     {
-        // If the enemy is near the current waypoint, advance to the next.
-        if (Vector2.Distance(target.position, transform.position) <= 0.2f)
+        HandleSpeedResetTimer();
+        HandleWaypointProgression();
+    }
+
+    private void FixedUpdate()
+    {
+        if (moveSpeed > 0f)
+        {
+            Vector2 direction = (GetRandomizedTarget() - transform.position).normalized;
+            rb.velocity = direction * moveSpeed;
+        }
+        else
+        {
+            rb.velocity = Vector2.zero;
+        }
+    }
+
+    private void HandleSpeedResetTimer()
+    {
+        if (moveSpeed == 0f)
+        {
+            zeroSpeedTimer += Time.deltaTime;
+            if (zeroSpeedTimer >= resetDelay)
+            {
+                ResetSpeed();
+                zeroSpeedTimer = 0f;
+            }
+        }
+        else
+        {
+            zeroSpeedTimer = 0f;
+        }
+    }
+
+    private void HandleWaypointProgression()
+    {
+        if (Vector2.Distance(transform.position, target.position) <= 0.2f)
         {
             pathIndex++;
-            if (pathIndex == LevelManager.main.path.Length)
+            if (pathIndex >= LevelManager.main.path.Length)
             {
-                EnemySpawner.onEnemyDestroy.Invoke();
+                EnemySpawner.onEnemyDestroy?.Invoke();
                 Destroy(gameObject);
-                return;
             }
             else
             {
@@ -40,15 +96,12 @@ public class EnemyMovement : MonoBehaviour
         }
     }
 
-    private void FixedUpdate()
+    private Vector3 GetRandomizedTarget()
     {
-        // Slight randomization for natural movement.
-        Vector3 RandomTarget = new Vector3(
+        return new Vector3(
             Random.Range(target.position.x - 0.1f, target.position.x + 0.1f),
             Random.Range(target.position.y - 0.2f, target.position.y + 0.2f),
             0);
-        Vector2 direction = (RandomTarget - transform.position).normalized;
-        rb.velocity = direction * moveSpeed;
     }
 
     public void UpdateSpeed(float newSpeed)
@@ -58,40 +111,34 @@ public class EnemyMovement : MonoBehaviour
 
     public void ResetSpeed()
     {
-        moveSpeed = baseSpeed;
+        moveSpeed = baseSpeed; // Resets to the original speed of the prefab
     }
 
-    /// <summary>
-    /// Returns the enemy's progress along the path as a float.
-    /// For example, if the enemy has completed 2 segments and is 50% through the 3rd,
-    /// this method returns 2.5.
-    /// </summary>
     public float GetProgress()
     {
-        if (pathIndex == 0)
-            return 0f;
+        if (pathIndex == 0) return 0f;
+
         Transform prev = LevelManager.main.path[pathIndex - 1];
         Transform curr = LevelManager.main.path[pathIndex];
+
         float segmentLength = Vector2.Distance(prev.position, curr.position);
         float distTravelled = Vector2.Distance(prev.position, transform.position);
-        float fraction = (segmentLength > 0) ? Mathf.Clamp01(distTravelled / segmentLength) : 0f;
+        float fraction = (segmentLength > 0f) ? Mathf.Clamp01(distTravelled / segmentLength) : 0f;
+
         return (pathIndex - 1) + fraction;
     }
 
-    /// <summary>
-    /// Sets the enemy's position along the path based on the provided progress value.
-    /// 'progress' should be between 0 and (number of segments).
-    /// For example, a progress value of 2.5 will place the enemy halfway between waypoint 2 and 3.
-    /// </summary>
     public void SetProgress(float progress)
     {
         int index = Mathf.FloorToInt(progress);
         float fraction = progress - index;
-        // Clamp index to ensure valid range. There must be at least two waypoints.
+
         index = Mathf.Clamp(index, 0, LevelManager.main.path.Length - 2);
         pathIndex = index + 1;
+
         Transform prev = LevelManager.main.path[index];
         Transform curr = LevelManager.main.path[pathIndex];
+
         transform.position = Vector3.Lerp(prev.position, curr.position, fraction);
         target = curr;
     }

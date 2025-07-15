@@ -21,20 +21,17 @@ public class LussuriaHealth : MonoBehaviour
     [SerializeField] private AudioClip noArmor;
     [SerializeField] private UnityEngine.Audio.AudioMixerGroup audioMixerGroup;
 
-
-
     [Header("Death Prefab")]
     [SerializeField] private GameObject deathPrefab;
 
     public bool IsDestroyed => isDestroyed;
+    public int HitPoints => hitPoints;
+
     private bool isDestroyed = false;
     private float previousEffectiveArmor;
     private EnemyMovement enemyMovement;
-    public int HitPoints => hitPoints;
-
     private SpriteRenderer sr;
     private Sprite originalSprite;
-
     private AudioSource audioSource;
 
     private void Start()
@@ -44,22 +41,34 @@ public class LussuriaHealth : MonoBehaviour
         originalSprite = sr != null ? sr.sprite : null;
         armor = baseArmor;
         previousEffectiveArmor = armor;
-        audioSource.outputAudioMixerGroup = audioMixerGroup;
 
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
         audioSource.spatialBlend = 0f;
+
+        if (audioMixerGroup != null)
+        {
+            audioSource.outputAudioMixerGroup = audioMixerGroup;
+        }
+        else
+        {
+            Debug.LogWarning($"{gameObject.name}: AudioMixerGroup not assigned in Inspector.");
+        }
     }
 
-    private void Update() => UpdateArmorBasedOnSpeed();
+    private void Update()
+    {
+        UpdateArmorBasedOnSpeed();
+    }
 
     private void UpdateArmorBasedOnSpeed()
     {
         if (enemyMovement == null) return;
+
         float speedRatio = enemyMovement.BaseSpeed > 0 ? enemyMovement.moveSpeed / enemyMovement.BaseSpeed : 0f;
         float effectiveArmor = Mathf.Clamp(baseArmor * speedRatio, 0, baseArmor);
 
-        if (effectiveArmor != previousEffectiveArmor)
+        if (!Mathf.Approximately(effectiveArmor, previousEffectiveArmor))
         {
             bool armorIncreased = effectiveArmor > previousEffectiveArmor;
             LevelManager.main?.PlayArmorChangeEffect(transform, armorIncreased, !armorIncreased && effectiveArmor == 0);
@@ -72,10 +81,23 @@ public class LussuriaHealth : MonoBehaviour
     private void CheckArmorSprite()
     {
         if (sr == null) return;
-        if (armor <= 0 && armorZeroSprite != null) sr.sprite = armorZeroSprite;
-        else if (armor <= 50 && lowEffectiveArmorSprite != null) sr.sprite = lowEffectiveArmorSprite;
-        else if (highEffectiveArmorSprite != null) sr.sprite = highEffectiveArmorSprite;
-        else sr.sprite = originalSprite;
+
+        if (armor <= 0 && armorZeroSprite != null)
+        {
+            sr.sprite = armorZeroSprite;
+        }
+        else if (armor <= 50 && lowEffectiveArmorSprite != null)
+        {
+            sr.sprite = lowEffectiveArmorSprite;
+        }
+        else if (highEffectiveArmorSprite != null)
+        {
+            sr.sprite = highEffectiveArmorSprite;
+        }
+        else if (originalSprite != null)
+        {
+            sr.sprite = originalSprite;
+        }
     }
 
     public virtual void TakeDamage(int dmg)
@@ -86,8 +108,13 @@ public class LussuriaHealth : MonoBehaviour
 
         int finalDamage = Mathf.CeilToInt(dmg * (1f - armor / 100f));
         hitPoints -= finalDamage;
+
         CheckArmorSprite();
-        if (hitPoints <= 0) Kill();
+
+        if (hitPoints <= 0)
+        {
+            Kill();
+        }
     }
 
     public virtual void TakeDamageDOTLU(int dmg)
@@ -97,13 +124,19 @@ public class LussuriaHealth : MonoBehaviour
         PlayDamageSound();
 
         hitPoints -= dmg;
+
         CheckArmorSprite();
-        if (hitPoints <= 0) Kill();
+
+        if (hitPoints <= 0)
+        {
+            Kill();
+        }
     }
 
     public virtual void ReduceArmour(int amount)
     {
         if (baseArmor <= 0) return;
+
         baseArmor = Mathf.Max(baseArmor - amount, 0);
         UpdateArmorBasedOnSpeed();
     }
@@ -111,12 +144,11 @@ public class LussuriaHealth : MonoBehaviour
     private void Kill()
     {
         if (isDestroyed) return;
+
         isDestroyed = true;
 
-        EnemySpawner.onEnemyDestroy.Invoke();
+        EnemySpawner.onEnemyDestroy?.Invoke();
         LevelManager.main?.IncreaseCurrency(currencyWorth);
-
-
 
         if (deathPrefab != null)
         {
@@ -134,7 +166,7 @@ public class LussuriaHealth : MonoBehaviour
         {
             audioSource.PlayOneShot(damageSound);
         }
-        else if (armor <= 96f && damageSoundLowArmor != null)
+        else if (armor <= 96f && armor > 50f && damageSoundLowArmor != null)
         {
             audioSource.PlayOneShot(damageSoundLowArmor);
         }
@@ -143,7 +175,4 @@ public class LussuriaHealth : MonoBehaviour
             audioSource.PlayOneShot(noArmor);
         }
     }
-
-
-
 }

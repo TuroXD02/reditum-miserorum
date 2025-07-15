@@ -34,6 +34,7 @@ public class TurretAreaDamage : MonoBehaviour
     [SerializeField] private float volumeMax = 1.1f;
     [SerializeField] private AudioMixerGroup sfxMixerGroup;
 
+    public int GetLevel() => level;
     private float bpsBase;
     private float targetingRangeBase;
     private int bulletDamageBase;

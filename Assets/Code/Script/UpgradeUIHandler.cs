@@ -11,6 +11,7 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
     [SerializeField] private TextMeshProUGUI costUI;
     [SerializeField] private TextMeshProUGUI sellGainUI;
     [SerializeField] private Button sellButton;
+    [SerializeField] private TextMeshProUGUI levelUI;
 
     public bool mouse_over = false;
 
@@ -23,9 +24,9 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
     [Header("Targeting Range Circle")]
     public int circleSegments = 50;
-    public float lineSpacing = 0.5f; // 5cm spacing
-    public Color innerCircleColor = Color.white;
-    public Color outerCircleColor = new Color(1f, 0.3f, 0.3f); // light red
+    public float lineSpacing = 0.5f;
+    public Color innerCircleColor = new Color(1f, 0.8f, 0.8f);
+    public Color outerCircleColor = new Color(1f, 0.3f, 0.3f);
     public Material lineMaterial;
 
     private List<LineRenderer> ringRenderers = new List<LineRenderer>();
@@ -52,46 +53,55 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
     {
         int upgradeCost = 0;
         int sellGain = 0;
+        int level = 1;
 
         if (turretInstance != null)
         {
             upgradeCost = turretInstance.CalculateCost();
             sellGain = Mathf.RoundToInt(turretInstance.baseUpgradeCost * 0.5f);
+            level = turretInstance.GetLevel();
         }
         else if (turretSlowInstance != null)
         {
             upgradeCost = turretSlowInstance.CalculateCost();
             sellGain = Mathf.RoundToInt(turretSlowInstance.baseUpgradeCost * 0.5f);
+            level = turretSlowInstance.GetLevel();
         }
         else if (TurretLongRangeInstance != null)
         {
             upgradeCost = TurretLongRangeInstance.CalculateCost();
             sellGain = Mathf.RoundToInt(TurretLongRangeInstance.baseUpgradeCost * 0.5f);
+            level = TurretLongRangeInstance.GetLevel();
         }
         else if (TurretPoisonInstance != null)
         {
             upgradeCost = TurretPoisonInstance.CalculateCost();
             sellGain = Mathf.RoundToInt(TurretPoisonInstance.baseUpgradeCost * 0.5f);
+            level = TurretPoisonInstance.GetLevel();
         }
         else if (TurretAreaDamageInstance != null)
         {
             upgradeCost = TurretAreaDamageInstance.CalculateCost();
             sellGain = Mathf.RoundToInt(TurretAreaDamageInstance.baseUpgradeCost * 0.5f);
+            level = TurretAreaDamageInstance.GetLevel();
         }
         else if (TurretArmourBreakerInstance != null)
         {
             upgradeCost = TurretArmourBreakerInstance.CalculateCost();
             sellGain = Mathf.RoundToInt(TurretArmourBreakerInstance.baseUpgradeCost * 0.5f);
+            level = TurretArmourBreakerInstance.GetLevel();
         }
         else
         {
             costUI.text = "No selected tower";
             sellGainUI.text = "";
+            levelUI.text = "";
             return;
         }
 
         costUI.text = upgradeCost.ToString();
         sellGainUI.text = sellGain.ToString();
+        levelUI.text = $"Level {level}";
     }
 
     public void OnPointerEnter(PointerEventData eventData)
@@ -214,17 +224,12 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
         if (targetingRange <= 0f) return;
 
         ClearRings();
-
         Vector3 center = GetTurretPosition();
         int ringIndex = 0;
 
-        // Inner rings
         for (float radius = lineSpacing; radius < targetingRange; radius += lineSpacing)
-        {
             DrawRing(radius, center, innerCircleColor, ++ringIndex);
-        }
 
-        // Outer ring at exact range
         DrawRing(targetingRange, center, outerCircleColor, ++ringIndex);
     }
 

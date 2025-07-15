@@ -32,6 +32,7 @@ public class Turret : MonoBehaviour
     [SerializeField] private float volumeMin = 0.9f;
     [SerializeField] private float volumeMax = 1.1f;
 
+    public int GetLevel() => level;
     private float bpsBase;
     private float targetingRangeBase;
     private int bulletDamageBase;
