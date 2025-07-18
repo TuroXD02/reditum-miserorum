@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections;
 using System.Collections.Generic;
 
 public class DisplaySettingsMenu : MonoBehaviour
@@ -8,8 +9,14 @@ public class DisplaySettingsMenu : MonoBehaviour
     [Header("UI Elements")]
     [SerializeField] private Button settingsButton;
     [SerializeField] private GameObject settingsPanel;
+
+    [Header("Dropdowns")]
+    [SerializeField] private TMP_Dropdown displayModeDropdown;
     [SerializeField] private TMP_Dropdown resolutionDropdown;
-    [SerializeField] private TMP_Dropdown screenModeDropdown;
+
+    [Header("Dropdown Resize Settings")]
+    [SerializeField] private int maxVisibleItems = 5;
+    [SerializeField] private float itemHeight = 60f;
 
     private Resolution[] availableResolutions;
 
@@ -21,11 +28,20 @@ public class DisplaySettingsMenu : MonoBehaviour
         if (settingsButton != null)
             settingsButton.onClick.AddListener(ToggleSettingsPanel);
 
-        PopulateResolutionDropdown();
-        PopulateScreenModeDropdown();
+        SetupResolutionDropdown();
+        SetupDisplayModeDropdown();
 
-        resolutionDropdown.onValueChanged.AddListener(SetResolution);
-        screenModeDropdown.onValueChanged.AddListener(SetScreenMode);
+        if (displayModeDropdown != null)
+        {
+            displayModeDropdown.onValueChanged.AddListener(OnDisplayModeChanged);
+            displayModeDropdown.onValueChanged.AddListener(_ => StartCoroutine(ResizeDropdownNextFrame(displayModeDropdown)));
+        }
+
+        if (resolutionDropdown != null)
+        {
+            resolutionDropdown.onValueChanged.AddListener(OnResolutionChanged);
+            resolutionDropdown.onValueChanged.AddListener(_ => StartCoroutine(ResizeDropdownNextFrame(resolutionDropdown)));
+        }
     }
 
     private void ToggleSettingsPanel()
@@ -34,18 +50,20 @@ public class DisplaySettingsMenu : MonoBehaviour
             settingsPanel.SetActive(!settingsPanel.activeSelf);
     }
 
-    private void PopulateResolutionDropdown()
+    private void SetupResolutionDropdown()
     {
+        if (resolutionDropdown == null) return;
+
         availableResolutions = Screen.resolutions;
         resolutionDropdown.ClearOptions();
 
-        List<string> options = new List<string>();
+        List<string> resolutionOptions = new List<string>();
         int currentResolutionIndex = 0;
 
         for (int i = 0; i < availableResolutions.Length; i++)
         {
-            string option = $"{availableResolutions[i].width} x {availableResolutions[i].height}";
-            options.Add(option);
+            string resLabel = $"{availableResolutions[i].width} x {availableResolutions[i].height}";
+            resolutionOptions.Add(resLabel);
 
             if (availableResolutions[i].width == Screen.currentResolution.width &&
                 availableResolutions[i].height == Screen.currentResolution.height)
@@ -54,35 +72,101 @@ public class DisplaySettingsMenu : MonoBehaviour
             }
         }
 
-        resolutionDropdown.AddOptions(options);
+        resolutionDropdown.AddOptions(resolutionOptions);
         resolutionDropdown.value = currentResolutionIndex;
         resolutionDropdown.RefreshShownValue();
     }
 
-    private void PopulateScreenModeDropdown()
+    private void SetupDisplayModeDropdown()
     {
-        screenModeDropdown.ClearOptions();
-        List<string> options = new List<string> { "Fullscreen", "Windowed" };
+        if (displayModeDropdown == null) return;
 
-        screenModeDropdown.AddOptions(options);
-        screenModeDropdown.value = Screen.fullScreen ? 0 : 1;
-        screenModeDropdown.RefreshShownValue();
+        displayModeDropdown.ClearOptions();
+
+        List<string> modes = new List<string>
+        {
+            "Windowed",
+            "Borderless Windowed",
+            "Fullscreen"
+        };
+
+        displayModeDropdown.AddOptions(modes);
+
+        FullScreenMode currentMode = Screen.fullScreenMode;
+        int selectedIndex = 0;
+
+        if (currentMode == FullScreenMode.Windowed)
+            selectedIndex = 0;
+        else if (currentMode == FullScreenMode.MaximizedWindow)
+            selectedIndex = 1;
+        else if (currentMode == FullScreenMode.FullScreenWindow)
+            selectedIndex = 2;
+
+        displayModeDropdown.value = selectedIndex;
+        displayModeDropdown.RefreshShownValue();
     }
 
-    private void SetResolution(int index)
+    private void OnDisplayModeChanged(int index)
     {
-        Resolution res = availableResolutions[index];
-        Screen.SetResolution(res.width, res.height, Screen.fullScreen);
+        FullScreenMode selectedMode = FullScreenMode.Windowed;
+
+        switch (index)
+        {
+            case 0: selectedMode = FullScreenMode.Windowed; break;
+            case 1: selectedMode = FullScreenMode.MaximizedWindow; break;
+            case 2: selectedMode = FullScreenMode.FullScreenWindow; break;
+        }
+
+        ApplyDisplaySettings(resolutionDropdown.value, selectedMode);
     }
 
-    private void SetScreenMode(int index)
+    private void OnResolutionChanged(int index)
     {
-        bool fullScreen = index == 0;
-        Screen.fullScreen = fullScreen;
-
-        // Also reapply resolution to ensure mode change takes effect
-        int resIndex = resolutionDropdown.value;
-        Resolution res = availableResolutions[resIndex];
-        Screen.SetResolution(res.width, res.height, fullScreen);
+        FullScreenMode currentMode = Screen.fullScreenMode;
+        ApplyDisplaySettings(index, currentMode);
     }
+
+    private void ApplyDisplaySettings(int resolutionIndex, FullScreenMode mode)
+    {
+        if (resolutionIndex < 0 || resolutionIndex >= availableResolutions.Length)
+            return;
+
+        Resolution res = availableResolutions[resolutionIndex];
+        Screen.SetResolution(res.width, res.height, mode);
+    }
+
+    // Resize the dropdown list after it's shown
+    private IEnumerator ResizeDropdownNextFrame(TMP_Dropdown dropdown)
+    {
+        yield return new WaitForEndOfFrame();
+
+        GameObject dropdownList = GameObject.Find("Dropdown List");
+        if (dropdownList == null) yield break;
+
+        ScrollRect scrollRect = dropdownList.GetComponentInChildren<ScrollRect>();
+        if (scrollRect == null) yield break;
+
+        RectTransform listRect = dropdownList.GetComponent<RectTransform>();
+        RectTransform viewportRect = scrollRect.viewport;
+        RectTransform contentRect = scrollRect.content;
+
+        int optionCount = dropdown.options.Count;
+        int visibleCount = Mathf.Min(optionCount, maxVisibleItems);
+
+        float fullItemHeight = itemHeight;
+        float newViewportHeight = visibleCount * fullItemHeight;
+        float totalContentHeight = optionCount * fullItemHeight;
+        float outerHeight = newViewportHeight + 30f; // ADD 30 to fix clipping
+
+        if (viewportRect != null)
+            viewportRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, newViewportHeight);
+
+        if (contentRect != null)
+            contentRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, totalContentHeight);
+
+        if (listRect != null)
+            listRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, outerHeight);
+    }
+
+
 }
