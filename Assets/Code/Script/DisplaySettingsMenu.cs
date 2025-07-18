@@ -10,6 +10,9 @@ public class DisplaySettingsMenu : MonoBehaviour
     [SerializeField] private Button settingsButton;
     [SerializeField] private GameObject settingsPanel;
 
+    [Header("Escape / Back")]
+    [SerializeField] private Button backButton; // <-- ADD THIS IN THE INSPECTOR
+
     [Header("Dropdowns")]
     [SerializeField] private TMP_Dropdown displayModeDropdown;
     [SerializeField] private TMP_Dropdown resolutionDropdown;
@@ -28,6 +31,9 @@ public class DisplaySettingsMenu : MonoBehaviour
         if (settingsButton != null)
             settingsButton.onClick.AddListener(ToggleSettingsPanel);
 
+        if (backButton != null)
+            backButton.onClick.AddListener(CloseSettingsPanel);
+
         SetupResolutionDropdown();
         SetupDisplayModeDropdown();
 
@@ -44,10 +50,24 @@ public class DisplaySettingsMenu : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape) && settingsPanel.activeSelf)
+        {
+            CloseSettingsPanel();
+        }
+    }
+
     private void ToggleSettingsPanel()
     {
         if (settingsPanel != null)
             settingsPanel.SetActive(!settingsPanel.activeSelf);
+    }
+
+    private void CloseSettingsPanel()
+    {
+        if (settingsPanel != null)
+            settingsPanel.SetActive(false);
     }
 
     private void SetupResolutionDropdown()
@@ -135,7 +155,6 @@ public class DisplaySettingsMenu : MonoBehaviour
         Screen.SetResolution(res.width, res.height, mode);
     }
 
-    // Resize the dropdown list after it's shown
     private IEnumerator ResizeDropdownNextFrame(TMP_Dropdown dropdown)
     {
         yield return new WaitForEndOfFrame();
@@ -156,7 +175,7 @@ public class DisplaySettingsMenu : MonoBehaviour
         float fullItemHeight = itemHeight;
         float newViewportHeight = visibleCount * fullItemHeight;
         float totalContentHeight = optionCount * fullItemHeight;
-        float outerHeight = newViewportHeight + 30f; // ADD 30 to fix clipping
+        float outerHeight = newViewportHeight + 30f; // Fix for cut item
 
         if (viewportRect != null)
             viewportRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, newViewportHeight);
@@ -167,6 +186,4 @@ public class DisplaySettingsMenu : MonoBehaviour
         if (listRect != null)
             listRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, outerHeight);
     }
-
-
 }

@@ -10,6 +10,7 @@ public class PauseMenu : MonoBehaviour
     [SerializeField] private Slider musicSlider;
     [SerializeField] private Slider sfxSlider;
     [SerializeField] private Button resumeButton;
+    [SerializeField] private Button extraResumeButton; // NEW: second resume button
     [SerializeField] private Button mainMenuButton;
     [SerializeField] private Button quitButton;
     [SerializeField] private Button pauseButton;
@@ -30,16 +31,30 @@ public class PauseMenu : MonoBehaviour
         AddListeners();
     }
 
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            TogglePauseMenu();
+        }
+    }
+
     private void InitializeSliders()
     {
         float savedMusic = PlayerPrefs.GetFloat("MusicVolume", 1f);
         float savedSFX = PlayerPrefs.GetFloat("SFXVolume", 1f);
 
-        musicSlider.value = savedMusic;
-        sfxSlider.value = savedSFX;
+        if (musicSlider != null)
+        {
+            musicSlider.value = savedMusic;
+            SetMusicVolume(savedMusic);
+        }
 
-        SetMusicVolume(savedMusic);
-        SetSFXVolume(savedSFX);
+        if (sfxSlider != null)
+        {
+            sfxSlider.value = savedSFX;
+            SetSFXVolume(savedSFX);
+        }
     }
 
     private void AddListeners()
@@ -53,6 +68,9 @@ public class PauseMenu : MonoBehaviour
         if (resumeButton != null)
             resumeButton.onClick.AddListener(ResumeGame);
 
+        if (extraResumeButton != null) // Hook up second resume button
+            extraResumeButton.onClick.AddListener(ResumeGame);
+
         if (mainMenuButton != null)
             mainMenuButton.onClick.AddListener(() => SceneManager.LoadScene("MainMenu"));
 
@@ -63,17 +81,10 @@ public class PauseMenu : MonoBehaviour
             pauseButton.onClick.AddListener(TogglePauseMenu);
     }
 
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            TogglePauseMenu();
-        }
-    }
-
     public void TogglePauseMenu()
     {
         isPaused = !isPaused;
+
         if (pausePanel != null)
             pausePanel.SetActive(isPaused);
 
@@ -83,6 +94,7 @@ public class PauseMenu : MonoBehaviour
     public void ResumeGame()
     {
         isPaused = false;
+
         if (pausePanel != null)
             pausePanel.SetActive(false);
 
@@ -101,9 +113,7 @@ public class PauseMenu : MonoBehaviour
         PlayerPrefs.Save();
 
         if (AudioManager.instance != null)
-        {
-            AudioManager.instance.SetVolumeLinear(value); // Keep background music in sync
-        }
+            AudioManager.instance.SetVolumeLinear(value);
     }
 
     public void SetSFXVolume(float value)
