@@ -5,62 +5,78 @@ using UnityEngine.UI;
 public class BestiaryUIManager : MonoBehaviour
 {
     [Header("UI Panels")]
-    [SerializeField] private GameObject bestiaryMenuPanel;        // The main Bestiary UI panel
-    [SerializeField] private Transform gridContainer;             // Grid container for entry icons
-    [SerializeField] private Transform detailPanelParent;         // Parent for detail panel
+    [SerializeField] private GameObject bestiaryMenuPanel;
+    [SerializeField] private Transform gridContainer;
+    [SerializeField] private Transform detailPanelParent;
 
     [Header("Prefabs")]
-    [SerializeField] private GameObject entryIconPrefab;          // Prefab for enemy entry icon
-    [SerializeField] private GameObject detailPanelPrefab;        // Prefab for detail display
+    [SerializeField] private GameObject entryIconPrefab;
+    [SerializeField] private GameObject detailPanelPrefab;
 
     [Header("Buttons")]
-    [SerializeField] private Button closeButton;                  // Close button (optional)
+    [SerializeField] private Button closeButton;
 
-    private List<BestiaryEntry> discoveredEnemies = new();        // List of discovered enemies
-    private int currentIndex = -1;                                // Current index in discoveredEnemies
-    private GameObject currentDetailPanel;                        // Current detail panel instance
+    [Header("Notification System")]
+    [SerializeField] private GameObject notificationObject; // UI notification object (e.g., Image)
+    [SerializeField] private Animator notificationAnimator; // Animator on the UI object
+    [SerializeField] private string notificationTrigger = "PlayNotification";
+
+    private List<BestiaryEntry> discoveredEnemies = new();
+    private int currentIndex = -1;
+    private GameObject currentDetailPanel;
+
+    private HashSet<string> previouslySeenEntries = new();
 
     private void Start()
     {
-        // Hide Bestiary at start
+        // Hide panels and notification on start
         if (bestiaryMenuPanel != null)
             bestiaryMenuPanel.SetActive(false);
 
-        // Hook up close button if assigned
+        if (notificationObject != null)
+            notificationObject.SetActive(false);
+
         if (closeButton != null)
             closeButton.onClick.AddListener(CloseBestiary);
+
+        // Cache previously discovered enemies
+        foreach (var entry in BestiaryManager.Instance.GetAllEntries())
+        {
+            if (BestiaryManager.Instance.IsDiscovered(entry.enemyID))
+                previouslySeenEntries.Add(entry.enemyID);
+        }
     }
 
-    /// <summary>
-    /// Opens the Bestiary UI and pauses the game.
-    /// </summary>
+    private void Update()
+    {
+        CheckForNewEntries();
+    }
+
     public void OpenBestiary()
     {
         if (bestiaryMenuPanel != null)
             bestiaryMenuPanel.SetActive(true);
 
+        Time.timeScale = 0f;
+
         RefreshBestiary();
-        Time.timeScale = 0f; // Pause the game
+        CloseDetailPanel();
+
+        // Hide notification when menu is opened
+        if (notificationObject != null)
+            notificationObject.SetActive(false);
     }
 
-    /// <summary>
-    /// Closes the Bestiary UI but keeps the game paused.
-    /// </summary>
     public void CloseBestiary()
     {
         if (bestiaryMenuPanel != null)
             bestiaryMenuPanel.SetActive(false);
 
+        Time.timeScale = 1f;
         ClearGrid();
         CloseDetailPanel();
-
-        // Do NOT unpause the game
-        // Time.timeScale = 1f;
     }
 
-    /// <summary>
-    /// Refreshes the Bestiary grid with discovered entries.
-    /// </summary>
     private void RefreshBestiary()
     {
         ClearGrid();
@@ -79,32 +95,23 @@ public class BestiaryUIManager : MonoBehaviour
                 icon.Setup(entry, true, () => OnEntryClicked(entry));
                 discoveredEnemies.Add(entry);
             }
+
+            previouslySeenEntries.Add(entry.enemyID); // Mark as seen now
         }
     }
 
-    /// <summary>
-    /// Clears all icons from the grid.
-    /// </summary>
     private void ClearGrid()
     {
         foreach (Transform child in gridContainer)
-        {
             Destroy(child.gameObject);
-        }
     }
 
-    /// <summary>
-    /// Called when a Bestiary entry is clicked.
-    /// </summary>
     private void OnEntryClicked(BestiaryEntry entry)
     {
         currentIndex = discoveredEnemies.IndexOf(entry);
         ShowDetailPanel(entry);
     }
 
-    /// <summary>
-    /// Displays the detail panel for a selected enemy.
-    /// </summary>
     private void ShowDetailPanel(BestiaryEntry entry)
     {
         CloseDetailPanel();
@@ -119,9 +126,6 @@ public class BestiaryUIManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Destroys the current detail panel if it exists.
-    /// </summary>
     private void CloseDetailPanel()
     {
         if (currentDetailPanel != null)
@@ -131,9 +135,6 @@ public class BestiaryUIManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Navigates to the previous entry in the discovered list.
-    /// </summary>
     private void GoToPrevious()
     {
         if (discoveredEnemies.Count == 0) return;
@@ -142,14 +143,45 @@ public class BestiaryUIManager : MonoBehaviour
         ShowDetailPanel(discoveredEnemies[currentIndex]);
     }
 
-    /// <summary>
-    /// Navigates to the next entry in the discovered list.
-    /// </summary>
     private void GoToNext()
     {
         if (discoveredEnemies.Count == 0) return;
 
         currentIndex = (currentIndex + 1) % discoveredEnemies.Count;
         ShowDetailPanel(discoveredEnemies[currentIndex]);
+    }
+
+    /// <summary>
+    /// Show notification only if there's something newly discovered.
+    /// </summary>
+    private void CheckForNewEntries()
+    {
+        bool foundNew = false;
+
+        foreach (var entry in BestiaryManager.Instance.GetAllEntries())
+        {
+            if (BestiaryManager.Instance.IsDiscovered(entry.enemyID) &&
+                !previouslySeenEntries.Contains(entry.enemyID))
+            {
+                foundNew = true;
+                break;
+            }
+        }
+
+        if (notificationObject == null) return;
+
+        if (foundNew)
+        {
+            if (!notificationObject.activeSelf)
+                notificationObject.SetActive(true);
+
+            if (notificationAnimator != null)
+                notificationAnimator.SetTrigger(notificationTrigger);
+        }
+        else
+        {
+            if (notificationObject.activeSelf)
+                notificationObject.SetActive(false);
+        }
     }
 }
