@@ -65,6 +65,9 @@ TagManager:
   - name: Buff
     uniqueID: 3327072123
     locked: 0
+  - name: Paradise
+    uniqueID: 2678450243
+    locked: 0
   - name: UI
     uniqueID: 3845831911
     locked: 0
