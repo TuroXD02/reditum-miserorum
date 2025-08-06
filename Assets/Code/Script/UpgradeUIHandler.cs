@@ -32,7 +32,10 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
     public Color outerCircleColor = new Color(1f, 0.3f, 0.3f);
     public Material lineMaterial;
 
-    private List<LineRenderer> ringRenderers = new List<LineRenderer>();
+    // Use LineRenderer pool instead of creating/destroying
+    private List<LineRenderer> lineRendererPool = new List<LineRenderer>();
+    private List<LineRenderer> activeRenderers = new List<LineRenderer>();
+
     private bool isHoveringUI = false;
 
     private void Awake()
@@ -47,10 +50,10 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
         if (upgradeButton != null)
         {
-            upgradeButton.onClick.AddListener(ShowStatPreview);
+            upgradeButton.onClick.AddListener(UpgradeTower);
 
-            // 🔁 Add hover triggers to show/hide stat preview
-            EventTrigger trigger = upgradeButton.gameObject.AddComponent<EventTrigger>();
+            EventTrigger trigger = upgradeButton.GetComponent<EventTrigger>();
+            if (trigger == null) trigger = upgradeButton.gameObject.AddComponent<EventTrigger>();
 
             var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
             enter.callback.AddListener((data) => ShowStatPreview());
@@ -58,16 +61,14 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
             var exit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
             exit.callback.AddListener((data) => HideStatPreview());
 
+            trigger.triggers.Clear();
             trigger.triggers.Add(enter);
             trigger.triggers.Add(exit);
         }
 
-        // Hide stat preview at start
         statPreviewUI.text = "";
-
-        gameObject.SetActive(false); // Start hidden
+        gameObject.SetActive(false);
     }
-
 
     private void Update()
     {
@@ -95,21 +96,67 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
     {
         isHoveringUI = true;
         UiManager.main?.SetHoveringState(true);
+        DrawCircle();
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
         isHoveringUI = false;
         UiManager.main?.SetHoveringState(false);
-        StartCoroutine(HideWhenNotHovering());
-    }
 
-    private System.Collections.IEnumerator HideWhenNotHovering()
-    {
-        yield return new WaitForSeconds(0.1f);
-        if (!isHoveringUI && !UiManager.main.IsHoveringUI())
+        if (!UiManager.main.IsHoveringUI())
         {
             CloseUpgradePanel();
+        }
+    }
+
+    public void UpgradeTower()
+    {
+        bool upgraded = false;
+        
+        // FIXED: Use LevelManager.main.currency instead of GetCurrency()
+        if (turretInstance != null && LevelManager.main.currency >= turretInstance.CalculateCost())
+        {
+            LevelManager.main.AddCurrency(-turretInstance.CalculateCost());
+            turretInstance.Upgrade();
+            upgraded = true;
+        }
+        else if (turretSlowInstance != null && LevelManager.main.currency >= turretSlowInstance.CalculateCost())
+        {
+            LevelManager.main.AddCurrency(-turretSlowInstance.CalculateCost());
+            turretSlowInstance.Upgrade();
+            upgraded = true;
+        }
+        else if (TurretLongRangeInstance != null && LevelManager.main.currency >= TurretLongRangeInstance.CalculateCost())
+        {
+            LevelManager.main.AddCurrency(-TurretLongRangeInstance.CalculateCost());
+            TurretLongRangeInstance.Upgrade();
+            upgraded = true;
+        }
+        else if (TurretPoisonInstance != null && LevelManager.main.currency >= TurretPoisonInstance.CalculateCost())
+        {
+            LevelManager.main.AddCurrency(-TurretPoisonInstance.CalculateCost());
+            TurretPoisonInstance.Upgrade();
+            upgraded = true;
+        }
+        else if (TurretAreaDamageInstance != null && LevelManager.main.currency >= TurretAreaDamageInstance.CalculateCost())
+        {
+            LevelManager.main.AddCurrency(-TurretAreaDamageInstance.CalculateCost());
+            TurretAreaDamageInstance.Upgrade();
+            upgraded = true;
+        }
+        else if (TurretArmourBreakerInstance != null && LevelManager.main.currency >= TurretArmourBreakerInstance.CalculateCost())
+        {
+            LevelManager.main.AddCurrency(-TurretArmourBreakerInstance.CalculateCost());
+            TurretArmourBreakerInstance.Upgrade();
+            upgraded = true;
+        }
+
+        if (upgraded)
+        {
+            UpdateCostAndSellGainUI();
+            DrawCircle();
+            ShowStatPreview();
         }
     }
 
@@ -195,78 +242,81 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
         statPreviewUI.text = preview;
     }
 
-    private void HideStatPreview()
-    {
-        statPreviewUI.text = "";
-    }
+    private void HideStatPreview() => statPreviewUI.text = "";
 
+    private string GenerateTurretStatPreview(int currentLevel, object turret)
+    {
+        int nextLevel = currentLevel + 1;
+        float currBPS = 0f, nextBPS = 0f;
+        float currRange = 0f, nextRange = 0f;
+        int currDamage = 0, nextDamage = 0;
 
-private string GenerateTurretStatPreview(int currentLevel, object turret)
-{
-    int nextLevel = currentLevel + 1;
-    float currBPS = 0f, nextBPS = 0f;
-    float currRange = 0f, nextRange = 0f;
-    int currDamage = 0, nextDamage = 0;
+        switch (turret)
+        {
+            case Turret t:
+                currBPS = t.CalculateBPS(currentLevel);
+                nextBPS = t.CalculateBPS(nextLevel);
+                currRange = t.CalculateRange(currentLevel);
+                nextRange = t.CalculateRange(nextLevel);
+                currDamage = t.CalculateBulletDamage(currentLevel);
+                nextDamage = t.CalculateBulletDamage(nextLevel);
+                break;
 
-    if (turret is Turret t)
-    {
-        currBPS = t.CalculateBPS(currentLevel);
-        nextBPS = t.CalculateBPS(nextLevel);
-        currRange = t.CalculateRange(currentLevel);
-        nextRange = t.CalculateRange(nextLevel);
-        currDamage = t.CalculateBulletDamage(currentLevel);
-        nextDamage = t.CalculateBulletDamage(nextLevel);
-    }
-    else if (turret is TurretSlow tS)
-    {
-        currBPS = tS.CalculateBPS(currentLevel);
-        nextBPS = tS.CalculateBPS(nextLevel);
-        currRange = tS.CalculateRange(currentLevel);
-        nextRange = tS.CalculateRange(nextLevel);
-    }
-    // Add handling for TurretLongRange
-    else if (turret is TurretLongRange tLR)
-    {
-        currBPS = tLR.CalculateBPS(currentLevel);
-        nextBPS = tLR.CalculateBPS(nextLevel);
-        currRange = tLR.CalculateRange(currentLevel);
-        nextRange = tLR.CalculateRange(nextLevel);
-        currDamage = tLR.CalculateBulletDamage(currentLevel);
-        nextDamage = tLR.CalculateBulletDamage(nextLevel);
-    }
-    // Add handling for other turret types
-    else if (turret is TurretPoison tP)
-    {
-        currBPS = tP.CalculateBPS(currentLevel);
-        nextBPS = tP.CalculateBPS(nextLevel);
-        currRange = tP.CalculateRange(currentLevel);
-        nextRange = tP.CalculateRange(nextLevel);
-        currDamage = tP.CalculateBulletDamage(currentLevel);
-        nextDamage = tP.CalculateBulletDamage(nextLevel);
-    }
-    else if (turret is TurretAreaDamage tAD)
-    {
-        currBPS = tAD.CalculateBPS(currentLevel);
-        nextBPS = tAD.CalculateBPS(nextLevel);
-        currRange = tAD.CalculateRange(currentLevel);
-        nextRange = tAD.CalculateRange(nextLevel);
-        currDamage = tAD.CalculateBulletDamage(currentLevel);
-        nextDamage = tAD.CalculateBulletDamage(nextLevel);
-    }
-    else if (turret is TurretArmourBreaker tAB)
-    {
-        currBPS = tAB.CalculateBPS(currentLevel);
-        nextBPS = tAB.CalculateBPS(nextLevel);
-        currRange = tAB.CalculateRange(currentLevel);
-        nextRange = tAB.CalculateRange(nextLevel);
+            case TurretSlow tS:
+                currBPS = tS.CalculateBPS(currentLevel);
+                nextBPS = tS.CalculateBPS(nextLevel);
+                currRange = tS.CalculateRange(currentLevel);
+                nextRange = tS.CalculateRange(nextLevel);
+                break;
 
-    }
+            case TurretLongRange tLR:
+                currBPS = tLR.CalculateBPS(currentLevel);
+                nextBPS = tLR.CalculateBPS(nextLevel);
+                currRange = tLR.CalculateRange(currentLevel);
+                nextRange = tLR.CalculateRange(nextLevel);
+                currDamage = tLR.CalculateBulletDamage(currentLevel);
+                nextDamage = tLR.CalculateBulletDamage(nextLevel);
+                return $"<b>Next Upgrade:</b>\n" +
+                       $"\u2022 Damage: {currDamage} → {nextDamage} (x1 min dist. - x350 max dist)\n" +
+                       $"\u2022 Range: {currRange:F1} → {nextRange:F1}\n" +
+                       $"\u2022 Fire Rate: {currBPS:F2} → {nextBPS:F2}";
 
-    return $"<b>Next Upgrade:</b>\n" +
-           $"\u2022 Damage: {currDamage} → {nextDamage}\n" +
-           $"\u2022 Range: {currRange:F1} → {nextRange:F1}\n" +
-           $"\u2022 Fire Rate: {currBPS:F2} → {nextBPS:F2}";
-}
+            case TurretPoison tP:
+                currBPS = tP.CalculateBPS(currentLevel);
+                nextBPS = tP.CalculateBPS(nextLevel);
+                currRange = tP.CalculateRange(currentLevel);
+                nextRange = tP.CalculateRange(nextLevel);
+                currDamage = tP.CalculateBulletDamage(currentLevel);
+                nextDamage = tP.CalculateBulletDamage(nextLevel);
+                return $"<b>Next Upgrade:</b>\n" +
+                       $"\u2022 Damage: {currDamage} → {nextDamage} (+ poison = 50dmg x 2sec. stackable)\n" +
+                       $"\u2022 Range: {currRange:F1} → {nextRange:F1}\n" +
+                       $"\u2022 Fire Rate: {currBPS:F2} → {nextBPS:F2}";
+
+            case TurretAreaDamage tAD:
+                currBPS = tAD.CalculateBPS(currentLevel);
+                nextBPS = tAD.CalculateBPS(nextLevel);
+                currRange = tAD.CalculateRange(currentLevel);
+                nextRange = tAD.CalculateRange(nextLevel);
+                currDamage = tAD.CalculateBulletDamage(currentLevel);
+                nextDamage = tAD.CalculateBulletDamage(nextLevel);
+                break;
+
+            case TurretArmourBreaker tAB:
+                currBPS = tAB.CalculateBPS(currentLevel);
+                nextBPS = tAB.CalculateBPS(nextLevel);
+                currRange = tAB.CalculateRange(currentLevel);
+                nextRange = tAB.CalculateRange(nextLevel);
+                currDamage = tAB.CalculateDamage(currentLevel);
+                nextDamage = tAB.CalculateDamage(nextLevel);
+                break;
+        }
+
+        return $"<b>Next Upgrade:</b>\n" +
+               $"\u2022 Damage: {currDamage} → {nextDamage}\n" +
+               $"\u2022 Range: {currRange:F1} → {nextRange:F1}\n" +
+               $"\u2022 Fire Rate: {currBPS:F2} → {nextBPS:F2}";
+    }
 
     private int GetTurretOriginalCost()
     {
@@ -282,31 +332,47 @@ private string GenerateTurretStatPreview(int currentLevel, object turret)
     private void DrawCircle()
     {
         float range = GetTurretTargetingRange();
-        if (range <= 0f) return;
+        if (range <= 0f)
+        {
+            Debug.LogWarning("Targeting range is 0 or negative");
+            return;
+        }
 
         ClearRings();
         Vector3 center = GetTurretPosition();
-        int index = 0;
+        center.z = -1f;
+
+        int ringsDrawn = 0;
 
         for (float radius = lineSpacing; radius < range; radius += lineSpacing)
-            DrawRing(radius, center, innerCircleColor, ++index);
+        {
+            DrawRing(radius, center, innerCircleColor);
+            ringsDrawn++;
+        }
 
-        DrawRing(range, center, outerCircleColor, ++index);
+        DrawRing(range, center, outerCircleColor);
+        ringsDrawn++;
+
+        Debug.Log($"Drew {ringsDrawn} rings for range {range} at position {center}");
     }
 
-    private void DrawRing(float radius, Vector3 center, Color color, int index)
+    private void DrawRing(float radius, Vector3 center, Color color)
     {
-        GameObject ringObj = new GameObject($"Ring_{index}");
-        ringObj.transform.SetParent(transform);
-        LineRenderer ring = ringObj.AddComponent<LineRenderer>();
+        LineRenderer ring = GetAvailableLineRenderer();
+        activeRenderers.Add(ring);
 
-        ring.useWorldSpace = true;
-        ring.loop = true;
-        ring.material = lineMaterial;
+        ring.gameObject.SetActive(true);
+        ring.positionCount = circleSegments + 1;
         ring.startColor = color;
         ring.endColor = color;
-        ring.widthMultiplier = 0.02f;
-        ring.positionCount = circleSegments + 1;
+        ring.widthMultiplier = 0.07f;
+
+        ring.material = lineMaterial ? lineMaterial : CreateDefaultMaterial();
+        ring.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        ring.receiveShadows = false;
+        ring.loop = true;
+        ring.useWorldSpace = true;
+        ring.sortingOrder = 2;
 
         float angleStep = 360f / circleSegments;
         for (int j = 0; j <= circleSegments; j++)
@@ -315,21 +381,49 @@ private string GenerateTurretStatPreview(int currentLevel, object turret)
             Vector3 pos = new Vector3(
                 Mathf.Cos(angle) * radius + center.x,
                 Mathf.Sin(angle) * radius + center.y,
-                0
+                center.z
             );
             ring.SetPosition(j, pos);
         }
+    }
 
-        ringRenderers.Add(ring);
+    private LineRenderer GetAvailableLineRenderer()
+    {
+        foreach (var lr in lineRendererPool)
+        {
+            if (!lr.gameObject.activeSelf)
+                return lr;
+        }
+
+        GameObject go = new GameObject("RangeCircleRing");
+        go.transform.SetParent(transform);
+        LineRenderer newLR = go.AddComponent<LineRenderer>();
+        lineRendererPool.Add(newLR);
+        return newLR;
+    }
+
+    private Material CreateDefaultMaterial()
+    {
+        Shader shader = Shader.Find("Unlit/Color");
+        if (shader == null)
+        {
+            Debug.LogError("Unlit/Color shader not found!");
+            return null;
+        }
+
+        Material mat = new Material(shader);
+        mat.color = Color.white;
+        return mat;
     }
 
     private void ClearRings()
     {
-        foreach (var ring in ringRenderers)
+        foreach (var ring in activeRenderers)
         {
-            if (ring != null) Destroy(ring.gameObject);
+            if (ring != null)
+                ring.gameObject.SetActive(false);
         }
-        ringRenderers.Clear();
+        activeRenderers.Clear();
     }
 
     private void HideCircle() => ClearRings();

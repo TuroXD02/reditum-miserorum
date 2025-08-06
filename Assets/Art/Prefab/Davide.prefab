@@ -1343,8 +1343,6 @@ MonoBehaviour:
   upgradeButton: {fileID: 4818884365336455620}
   statPreviewUI: {fileID: 6800174757107203314}
   upgradePanel: {fileID: 3617056878109499194}
-  mouse_over: 0
-  hoverShowDelay: 0.3
   turretInstance: {fileID: 0}
   turretSlowInstance: {fileID: 0}
   TurretLongRangeInstance: {fileID: 5785025669134519000}
@@ -1448,12 +1446,12 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 35
+  m_fontSize: 22
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
   m_fontSizeMin: 18
-  m_fontSizeMax: 35
+  m_fontSizeMax: 22
   m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
