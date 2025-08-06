@@ -11,7 +11,8 @@ public class DisplaySettingsMenu : MonoBehaviour
     [SerializeField] private GameObject settingsPanel;
 
     [Header("Escape / Back")]
-    [SerializeField] private Button backButton; // <-- ADD THIS IN THE INSPECTOR
+    [SerializeField] private Button backButton; 
+    
 
     [Header("Dropdowns")]
     [SerializeField] private TMP_Dropdown displayModeDropdown;

@@ -13,10 +13,8 @@ MonoBehaviour:
   m_Name: seneh
   m_EditorClassIdentifier: 
   enemyID: 9
-  enemyName: seneh
+  enemyName: Seneh
   enemyIcon: {fileID: 21300000, guid: 53b332eff05f94a4ea5542dc8bbfed3f, type: 3}
   description: It burns with a flame that does not consume, a sign once sacred, now
     corrupted. So long as it blazes, the cold shall not take root. Nearby foes are
     shielded from all freezing, their limbs warmed by the fire that defies the frost.
-  maxHealth: 0
-  speed: 0

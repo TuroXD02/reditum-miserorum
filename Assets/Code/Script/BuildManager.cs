@@ -20,10 +20,14 @@ public class BuildManager : MonoBehaviour
     [SerializeField] private Vector2 cursorHotspot = Vector2.zero;
     [SerializeField] private CursorMode cursorMode = CursorMode.Auto;
 
+    [Header("Game Speed Memory")]
+    public float previousTimeScale = 1f;  // Stores game speed before pause/menu
+
     private void Awake()
     {
         main = this;
         selectedTower = -1;
+        previousTimeScale = Time.timeScale;
     }
 
     private void Start()
@@ -41,6 +45,32 @@ public class BuildManager : MonoBehaviour
                     btn.onClick.AddListener(ClearSelectedTower);
             }
         }
+    }
+
+    private void Update()
+    {
+        // Right-click to clear selected tower
+        if (Input.GetMouseButtonDown(1))
+        {
+            ClearSelectedTower();
+        }
+    }
+
+    /// <summary>
+    /// Call this before opening any menu to pause the game and store the current speed.
+    /// </summary>
+    public void PauseGameAndStoreSpeed()
+    {
+        previousTimeScale = Time.timeScale;
+        Time.timeScale = 0f;
+    }
+
+    /// <summary>
+    /// Call this after closing a menu to restore the previous game speed.
+    /// </summary>
+    public void ResumeGameWithStoredSpeed()
+    {
+        Time.timeScale = previousTimeScale;
     }
 
     /// <summary>
@@ -81,4 +111,4 @@ public class BuildManager : MonoBehaviour
 
         Cursor.SetCursor(defaultCursor, cursorHotspot, cursorMode);
     }
-}
+} 

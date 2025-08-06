@@ -10,7 +10,7 @@ public class PauseMenu : MonoBehaviour
     [SerializeField] private Slider musicSlider;
     [SerializeField] private Slider sfxSlider;
     [SerializeField] private Button resumeButton;
-    [SerializeField] private Button extraResumeButton; // NEW: second resume button
+    [SerializeField] private Button extraResumeButton;
     [SerializeField] private Button mainMenuButton;
     [SerializeField] private Button quitButton;
     [SerializeField] private Button pauseButton;
@@ -34,9 +34,7 @@ public class PauseMenu : MonoBehaviour
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
-        {
             TogglePauseMenu();
-        }
     }
 
     private void InitializeSliders()
@@ -68,7 +66,7 @@ public class PauseMenu : MonoBehaviour
         if (resumeButton != null)
             resumeButton.onClick.AddListener(ResumeGame);
 
-        if (extraResumeButton != null) // Hook up second resume button
+        if (extraResumeButton != null)
             extraResumeButton.onClick.AddListener(ResumeGame);
 
         if (mainMenuButton != null)
@@ -88,7 +86,15 @@ public class PauseMenu : MonoBehaviour
         if (pausePanel != null)
             pausePanel.SetActive(isPaused);
 
-        Time.timeScale = isPaused ? 0f : 1f;
+        if (isPaused)
+        {
+            GameSpeedController.Instance?.SetGameSpeed(0f);
+        }
+        else
+        {
+            float speed = GameSpeedController.Instance?.GetLastSpeed() ?? 1f;
+            GameSpeedController.Instance?.SetGameSpeed(speed);
+        }
     }
 
     public void ResumeGame()
@@ -98,7 +104,8 @@ public class PauseMenu : MonoBehaviour
         if (pausePanel != null)
             pausePanel.SetActive(false);
 
-        Time.timeScale = 1f;
+        float speed = GameSpeedController.Instance?.GetLastSpeed() ?? 1f;
+        GameSpeedController.Instance?.SetGameSpeed(speed);
     }
 
     public void SetMusicVolume(float value)

@@ -1,8 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 public class GameSpeedController : MonoBehaviour
 {
+    public static GameSpeedController Instance;
+
     [Header("Speed Control Buttons")]
     [SerializeField] private Button normalSpeedButton;
     [SerializeField] private Button doubleSpeedButton;
@@ -10,70 +13,92 @@ public class GameSpeedController : MonoBehaviour
     [SerializeField] private Button pauseButton;
 
     [Header("Colors")]
-    [SerializeField] private Color activeColor = Color.gray;   // Highlighted color
-    [SerializeField] private Color defaultColor = Color.white; // Normal color
+    [SerializeField] private Color activeColor = Color.gray;
+    [SerializeField] private Color defaultColor = Color.white;
+
+    private float lastSpeed = 1f;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     private void Start()
     {
         if (pauseButton != null)
-            pauseButton.onClick.AddListener(() => SetGameSpeed(0f));
+            pauseButton.onClick.AddListener(() => { SetGameSpeed(0f); ClearUISelection(); });
+
         if (normalSpeedButton != null)
-            normalSpeedButton.onClick.AddListener(() => SetGameSpeed(1f));
+            normalSpeedButton.onClick.AddListener(() => { SetGameSpeed(1f); ClearUISelection(); });
+
         if (doubleSpeedButton != null)
-            doubleSpeedButton.onClick.AddListener(() => SetGameSpeed(2f));
+            doubleSpeedButton.onClick.AddListener(() => { SetGameSpeed(2f); ClearUISelection(); });
+
         if (quadSpeedButton != null)
-            quadSpeedButton.onClick.AddListener(() => SetGameSpeed(4f));
-        
-        UpdateHighlight(); // Set correct highlight at start
+            quadSpeedButton.onClick.AddListener(() => { SetGameSpeed(4f); ClearUISelection(); });
+
+        HighlightButtonForSpeed(Time.timeScale);
     }
 
     private void Update()
     {
-        UpdateHighlight(); // Continuously ensure correct button is highlighted
+        if (Input.GetKeyDown(KeyCode.Z)) SetGameSpeed(1f);
+        if (Input.GetKeyDown(KeyCode.X)) SetGameSpeed(2f);
+        if (Input.GetKeyDown(KeyCode.C)) SetGameSpeed(4f);
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            if (Mathf.Approximately(Time.timeScale, 0f))
+                SetGameSpeed(lastSpeed <= 0f ? 1f : lastSpeed);
+            else
+                SetGameSpeed(0f);
+        }
     }
 
-    private void SetGameSpeed(float speed)
+    public void SetGameSpeed(float speed)
     {
+        if (speed > 0f)
+            lastSpeed = speed;
+
         Time.timeScale = speed;
-        UpdateHighlight();
-        Debug.Log($"Game speed set to {speed}x");
+        HighlightButtonForSpeed(speed);
+        Debug.Log($"[GameSpeed] Time scale set to {speed}");
     }
 
-    private void UpdateHighlight()
+    public void HighlightButtonForSpeed(float speed)
     {
-        ResetAllButtons();
+        DeselectAllButtons();
 
-        if (Time.timeScale == 0f && pauseButton != null)
-        {
+        if (Mathf.Approximately(speed, 0f))
             pauseButton.image.color = activeColor;
-        }
-        else if (Time.timeScale == 1f && normalSpeedButton != null)
-        {
+        else if (Mathf.Approximately(speed, 1f))
             normalSpeedButton.image.color = activeColor;
-        }
-        else if (Time.timeScale == 2f && doubleSpeedButton != null)
-        {
+        else if (Mathf.Approximately(speed, 2f))
             doubleSpeedButton.image.color = activeColor;
-        }
-        else if (Time.timeScale == 4f && quadSpeedButton != null)
-        {
+        else if (Mathf.Approximately(speed, 4f))
             quadSpeedButton.image.color = activeColor;
-        }
-        else
-        {
-            // Optional: handle weird timescales if needed
-        }
     }
 
-    private void ResetAllButtons()
+    public void DeselectAllButtons()
     {
+        if (pauseButton != null)
+            pauseButton.image.color = defaultColor;
         if (normalSpeedButton != null)
             normalSpeedButton.image.color = defaultColor;
         if (doubleSpeedButton != null)
             doubleSpeedButton.image.color = defaultColor;
         if (quadSpeedButton != null)
             quadSpeedButton.image.color = defaultColor;
-        if (pauseButton != null)
-            pauseButton.image.color = defaultColor;
+    }
+
+    private void ClearUISelection()
+    {
+        if (EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(null);
+    }
+
+    public float GetLastSpeed()
+    {
+        return lastSpeed > 0f ? lastSpeed : 1f;
     }
 }

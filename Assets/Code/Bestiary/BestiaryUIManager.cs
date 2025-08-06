@@ -17,19 +17,19 @@ public class BestiaryUIManager : MonoBehaviour
     [SerializeField] private Button closeButton;
 
     [Header("Notification System")]
-    [SerializeField] private GameObject notificationObject; // UI notification object (e.g., Image)
-    [SerializeField] private Animator notificationAnimator; // Animator on the UI object
+    [SerializeField] private GameObject notificationObject;
+    [SerializeField] private Animator notificationAnimator;
     [SerializeField] private string notificationTrigger = "PlayNotification";
 
     private List<BestiaryEntry> discoveredEnemies = new();
     private int currentIndex = -1;
     private GameObject currentDetailPanel;
-
     private HashSet<string> previouslySeenEntries = new();
+
+    private float storedSpeed = 1f;
 
     private void Start()
     {
-        // Hide panels and notification on start
         if (bestiaryMenuPanel != null)
             bestiaryMenuPanel.SetActive(false);
 
@@ -39,7 +39,6 @@ public class BestiaryUIManager : MonoBehaviour
         if (closeButton != null)
             closeButton.onClick.AddListener(CloseBestiary);
 
-        // Cache previously discovered enemies
         foreach (var entry in BestiaryManager.Instance.GetAllEntries())
         {
             if (BestiaryManager.Instance.IsDiscovered(entry.enemyID))
@@ -57,12 +56,12 @@ public class BestiaryUIManager : MonoBehaviour
         if (bestiaryMenuPanel != null)
             bestiaryMenuPanel.SetActive(true);
 
+        storedSpeed = Time.timeScale > 0f ? Time.timeScale : storedSpeed;
         Time.timeScale = 0f;
 
         RefreshBestiary();
         CloseDetailPanel();
 
-        // Hide notification when menu is opened
         if (notificationObject != null)
             notificationObject.SetActive(false);
     }
@@ -72,7 +71,7 @@ public class BestiaryUIManager : MonoBehaviour
         if (bestiaryMenuPanel != null)
             bestiaryMenuPanel.SetActive(false);
 
-        Time.timeScale = 1f;
+        Time.timeScale = storedSpeed;
         ClearGrid();
         CloseDetailPanel();
     }
@@ -96,7 +95,7 @@ public class BestiaryUIManager : MonoBehaviour
                 discoveredEnemies.Add(entry);
             }
 
-            previouslySeenEntries.Add(entry.enemyID); // Mark as seen now
+            previouslySeenEntries.Add(entry.enemyID);
         }
     }
 
@@ -151,9 +150,6 @@ public class BestiaryUIManager : MonoBehaviour
         ShowDetailPanel(discoveredEnemies[currentIndex]);
     }
 
-    /// <summary>
-    /// Show notification only if there's something newly discovered.
-    /// </summary>
     private void CheckForNewEntries()
     {
         bool foundNew = false;
