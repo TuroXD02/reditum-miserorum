@@ -3,8 +3,14 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Audio;
 
-public class TurretAreaDamage : MonoBehaviour
+public class TurretAreaDamage : Turret
 {
+    // Add combat statistics properties
+    public int KillCount { get; private set; } = 0;
+    public float TotalDamageDealt { get; private set; } = 0f;
+    private float activeTime = 0f;
+    
+    // Existing references
     [Header("References")]
     [SerializeField] private Transform turretRotationPoint;
     [SerializeField] private LayerMask enemyMask;
@@ -43,7 +49,11 @@ public class TurretAreaDamage : MonoBehaviour
     private int level = 1;
 
     public int GetLevel() => level;
-    public int BaseCost => baseUpgradeCost; // Added property
+    public int BaseCost => baseUpgradeCost;
+    
+    // Add DPS calculation property
+    public float CalculateCurrentDPS() => 
+        (activeTime > 0) ? TotalDamageDealt / activeTime : 0;
 
     private void Start()
     {
@@ -61,6 +71,9 @@ public class TurretAreaDamage : MonoBehaviour
 
     private void Update()
     {
+        // Track active time for DPS calculation
+        activeTime += Time.deltaTime;
+        
         if (target == null)
         {
             FindTarget();
@@ -84,6 +97,10 @@ public class TurretAreaDamage : MonoBehaviour
         }
     }
 
+    // Add methods to register damage and kills
+    public void RegisterDamage(int damage) => TotalDamageDealt += damage;
+    public void RegisterKill() => KillCount++;
+
     private void Shoot()
     {
         GameObject bulletObj = Instantiate(areaBulletPrefab, firingPoint.position, Quaternion.identity);
@@ -94,6 +111,9 @@ public class TurretAreaDamage : MonoBehaviour
             bulletScript.SetTarget(target);
             bulletScript.SetDamage(bulletDamage);
             bulletScript.SetAOERadius(aoeRadius);
+            
+            // Add reference to this turret for damage/kill tracking
+            bulletScript.SetSourceTurret(this);
         }
 
         PlaySound(shootClip);

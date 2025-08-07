@@ -32,7 +32,11 @@ public class AreaDamageBullet : MonoBehaviour
     private bool hasExploded = false;
     private Rigidbody2D rb;
 
-    // Setup methods
+    // 🔧 Source turret reference
+    private TurretAreaDamage sourceTurret;
+
+    // Setters
+    public void SetSourceTurret(TurretAreaDamage turret) => sourceTurret = turret;
     public void SetDamage(int dmg) => damage = dmg;
     public void SetAOERadius(float radius) => aoeRadius = radius;
     public void SetTarget(Transform targetTransform) => target = targetTransform;
@@ -46,7 +50,6 @@ public class AreaDamageBullet : MonoBehaviour
     private void FixedUpdate()
     {
         if (hasExploded || target == null) return;
-
         Vector2 direction = (target.position - transform.position).normalized;
         rb.velocity = direction * bulletSpeed;
     }
@@ -55,7 +58,6 @@ public class AreaDamageBullet : MonoBehaviour
     {
         if (hasExploded) return;
 
-        // Check for valid targets
         if (collision.collider.GetComponent<EnemyHealth>() != null ||
             collision.collider.GetComponent<LussuriaHealth>() != null)
         {
@@ -66,21 +68,24 @@ public class AreaDamageBullet : MonoBehaviour
     private void Explode()
     {
         hasExploded = true;
-
-        // Stop motion
         rb.velocity = Vector2.zero;
 
-        // Disable visuals/physics
         if (TryGetComponent(out SpriteRenderer sr)) sr.enabled = false;
         if (TryGetComponent(out Collider2D col2D)) col2D.enabled = false;
 
-        // Damage logic
         Collider2D[] hitColliders = Physics2D.OverlapCircleAll(transform.position, aoeRadius);
         foreach (Collider2D col in hitColliders)
         {
             if (col.TryGetComponent(out EnemyHealth enemy))
             {
-                enemy.TakeDamage(damage);
+                bool isKilled = enemy.TakeDamage(damage, sourceTurret);
+
+                if (sourceTurret != null)
+                {
+                    sourceTurret.RegisterDamage(damage);
+                    if (isKilled)
+                        sourceTurret.RegisterKill();
+                }
             }
             else if (col.TryGetComponent(out LussuriaHealth lussuria))
             {

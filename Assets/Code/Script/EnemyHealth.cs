@@ -15,7 +15,7 @@ public class EnemyHealth : MonoBehaviour
 
     [Header("Audio")]
     [SerializeField] private AudioClip damageSound;
-    [SerializeField] private AudioMixerGroup audioMixerGroup; // Optional override
+    [SerializeField] private AudioMixerGroup audioMixerGroup;
 
     [Header("Death Prefab")]
     [SerializeField] private GameObject deathPrefab;
@@ -24,8 +24,10 @@ public class EnemyHealth : MonoBehaviour
     protected int fullHealth;
     private SpriteRenderer sr;
     private Sprite originalSprite;
-
     private AudioSource audioSource;
+
+    // Reference to turret that last dealt damage
+    private Turret lastDamageSource;
 
     public virtual int HitPoints => hitPoints;
     public bool IsDestroyed => isDestroyed;
@@ -40,10 +42,9 @@ public class EnemyHealth : MonoBehaviour
         audioSource.playOnAwake = false;
         audioSource.spatialBlend = 0f;
 
-        // Automatically assign "SFX" AudioMixerGroup if not set manually
         if (audioMixerGroup == null)
         {
-            AudioMixer mixer = Resources.Load<AudioMixer>("Audio/MainMixer"); // Make sure path and name match
+            AudioMixer mixer = Resources.Load<AudioMixer>("Audio/MainMixer");
             if (mixer != null)
             {
                 AudioMixerGroup[] groups = mixer.FindMatchingGroups("SFX");
@@ -57,6 +58,37 @@ public class EnemyHealth : MonoBehaviour
         audioSource.outputAudioMixerGroup = audioMixerGroup;
     }
 
+    /// <summary>
+    /// Overload for turret-damage tracking. Returns true if enemy was killed.
+    /// </summary>
+    public virtual bool TakeDamage(int dmg, Turret damageSource = null)
+    {
+        if (isDestroyed) return false;
+
+        PlayDamageSound();
+
+        float damageMultiplier = 1f - (armor / 100f);
+        int finalDamage = Mathf.CeilToInt(dmg * damageMultiplier);
+
+        hitPoints -= finalDamage;
+
+        lastDamageSource = damageSource;
+        damageSource?.RecordDamage(finalDamage);
+
+        CheckHealthSprite();
+
+        if (hitPoints <= 0)
+        {
+            EnemyDestroyed();
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Base version of TakeDamage. Can be overridden by subclasses.
+    /// </summary>
     public virtual void TakeDamage(int dmg)
     {
         if (isDestroyed) return;
@@ -66,9 +98,13 @@ public class EnemyHealth : MonoBehaviour
         float damageMultiplier = 1f - (armor / 100f);
         int finalDamage = Mathf.CeilToInt(dmg * damageMultiplier);
         hitPoints -= finalDamage;
+
         CheckHealthSprite();
 
-        if (hitPoints <= 0) EnemyDestroyed();
+        if (hitPoints <= 0)
+        {
+            EnemyDestroyed();
+        }
     }
 
     public virtual void TakeDamageDOT(int dmg)
@@ -80,7 +116,10 @@ public class EnemyHealth : MonoBehaviour
         hitPoints -= dmg;
         CheckHealthSprite();
 
-        if (hitPoints <= 0) EnemyDestroyed();
+        if (hitPoints <= 0)
+        {
+            EnemyDestroyed();
+        }
     }
 
     public virtual void ReduceArmour(int amount)
@@ -94,6 +133,9 @@ public class EnemyHealth : MonoBehaviour
     {
         if (isDestroyed) return;
         isDestroyed = true;
+
+        // Let the turret know it got a kill
+        lastDamageSource?.RecordKill();
 
         EnemySpawner.onEnemyDestroy.Invoke();
         LevelManager.main?.IncreaseCurrency(currencyWorth);
@@ -109,11 +151,17 @@ public class EnemyHealth : MonoBehaviour
     protected virtual void CheckHealthSprite()
     {
         if (sr == null || fullHealth == 0) return;
+
         float fraction = (float)hitPoints / fullHealth;
-        if (fraction > 0.7f) sr.sprite = originalSprite;
-        else if (fraction > 0.4f && healthSprites.Length >= 1) sr.sprite = healthSprites[0];
-        else if (fraction > 0.1f && healthSprites.Length >= 2) sr.sprite = healthSprites[1];
-        else if (healthSprites.Length >= 3) sr.sprite = healthSprites[2];
+
+        if (fraction > 0.7f)
+            sr.sprite = originalSprite;
+        else if (fraction > 0.4f && healthSprites.Length >= 1)
+            sr.sprite = healthSprites[0];
+        else if (fraction > 0.1f && healthSprites.Length >= 2)
+            sr.sprite = healthSprites[1];
+        else if (healthSprites.Length >= 3)
+            sr.sprite = healthSprites[2];
     }
 
     private void PlayDamageSound()

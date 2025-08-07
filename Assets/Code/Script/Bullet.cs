@@ -12,31 +12,33 @@ public class Bullet : MonoBehaviour
     [SerializeField] private float bulletSpeed = 10f;
 
     [Header("Impact Effects")]
-    [SerializeField] private List<GameObject> impactEffects; // Visual FX prefabs
+    [SerializeField] private List<GameObject> impactEffects;
     [SerializeField] private float effectDuration = 1.5f;
     [SerializeField] private float rotationOffset = -90f;
 
     [Header("Impact Audio")]
     [SerializeField] private AudioClip impactSound;
     [SerializeField] private float impactVolume = 1f;
-    [SerializeField] private AudioMixerGroup sfxMixerGroup; // 🎯 Assign this in the Inspector
+    [SerializeField] private AudioMixerGroup sfxMixerGroup;
 
     private static int lastEffectIndex = -1;
 
     private int bulletDamage = 1;
+    private Turret ownerTurret;
     public Transform target;
 
     public void SetDamage(int damage) => bulletDamage = damage;
     public void SetTarget(Transform _target) => target = _target;
+    public void SetOwner(Turret owner) => ownerTurret = owner;
 
     private void Start()
     {
-        Destroy(gameObject, 12f);
+        Destroy(gameObject, 12f); // Bullet timeout
     }
 
     private void Update()
     {
-        transform.Rotate(0f, 0f, -720f * Time.deltaTime);
+        transform.Rotate(0f, 0f, -720f * Time.deltaTime); // Spin bullet
     }
 
     private void FixedUpdate()
@@ -49,22 +51,34 @@ public class Bullet : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
+        bool hitSomething = false;
+
+        // Enemy
         if (collision.gameObject.TryGetComponent(out EnemyHealth enemy))
         {
-            enemy.TakeDamage(bulletDamage);
+            if (ownerTurret != null)
+                ownerTurret.RecordDamage(bulletDamage);
+
+            bool wasKilled = enemy.TakeDamage(bulletDamage, ownerTurret);
+
+            if (wasKilled && ownerTurret != null)
+                ownerTurret.RecordKill();
+
+            hitSomething = true;
         }
 
-        if (collision.gameObject.TryGetComponent(out LussuriaHealth boss))
+        // Future: Add more enemy types here
+
+        if (hitSomething)
         {
-            boss.TakeDamage(bulletDamage);
+            PlayImpactEffect();
+            Destroy(gameObject);
         }
-
-        PlayImpactEffect();
-        Destroy(gameObject);
     }
 
     private void PlayImpactEffect()
     {
+        // Visual Effect
         if (impactEffects != null && impactEffects.Count > 0)
         {
             int index;
@@ -85,7 +99,7 @@ public class Bullet : MonoBehaviour
             Destroy(impact, effectDuration);
         }
 
-        // 🎵 Create temporary object to play impact sound through SFX mixer
+        // Audio Effect
         if (impactSound != null && sfxMixerGroup != null)
         {
             GameObject tempAudio = new GameObject("TempImpactSound");
@@ -97,7 +111,7 @@ public class Bullet : MonoBehaviour
             src.volume = impactVolume;
             src.Play();
 
-            Destroy(tempAudio, impactSound.length + 0.1f); // Cleanup after sound plays
+            Destroy(tempAudio, impactSound.length + 0.1f);
         }
     }
 }

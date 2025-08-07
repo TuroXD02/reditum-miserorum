@@ -24,6 +24,10 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
     public TurretPoison TurretPoisonInstance;
     public TurretAreaDamage TurretAreaDamageInstance;
     public TurretArmourBreaker TurretArmourBreakerInstance;
+    
+    [Header("Performance Stats")]
+    [SerializeField] private TextMeshProUGUI dpsUI;
+    [SerializeField] private TextMeshProUGUI killsUI;
 
     [Header("Range Circle")]
     public int circleSegments = 50;
@@ -74,6 +78,7 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
     {
         if (!gameObject.activeSelf) return;
         UpdateCostAndSellGainUI();
+        UpdatePerformanceStats(); // Add this line
     }
 
     public void ShowUpgradePanel()
@@ -244,79 +249,88 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
     private void HideStatPreview() => statPreviewUI.text = "";
 
-    private string GenerateTurretStatPreview(int currentLevel, object turret)
+private string GenerateTurretStatPreview(int currentLevel, object turret)
+{
+    int nextLevel = currentLevel + 1;
+    float currBPS = 0f, nextBPS = 0f;
+    float currRange = 0f, nextRange = 0f;
+    int currDamage = 0, nextDamage = 0;
+
+    // Check most specific types first
+    if (turret is TurretLongRange tLR)
     {
-        int nextLevel = currentLevel + 1;
-        float currBPS = 0f, nextBPS = 0f;
-        float currRange = 0f, nextRange = 0f;
-        int currDamage = 0, nextDamage = 0;
-
-        switch (turret)
-        {
-            case Turret t:
-                currBPS = t.CalculateBPS(currentLevel);
-                nextBPS = t.CalculateBPS(nextLevel);
-                currRange = t.CalculateRange(currentLevel);
-                nextRange = t.CalculateRange(nextLevel);
-                currDamage = t.CalculateBulletDamage(currentLevel);
-                nextDamage = t.CalculateBulletDamage(nextLevel);
-                break;
-
-            case TurretSlow tS:
-                currBPS = tS.CalculateBPS(currentLevel);
-                nextBPS = tS.CalculateBPS(nextLevel);
-                currRange = tS.CalculateRange(currentLevel);
-                nextRange = tS.CalculateRange(nextLevel);
-                break;
-
-            case TurretLongRange tLR:
-                currBPS = tLR.CalculateBPS(currentLevel);
-                nextBPS = tLR.CalculateBPS(nextLevel);
-                currRange = tLR.CalculateRange(currentLevel);
-                nextRange = tLR.CalculateRange(nextLevel);
-                currDamage = tLR.CalculateBulletDamage(currentLevel);
-                nextDamage = tLR.CalculateBulletDamage(nextLevel);
-                return $"<b>Next Upgrade:</b>\n" +
-                       $"\u2022 Damage: {currDamage} → {nextDamage} (x1 min dist. - x350 max dist)\n" +
-                       $"\u2022 Range: {currRange:F1} → {nextRange:F1}\n" +
-                       $"\u2022 Fire Rate: {currBPS:F2} → {nextBPS:F2}";
-
-            case TurretPoison tP:
-                currBPS = tP.CalculateBPS(currentLevel);
-                nextBPS = tP.CalculateBPS(nextLevel);
-                currRange = tP.CalculateRange(currentLevel);
-                nextRange = tP.CalculateRange(nextLevel);
-                currDamage = tP.CalculateBulletDamage(currentLevel);
-                nextDamage = tP.CalculateBulletDamage(nextLevel);
-                return $"<b>Next Upgrade:</b>\n" +
-                       $"\u2022 Damage: {currDamage} → {nextDamage} (+ poison = 50dmg x 2sec. stackable)\n" +
-                       $"\u2022 Range: {currRange:F1} → {nextRange:F1}\n" +
-                       $"\u2022 Fire Rate: {currBPS:F2} → {nextBPS:F2}";
-
-            case TurretAreaDamage tAD:
-                currBPS = tAD.CalculateBPS(currentLevel);
-                nextBPS = tAD.CalculateBPS(nextLevel);
-                currRange = tAD.CalculateRange(currentLevel);
-                nextRange = tAD.CalculateRange(nextLevel);
-                currDamage = tAD.CalculateBulletDamage(currentLevel);
-                nextDamage = tAD.CalculateBulletDamage(nextLevel);
-                break;
-
-            case TurretArmourBreaker tAB:
-                currBPS = tAB.CalculateBPS(currentLevel);
-                nextBPS = tAB.CalculateBPS(nextLevel);
-                currRange = tAB.CalculateRange(currentLevel);
-                nextRange = tAB.CalculateRange(nextLevel);
-                currDamage = tAB.CalculateDamage(currentLevel);
-                nextDamage = tAB.CalculateDamage(nextLevel);
-                break;
-        }
-
+        currBPS = tLR.CalculateBPS(currentLevel);
+        nextBPS = tLR.CalculateBPS(nextLevel);
+        currRange = tLR.CalculateRange(currentLevel);
+        nextRange = tLR.CalculateRange(nextLevel);
+        currDamage = tLR.CalculateBulletDamage(currentLevel);
+        nextDamage = tLR.CalculateBulletDamage(nextLevel);
         return $"<b>Next Upgrade:</b>\n" +
-               $"\u2022 Damage: {currDamage} → {nextDamage}\n" +
+               $"\u2022 Damage: {currDamage} → {nextDamage} (x1 min dist. - x350 max dist)\n" +
                $"\u2022 Range: {currRange:F1} → {nextRange:F1}\n" +
                $"\u2022 Fire Rate: {currBPS:F2} → {nextBPS:F2}";
     }
+    else if (turret is TurretPoison tP)
+    {
+        currBPS = tP.CalculateBPS(currentLevel);
+        nextBPS = tP.CalculateBPS(nextLevel);
+        currRange = tP.CalculateRange(currentLevel);
+        nextRange = tP.CalculateRange(nextLevel);
+        currDamage = tP.CalculateBulletDamage(currentLevel);
+        nextDamage = tP.CalculateBulletDamage(nextLevel);
+        return $"<b>Next Upgrade:</b>\n" +
+               $"\u2022 Damage: {currDamage} → {nextDamage} (+ poison = 50dmg x 2sec. stackable)\n" +
+               $"\u2022 Range: {currRange:F1} → {nextRange:F1}\n" +
+               $"\u2022 Fire Rate: {currBPS:F2} → {nextBPS:F2}";
+    }
+    else if (turret is TurretAreaDamage tAD)
+    {
+        currBPS = tAD.CalculateBPS(currentLevel);
+        nextBPS = tAD.CalculateBPS(nextLevel);
+        currRange = tAD.CalculateRange(currentLevel);
+        nextRange = tAD.CalculateRange(nextLevel);
+        currDamage = tAD.CalculateBulletDamage(currentLevel);
+        nextDamage = tAD.CalculateBulletDamage(nextLevel);
+        // Keep the break and use the base format
+    }
+    else if (turret is TurretArmourBreaker tAB)
+    {
+        currBPS = tAB.CalculateBPS(currentLevel);
+        nextBPS = tAB.CalculateBPS(nextLevel);
+        currRange = tAB.CalculateRange(currentLevel);
+        nextRange = tAB.CalculateRange(nextLevel);
+        currDamage = tAB.CalculateDamage(currentLevel);
+        nextDamage = tAB.CalculateDamage(nextLevel);
+        // Keep the break and use the base format
+    }
+    else if (turret is TurretSlow tS)
+    {
+        currBPS = tS.CalculateBPS(currentLevel);
+        nextBPS = tS.CalculateBPS(nextLevel);
+        currRange = tS.CalculateRange(currentLevel);
+        nextRange = tS.CalculateRange(nextLevel);
+        // No damage for slow turrets
+        return $"<b>Next Upgrade:</b>\n" +
+               $"\u2022 Slow Power: Increased\n" +
+               $"\u2022 Range: {currRange:F1} → {nextRange:F1}\n" +
+               $"\u2022 Fire Rate: {currBPS:F2} → {nextBPS:F2}";
+    }
+    else if (turret is Turret t)
+    {
+        currBPS = t.CalculateBPS(currentLevel);
+        nextBPS = t.CalculateBPS(nextLevel);
+        currRange = t.CalculateRange(currentLevel);
+        nextRange = t.CalculateRange(nextLevel);
+        currDamage = t.CalculateBulletDamage(currentLevel);
+        nextDamage = t.CalculateBulletDamage(nextLevel);
+    }
+
+    // Default format for turrets without special descriptions
+    return $"<b>Next Upgrade:</b>\n" +
+           $"\u2022 Damage: {currDamage} → {nextDamage}\n" +
+           $"\u2022 Range: {currRange:F1} → {nextRange:F1}\n" +
+           $"\u2022 Fire Rate: {currBPS:F2} → {nextBPS:F2}";
+}
 
     private int GetTurretOriginalCost()
     {
@@ -327,6 +341,39 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
         if (TurretAreaDamageInstance != null) return TurretAreaDamageInstance.BaseCost;
         if (TurretArmourBreakerInstance != null) return TurretArmourBreakerInstance.BaseCost;
         return 0;
+    }
+    
+    private void UpdatePerformanceStats()
+    {
+        float dps = 0f;
+        int kills = 0;
+
+        // INTEGRA TUTTI I TIPI DI TORRE
+        
+        Turret turret = null;
+    
+        if (turretInstance != null) turret = turretInstance;
+        else if (turretSlowInstance != null)
+        {
+            dps = turretSlowInstance.CalculateCurrentDPS();
+            kills = turretSlowInstance.KillCount;
+            
+        }
+        else if (TurretLongRangeInstance != null) turret = TurretLongRangeInstance;
+        else if (TurretPoisonInstance != null) turret = TurretPoisonInstance;
+        else if (TurretAreaDamageInstance != null) turret = TurretAreaDamageInstance;
+        else if (TurretArmourBreakerInstance != null) turret = TurretArmourBreakerInstance;
+
+        if (turret != null)
+        {
+            dps = turret.CalculateCurrentDPS();
+            kills = turret.KillCount;
+        }
+        
+
+        // Update UI elements
+        if (dpsUI != null) dpsUI.text = $"DPS: {dps:F1}";
+        if (killsUI != null) killsUI.text = $"Kills: {kills}";
     }
 
     private void DrawCircle()

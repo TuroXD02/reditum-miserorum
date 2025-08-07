@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Audio;
 
-public class TurretSlow : MonoBehaviour
+public class TurretSlow : Turret
 {
     [Header("References")]
     [SerializeField] private LayerMask enemyMask;
@@ -48,23 +48,24 @@ public class TurretSlow : MonoBehaviour
     private float timeUntilFire;
 
     public int GetLevel() => level;
-    public int BaseCost => baseUpgradeCost; // Added property
-    public float CalculateBPS(int level) => 1f / CalculateAPS(level); // Added method
+    public int BaseCost => baseUpgradeCost;
+    public float CalculateBPS(int level) => 1f / CalculateAPS(level);
 
     private static Dictionary<EnemyMovement, Coroutine> activeResetCoroutines = new();
     private static Dictionary<EnemyMovement, float> lastSlowHitTime = new();
 
-    private void Start()
+    protected override void Start()
     {
+        base.Start(); // Call base implementation
         apsBase = aps;
         targetingRangeBase = targetingRange;
-
         upgradeButton.onClick.AddListener(Upgrade);
         PlaySound(placedClip);
     }
 
-    private void Update()
+    protected override void Update()
     {
+        base.Update(); // Maintains activeTime tracking
         timeUntilFire += Time.deltaTime;
         if (timeUntilFire >= 1f / aps)
         {
@@ -169,4 +170,7 @@ public class TurretSlow : MonoBehaviour
         audioSource.outputAudioMixerGroup = sfxMixerGroup;
         audioSource.PlayOneShot(clip, volume);
     }
+    
+    // Add override keyword and move to the bottom of the class
+    public override float CalculateCurrentDPS() => 0f;
 }
