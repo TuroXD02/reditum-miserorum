@@ -12,17 +12,18 @@ public class DisplaySettingsMenu : MonoBehaviour
 
     [Header("Escape / Back")]
     [SerializeField] private Button backButton; 
-    
 
     [Header("Dropdowns")]
     [SerializeField] private TMP_Dropdown displayModeDropdown;
     [SerializeField] private TMP_Dropdown resolutionDropdown;
+    [SerializeField] private TMP_Dropdown monitorDropdown; // NEW: Monitor selection
 
     [Header("Dropdown Resize Settings")]
     [SerializeField] private int maxVisibleItems = 5;
     [SerializeField] private float itemHeight = 60f;
 
     private Resolution[] availableResolutions;
+    private int currentMonitorIndex = 0; // Track selected monitor
 
     private void Start()
     {
@@ -35,6 +36,7 @@ public class DisplaySettingsMenu : MonoBehaviour
         if (backButton != null)
             backButton.onClick.AddListener(CloseSettingsPanel);
 
+        SetupMonitorDropdown();
         SetupResolutionDropdown();
         SetupDisplayModeDropdown();
 
@@ -48,6 +50,12 @@ public class DisplaySettingsMenu : MonoBehaviour
         {
             resolutionDropdown.onValueChanged.AddListener(OnResolutionChanged);
             resolutionDropdown.onValueChanged.AddListener(_ => StartCoroutine(ResizeDropdownNextFrame(resolutionDropdown)));
+        }
+
+        if (monitorDropdown != null)
+        {
+            monitorDropdown.onValueChanged.AddListener(OnMonitorChanged);
+            monitorDropdown.onValueChanged.AddListener(_ => StartCoroutine(ResizeDropdownNextFrame(monitorDropdown)));
         }
     }
 
@@ -69,6 +77,28 @@ public class DisplaySettingsMenu : MonoBehaviour
     {
         if (settingsPanel != null)
             settingsPanel.SetActive(false);
+    }
+
+    private void SetupMonitorDropdown()
+    {
+        if (monitorDropdown == null) return;
+
+        monitorDropdown.ClearOptions();
+        List<string> monitorOptions = new List<string>();
+
+        int displayCount = Display.displays.Length;
+
+        for (int i = 0; i < displayCount; i++)
+        {
+            monitorOptions.Add($"Monitor {i + 1}");
+        }
+
+        monitorDropdown.AddOptions(monitorOptions);
+
+        // Default to first monitor
+        currentMonitorIndex = 0;
+        monitorDropdown.value = currentMonitorIndex;
+        monitorDropdown.RefreshShownValue();
     }
 
     private void SetupResolutionDropdown()
@@ -127,6 +157,12 @@ public class DisplaySettingsMenu : MonoBehaviour
         displayModeDropdown.RefreshShownValue();
     }
 
+    private void OnMonitorChanged(int index)
+    {
+        currentMonitorIndex = index;
+        ApplyDisplaySettings(resolutionDropdown.value, Screen.fullScreenMode);
+    }
+
     private void OnDisplayModeChanged(int index)
     {
         FullScreenMode selectedMode = FullScreenMode.Windowed;
@@ -143,8 +179,7 @@ public class DisplaySettingsMenu : MonoBehaviour
 
     private void OnResolutionChanged(int index)
     {
-        FullScreenMode currentMode = Screen.fullScreenMode;
-        ApplyDisplaySettings(index, currentMode);
+        ApplyDisplaySettings(index, Screen.fullScreenMode);
     }
 
     private void ApplyDisplaySettings(int resolutionIndex, FullScreenMode mode)
@@ -153,6 +188,19 @@ public class DisplaySettingsMenu : MonoBehaviour
             return;
 
         Resolution res = availableResolutions[resolutionIndex];
+
+#if UNITY_2022_1_OR_NEWER
+        // Get available display info
+        List<DisplayInfo> displays = new List<DisplayInfo>();
+        Screen.GetDisplayLayout(displays);
+
+        if (currentMonitorIndex >= 0 && currentMonitorIndex < displays.Count)
+        {
+            var displayInfo = displays[currentMonitorIndex];
+            Screen.MoveMainWindowTo(displayInfo, Vector2Int.zero);
+        }
+#endif
+
         Screen.SetResolution(res.width, res.height, mode);
     }
 
