@@ -42,50 +42,49 @@ public class LongRangeBullet : MonoBehaviour
 
     private float afterimageTimer = 0f;
 
+    // owner is the base Turret type (so SetOwner accepts any turret subtype)
+    private Turret owner;
+
     private void Start()
     {
         startPosition = transform.position;
         spriteRenderer = GetComponent<SpriteRenderer>();
 
-        if (spriteRenderer != null)
-        {
-            spriteRenderer.color = startColor;
-        }
+        if (spriteRenderer == null)
+            Debug.LogError("LongRangeBullet: No SpriteRenderer found on bullet!");
         else
-        {
-            Debug.LogError("LongRangeBullet: No SpriteRenderer found!");
-        }
+            spriteRenderer.color = startColor;
 
-        Destroy(gameObject, 6f);
+        Destroy(gameObject, 6f); // safety cleanup
     }
 
+    // owner uses base Turret -> this keeps types simple and compatible
+    public void SetOwner(Turret turretOwner) => owner = turretOwner;
     public void SetDamage(int damage) => bulletDamage = damage;
     public void SetTarget(Transform _target) => target = _target;
 
     private void Update()
     {
-        transform.Rotate(0, 0, -2f * Time.deltaTime);
+        // slight rotation for visual effect
+        transform.Rotate(0f, 0f, -2f * Time.deltaTime);
 
         float distanceTraveled = Vector2.Distance(startPosition, transform.position);
         float factor = Mathf.Clamp01(distanceTraveled / maxDistanceForWhiteness);
 
         if (spriteRenderer != null)
-        {
             spriteRenderer.color = Color.Lerp(startColor, endColor, factor);
-        }
 
         afterimageTimer += Time.deltaTime;
         if (afterimageTimer >= afterimageSpawnInterval)
         {
-            SpawnAfterimage(distanceTraveled, factor);
+            SpawnAfterimage(factor);
             afterimageTimer = 0f;
         }
     }
 
     private void FixedUpdate()
     {
-        if (target == null) return;
-
+        if (target == null || rb == null) return;
         Vector2 direction = (target.position - transform.position).normalized;
         rb.velocity = direction * bulletSpeed;
     }
@@ -97,11 +96,31 @@ public class LongRangeBullet : MonoBehaviour
         float distanceTraveled = Vector2.Distance(startPosition, transform.position);
         int scaledDamage = Mathf.CeilToInt(bulletDamage + (distanceTraveled * damageMultiplier));
 
-        if (other.gameObject.TryGetComponent(out EnemyHealth enemyHealth))
-            enemyHealth.TakeDamage(scaledDamage);
+        bool enemyKilled = false;
 
-        if (other.gameObject.TryGetComponent(out LussuriaHealth lussuriaHealth))
+        // Prefer EnemyHealth.TakeDamage(dmg, owner) - it already records damage/kill back to the turret
+        if (other.gameObject.TryGetComponent(out EnemyHealth enemyHealth))
+        {
+            // This overload returns true if killed and also internally calls damageSource?.RecordDamage(...)
+            bool wasKilled = enemyHealth.TakeDamage(scaledDamage, owner);
+            enemyKilled = wasKilled;
+            // No need to manually call owner.RecordDamage()/RegisterDamage() when using this overload
+        }
+        else if (other.gameObject.TryGetComponent(out LussuriaHealth lussuriaHealth))
+        {
+            // LussuriaHealth doesn't accept an owner parameter in your provided code,
+            // so we manually notify the turret about damage and possible kill.
             lussuriaHealth.TakeDamage(scaledDamage);
+            owner?.RecordDamage(scaledDamage);
+
+            if (lussuriaHealth.IsDestroyed)
+            {
+                owner?.RecordKill();
+                enemyKilled = true;
+            }
+        }
+
+        // If you still needed any other enemy types, handle them here similarly.
 
         bool isMaxRange = (distanceTraveled / maxDistanceForWhiteness) >= maxDistanceThreshold;
         PlayImpactEffectAndSound(isMaxRange);
@@ -115,8 +134,7 @@ public class LongRangeBullet : MonoBehaviour
         GameObject chosenVFX = isMaxRange ? maxRangeImpactEffectPrefab : normalImpactEffectPrefab;
         AudioClip chosenSFX = isMaxRange ? maxRangeImpactSound : normalImpactSound;
 
-        // 🎇 Spawn VFX
-        if (chosenVFX != null)
+        if (chosenVFX != null && rb != null)
         {
             Vector2 bulletDir = rb.velocity.normalized;
             float angle = Mathf.Atan2(-bulletDir.y, -bulletDir.x) * Mathf.Rad2Deg + impactRotationOffset;
@@ -124,24 +142,18 @@ public class LongRangeBullet : MonoBehaviour
             Destroy(impact, impactEffectDuration);
         }
 
-        // 🎵 Play SFX immediately with PlayOneShot
         if (chosenSFX != null && sfxMixerGroup != null)
         {
             GameObject tempAudio = new GameObject("TempImpactSFX");
             tempAudio.transform.position = transform.position;
-
             AudioSource source = tempAudio.AddComponent<AudioSource>();
             source.outputAudioMixerGroup = sfxMixerGroup;
             source.volume = impactVolume;
-            source.spatialBlend = 0f; // 2D sound, set to 1f if you want 3D positioning
-
-            // Play instantly and independently
+            source.spatialBlend = 0f;
             source.PlayOneShot(chosenSFX);
-
-            Destroy(tempAudio, chosenSFX.length + 0.2f); // wait slightly longer
+            Destroy(tempAudio, chosenSFX.length + 0.2f);
         }
     }
-
 
     private void DisableBulletVisualsAndPhysics()
     {
@@ -156,7 +168,7 @@ public class LongRangeBullet : MonoBehaviour
         if (col != null) col.enabled = false;
     }
 
-    private void SpawnAfterimage(float distanceTraveled, float factor)
+    private void SpawnAfterimage(float factor)
     {
         if (afterimagePrefab == null || spriteRenderer == null) return;
 

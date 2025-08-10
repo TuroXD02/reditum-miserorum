@@ -1,8 +1,7 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class TurretArmourBreaker : MonoBehaviour
+public class TurretArmourBreaker : Turret
 {
     [Header("References")]
     [SerializeField] private Transform turretRotationPoint;
@@ -15,12 +14,8 @@ public class TurretArmourBreaker : MonoBehaviour
     [SerializeField] private Sprite[] towerStates;
 
     [Header("Attributes")]
-    public float targetingRange;
-    [SerializeField] private float rotationSpeed;
-    [SerializeField] private float attacksPerSecond;
-    public int baseUpgradeCost;
-    [SerializeField] private int attackDamage;
     [SerializeField] private int armourReduction;
+    private int armourReductionBase;
 
     [Header("Audio")]
     [SerializeField] private AudioSource audioSource;
@@ -31,30 +26,30 @@ public class TurretArmourBreaker : MonoBehaviour
     [SerializeField] private float volumeMin = 0.9f;
     [SerializeField] private float volumeMax = 1.1f;
 
-    private float baseAPS, baseRange;
-    private int baseDamage, baseArmourReduction;
+    // Stats & UI event
+    public int KillCount { get; private set; } = 0;
+    public float TotalDamageDealt { get; private set; } = 0f;
+    public event System.Action OnStatsUpdated;
 
-    private Transform target;
-    private float cooldown;
-    private int level = 1;
-
-    public int GetLevel() => level;
-    public int BaseCost => baseUpgradeCost; // Added property
-    public float CalculateBPS(int level) => 1f / CalculateAPS(level); // Added method
-
-    private void Start()
+    protected override void Start()
     {
-        baseAPS = attacksPerSecond;
-        baseRange = targetingRange;
-        baseDamage = attackDamage;
-        baseArmourReduction = armourReduction;
-
-        upgradeButton.onClick.AddListener(Upgrade);
-        UpdateSprite();
-        PlaySound(placeClip);
+        // Initialize base class fields properly
+        base.Start(); // Call base Start first
+        
+        // Cache base armour reduction value
+        armourReductionBase = armourReduction;
+        
+        // Set initial armour reduction using base value
+        armourReduction = CalculateArmourReduction(level);
     }
 
-    private void Update()
+    private void OnDestroy()
+    {
+        if (upgradeButton != null)
+            upgradeButton.onClick.RemoveListener(Upgrade);
+    }
+
+    protected override void Update()
     {
         if (target == null)
         {
@@ -62,84 +57,103 @@ public class TurretArmourBreaker : MonoBehaviour
             return;
         }
 
-        if (!IsTargetInRange()) target = null;
-        else
+        if (!CheckTargetIsInRange())
         {
-            cooldown += Time.deltaTime;
-            if (cooldown >= 1f / attacksPerSecond)
-            {
-                Attack();
-                cooldown = 0f;
-            }
+            target = null;
+            return;
+        }
+
+        timeUntilFire += Time.deltaTime;
+        if (timeUntilFire >= 1f / bps)
+        {
+            Shoot();
+            timeUntilFire = 0f;
         }
     }
 
-    private void Attack()
+    public override void Shoot()
     {
+        if (bulletPrefab == null || firingPoint == null || target == null) return;
+
         GameObject bulletObj = Instantiate(bulletPrefab, firingPoint.position, Quaternion.identity);
         ArmourBreakerBullet bullet = bulletObj.GetComponent<ArmourBreakerBullet>();
 
         if (bullet != null)
         {
             bullet.SetTarget(target);
-            bullet.SetDamage(attackDamage);
+            bullet.SetDamage(bulletDamage);
             bullet.SetArmourReduction(armourReduction);
-            bullet.transform.localScale = Vector3.one * (targetingRange / 5f);
+            bullet.SetSourceTurret(this);
+            bullet.transform.localScale = Vector3.one * Mathf.Max(0.1f, targetingRange / 5f);
         }
 
+        RegisterShot();
         PlaySound(shootClip);
     }
 
-    private void FindTarget()
+    public override void Upgrade()
     {
-        RaycastHit2D[] hits = Physics2D.CircleCastAll(transform.position, targetingRange, Vector2.zero, 0f, enemyMask);
-        if (hits.Length > 0) target = hits[0].transform;
-    }
-
-    private bool IsTargetInRange()
-    {
-        return Vector2.Distance(target.position, transform.position) <= targetingRange;
-    }
-
-    public void Upgrade()
-    {
-        int cost = CalculateCost();
-        if (cost > LevelManager.main.currency) return;
-
-        LevelManager.main.SpendCurrency(cost);
-        level++;
-
-        attacksPerSecond = CalculateAPS(level);
-        targetingRange = CalculateRange(level);
-        attackDamage = CalculateDamage(level);
-        armourReduction = CalculateArmourReduction(level);
-
-        UpdateSprite();
-        PlaySound(upgradeClip);
+        base.Upgrade(); // Use base upgrade functionality
+        armourReduction = CalculateArmourReduction(level); // Recalculate after upgrade
+        OnStatsUpdated?.Invoke();
     }
 
     private void UpdateSprite()
     {
-        if (turretSpriteRenderer != null && level - 1 < towerStates.Length)
+        if (turretSpriteRenderer != null && towerStates != null && level - 1 < towerStates.Length)
             turretSpriteRenderer.sprite = towerStates[level - 1];
     }
 
-    public int CalculateCost() => Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 0.8f));
+    public override float CalculateCurrentDPS()
+    {
+        // DPS = damage per bullet * bullets per second
+        return bulletDamage * bps;
+    }
 
-    public float CalculateAPS() => CalculateAPS(level);
-    public float CalculateRange() => CalculateRange(level);
-    public int CalculateDamage() => CalculateDamage(level);
-    public int CalculateArmourReduction() => CalculateArmourReduction(level);
+    // Armour reduction scaling
+    public int CalculateArmourReduction(int lvl)
+    {
+        return Mathf.RoundToInt(armourReductionBase * Mathf.Pow(lvl, 0.3f));
+    }
 
-    public float CalculateAPS(int lvl) => baseAPS * Mathf.Pow(lvl, 1f);
-    public float CalculateRange(int lvl) => baseRange * Mathf.Pow(lvl, 0.1f);
-    public int CalculateDamage(int lvl) => Mathf.RoundToInt(baseDamage * Mathf.Pow(lvl, 0.4f));
-    public int CalculateArmourReduction(int lvl) => Mathf.RoundToInt(baseArmourReduction * Mathf.Pow(lvl, 0.3f));
+    // Override the base class methods to calculate the correct stats with your scaling
+    public override float CalculateBPS(int lvl)
+    {
+        // Use your own scaling if needed or default
+        return bpsBase * Mathf.Pow(lvl, 1f);
+    }
 
-    public void OpenUpgradeUI() => upgradeUI.SetActive(true);
+    public override float CalculateRange(int lvl)
+    {
+        return targetingRangeBase * Mathf.Pow(lvl, 0.1f);
+    }
+
+    public override int CalculateBulletDamage(int lvl)
+    {
+        return Mathf.RoundToInt(bulletDamageBase * Mathf.Pow(lvl, 0.4f));
+    }
+
+    // For UI display
+    public string DamageStats => $"DMG: {bulletDamage} | ARM: -{armourReduction}";
+
+    // Register damage & kills (can be called from bullet scripts)
+    public void RegisterDamage(int damage)
+    {
+        TotalDamageDealt += damage;
+        OnStatsUpdated?.Invoke();
+    }
+
+    public void RegisterKill()
+    {
+        KillCount++;
+        OnStatsUpdated?.Invoke();
+    }
+
+    public void OpenUpgradeUI() => upgradeUI?.SetActive(true);
+
     public void CloseUpgradeUI()
     {
-        upgradeUI.SetActive(false);
+        if (upgradeUI != null) upgradeUI.SetActive(false);
         if (UiManager.main) UiManager.main.SetHoveringState(false);
     }
 
@@ -152,5 +166,11 @@ public class TurretArmourBreaker : MonoBehaviour
             float vol = Random.Range(volumeMin, volumeMax);
             audioSource.PlayOneShot(clip, vol);
         }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, targetingRange);
     }
 }

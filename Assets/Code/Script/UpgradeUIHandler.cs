@@ -24,8 +24,8 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
     public TurretPoison TurretPoisonInstance;
     public TurretAreaDamage TurretAreaDamageInstance;
     public TurretArmourBreaker TurretArmourBreakerInstance;
-    
-    [Header("Performance Stats")]
+
+    [Header("Performance Stats (TMP)")]
     [SerializeField] private TextMeshProUGUI dpsUI;
     [SerializeField] private TextMeshProUGUI killsUI;
 
@@ -36,11 +36,11 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
     public Color outerCircleColor = new Color(1f, 0.3f, 0.3f);
     public Material lineMaterial;
 
-    // Use LineRenderer pool instead of creating/destroying
     private List<LineRenderer> lineRendererPool = new List<LineRenderer>();
     private List<LineRenderer> activeRenderers = new List<LineRenderer>();
 
     private bool isHoveringUI = false;
+    private bool isUpgradeButtonHovered = false;
 
     private void Awake()
     {
@@ -60,17 +60,25 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
             if (trigger == null) trigger = upgradeButton.gameObject.AddComponent<EventTrigger>();
 
             var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
-            enter.callback.AddListener((data) => ShowStatPreview());
+            enter.callback.AddListener((data) => {
+                isUpgradeButtonHovered = true;
+                ShowStatPreview();
+                TogglePerformanceStats(false);
+            });
 
             var exit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
-            exit.callback.AddListener((data) => HideStatPreview());
+            exit.callback.AddListener((data) => {
+                isUpgradeButtonHovered = false;
+                HideStatPreview();
+                TogglePerformanceStats(true);
+            });
 
             trigger.triggers.Clear();
             trigger.triggers.Add(enter);
             trigger.triggers.Add(exit);
         }
 
-        statPreviewUI.text = "";
+        if (statPreviewUI != null) statPreviewUI.text = "";
         gameObject.SetActive(false);
     }
 
@@ -78,7 +86,7 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
     {
         if (!gameObject.activeSelf) return;
         UpdateCostAndSellGainUI();
-        UpdatePerformanceStats(); // Add this line
+        UpdatePerformanceStats();
     }
 
     public void ShowUpgradePanel()
@@ -86,6 +94,12 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
         gameObject.SetActive(true);
         UiManager.main?.SetHoveringState(true);
         DrawCircle();
+
+        // Subscribe to events for dynamic updates
+        if (TurretAreaDamageInstance != null)
+            TurretAreaDamageInstance.OnStatsUpdated += UpdatePerformanceStats;
+        if (TurretArmourBreakerInstance != null)
+            TurretArmourBreakerInstance.OnStatsUpdated += UpdatePerformanceStats;
     }
 
     public void CloseUpgradePanel()
@@ -95,6 +109,65 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
         HideStatPreview();
         gameObject.SetActive(false);
         isHoveringUI = false;
+
+        // Unsubscribe from events
+        if (TurretAreaDamageInstance != null)
+            TurretAreaDamageInstance.OnStatsUpdated -= UpdatePerformanceStats;
+        if (TurretArmourBreakerInstance != null)
+            TurretArmourBreakerInstance.OnStatsUpdated -= UpdatePerformanceStats;
+    }
+
+    // Turret reference setting methods
+    public void SetTurret(Turret turret)
+    {
+        ClearAllTurretReferences();
+        turretInstance = turret;
+        ShowUpgradePanel();
+    }
+
+    public void SetTurret(TurretSlow turret)
+    {
+        ClearAllTurretReferences();
+        turretSlowInstance = turret;
+        ShowUpgradePanel();
+    }
+
+    public void SetTurret(TurretLongRange turret)
+    {
+        ClearAllTurretReferences();
+        TurretLongRangeInstance = turret;
+        ShowUpgradePanel();
+    }
+
+    public void SetTurret(TurretPoison turret)
+    {
+        ClearAllTurretReferences();
+        TurretPoisonInstance = turret;
+        ShowUpgradePanel();
+    }
+
+    public void SetTurret(TurretAreaDamage turret)
+    {
+        ClearAllTurretReferences();
+        TurretAreaDamageInstance = turret;
+        ShowUpgradePanel();
+    }
+
+    public void SetTurret(TurretArmourBreaker turret)
+    {
+        ClearAllTurretReferences();
+        TurretArmourBreakerInstance = turret;
+        ShowUpgradePanel();
+    }
+
+    private void ClearAllTurretReferences()
+    {
+        turretInstance = null;
+        turretSlowInstance = null;
+        TurretLongRangeInstance = null;
+        TurretPoisonInstance = null;
+        TurretAreaDamageInstance = null;
+        TurretArmourBreakerInstance = null;
     }
 
     public void OnPointerEnter(PointerEventData eventData)
@@ -115,44 +188,45 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
         }
     }
 
+    private void TogglePerformanceStats(bool visible)
+    {
+        if (dpsUI != null)
+            dpsUI.gameObject.SetActive(visible);
+        if (killsUI != null)
+            killsUI.gameObject.SetActive(visible);
+    }
+
     public void UpgradeTower()
     {
         bool upgraded = false;
-        
-        // FIXED: Use LevelManager.main.currency instead of GetCurrency()
-        if (turretInstance != null && LevelManager.main.currency >= turretInstance.CalculateCost())
+
+        if (turretInstance != null)
         {
-            LevelManager.main.AddCurrency(-turretInstance.CalculateCost());
             turretInstance.Upgrade();
             upgraded = true;
         }
-        else if (turretSlowInstance != null && LevelManager.main.currency >= turretSlowInstance.CalculateCost())
+        else if (turretSlowInstance != null)
         {
-            LevelManager.main.AddCurrency(-turretSlowInstance.CalculateCost());
             turretSlowInstance.Upgrade();
             upgraded = true;
         }
-        else if (TurretLongRangeInstance != null && LevelManager.main.currency >= TurretLongRangeInstance.CalculateCost())
+        else if (TurretLongRangeInstance != null)
         {
-            LevelManager.main.AddCurrency(-TurretLongRangeInstance.CalculateCost());
             TurretLongRangeInstance.Upgrade();
             upgraded = true;
         }
-        else if (TurretPoisonInstance != null && LevelManager.main.currency >= TurretPoisonInstance.CalculateCost())
+        else if (TurretPoisonInstance != null)
         {
-            LevelManager.main.AddCurrency(-TurretPoisonInstance.CalculateCost());
             TurretPoisonInstance.Upgrade();
             upgraded = true;
         }
-        else if (TurretAreaDamageInstance != null && LevelManager.main.currency >= TurretAreaDamageInstance.CalculateCost())
+        else if (TurretAreaDamageInstance != null)
         {
-            LevelManager.main.AddCurrency(-TurretAreaDamageInstance.CalculateCost());
             TurretAreaDamageInstance.Upgrade();
             upgraded = true;
         }
-        else if (TurretArmourBreakerInstance != null && LevelManager.main.currency >= TurretArmourBreakerInstance.CalculateCost())
+        else if (TurretArmourBreakerInstance != null)
         {
-            LevelManager.main.AddCurrency(-TurretArmourBreakerInstance.CalculateCost());
             TurretArmourBreakerInstance.Upgrade();
             upgraded = true;
         }
@@ -187,150 +261,45 @@ public class UpgradeUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
         if (turretInstance != null)
         {
-            upgradeCost = turretInstance.CalculateCost();
+            upgradeCost = Mathf.RoundToInt(turretInstance.CalculateCost());
             sellGain = Mathf.RoundToInt(turretInstance.BaseCost * 0.5f);
             level = turretInstance.GetLevel();
         }
         else if (turretSlowInstance != null)
         {
-            upgradeCost = turretSlowInstance.CalculateCost();
+            upgradeCost = Mathf.RoundToInt(turretSlowInstance.CalculateCost());
             sellGain = Mathf.RoundToInt(turretSlowInstance.BaseCost * 0.5f);
             level = turretSlowInstance.GetLevel();
         }
         else if (TurretLongRangeInstance != null)
         {
-            upgradeCost = TurretLongRangeInstance.CalculateCost();
+            upgradeCost = Mathf.RoundToInt(TurretLongRangeInstance.CalculateCost());
             sellGain = Mathf.RoundToInt(TurretLongRangeInstance.BaseCost * 0.5f);
             level = TurretLongRangeInstance.GetLevel();
         }
         else if (TurretPoisonInstance != null)
         {
-            upgradeCost = TurretPoisonInstance.CalculateCost();
+            upgradeCost = Mathf.RoundToInt(TurretPoisonInstance.CalculateCost());
             sellGain = Mathf.RoundToInt(TurretPoisonInstance.BaseCost * 0.5f);
             level = TurretPoisonInstance.GetLevel();
         }
         else if (TurretAreaDamageInstance != null)
         {
-            upgradeCost = TurretAreaDamageInstance.CalculateCost();
+            upgradeCost = Mathf.RoundToInt(TurretAreaDamageInstance.CalculateCost());
             sellGain = Mathf.RoundToInt(TurretAreaDamageInstance.BaseCost * 0.5f);
             level = TurretAreaDamageInstance.GetLevel();
         }
         else if (TurretArmourBreakerInstance != null)
         {
-            upgradeCost = TurretArmourBreakerInstance.CalculateCost();
+            upgradeCost = Mathf.RoundToInt(TurretArmourBreakerInstance.CalculateCost());
             sellGain = Mathf.RoundToInt(TurretArmourBreakerInstance.BaseCost * 0.5f);
             level = TurretArmourBreakerInstance.GetLevel();
         }
 
-        costUI.text = upgradeCost.ToString();
-        sellGainUI.text = sellGain.ToString();
-        levelUI.text = $"Level {level}";
+        if (costUI != null) costUI.text = upgradeCost.ToString();
+        if (sellGainUI != null) sellGainUI.text = sellGain.ToString();
+        if (levelUI != null) levelUI.text = level.ToString();
     }
-
-    public void ShowStatPreview()
-    {
-        string preview = "";
-
-        if (turretInstance != null)
-            preview = GenerateTurretStatPreview(turretInstance.GetLevel(), turretInstance);
-        else if (turretSlowInstance != null)
-            preview = GenerateTurretStatPreview(turretSlowInstance.GetLevel(), turretSlowInstance);
-        else if (TurretLongRangeInstance != null)
-            preview = GenerateTurretStatPreview(TurretLongRangeInstance.GetLevel(), TurretLongRangeInstance);
-        else if (TurretPoisonInstance != null)
-            preview = GenerateTurretStatPreview(TurretPoisonInstance.GetLevel(), TurretPoisonInstance);
-        else if (TurretAreaDamageInstance != null)
-            preview = GenerateTurretStatPreview(TurretAreaDamageInstance.GetLevel(), TurretAreaDamageInstance);
-        else if (TurretArmourBreakerInstance != null)
-            preview = GenerateTurretStatPreview(TurretArmourBreakerInstance.GetLevel(), TurretArmourBreakerInstance);
-
-        statPreviewUI.text = preview;
-    }
-
-    private void HideStatPreview() => statPreviewUI.text = "";
-
-private string GenerateTurretStatPreview(int currentLevel, object turret)
-{
-    int nextLevel = currentLevel + 1;
-    float currBPS = 0f, nextBPS = 0f;
-    float currRange = 0f, nextRange = 0f;
-    int currDamage = 0, nextDamage = 0;
-
-    // Check most specific types first
-    if (turret is TurretLongRange tLR)
-    {
-        currBPS = tLR.CalculateBPS(currentLevel);
-        nextBPS = tLR.CalculateBPS(nextLevel);
-        currRange = tLR.CalculateRange(currentLevel);
-        nextRange = tLR.CalculateRange(nextLevel);
-        currDamage = tLR.CalculateBulletDamage(currentLevel);
-        nextDamage = tLR.CalculateBulletDamage(nextLevel);
-        return $"<b>Next Upgrade:</b>\n" +
-               $"\u2022 Damage: {currDamage} → {nextDamage} (x1 min dist. - x350 max dist)\n" +
-               $"\u2022 Range: {currRange:F1} → {nextRange:F1}\n" +
-               $"\u2022 Fire Rate: {currBPS:F2} → {nextBPS:F2}";
-    }
-    else if (turret is TurretPoison tP)
-    {
-        currBPS = tP.CalculateBPS(currentLevel);
-        nextBPS = tP.CalculateBPS(nextLevel);
-        currRange = tP.CalculateRange(currentLevel);
-        nextRange = tP.CalculateRange(nextLevel);
-        currDamage = tP.CalculateBulletDamage(currentLevel);
-        nextDamage = tP.CalculateBulletDamage(nextLevel);
-        return $"<b>Next Upgrade:</b>\n" +
-               $"\u2022 Damage: {currDamage} → {nextDamage} (+ poison = 50dmg x 2sec. stackable)\n" +
-               $"\u2022 Range: {currRange:F1} → {nextRange:F1}\n" +
-               $"\u2022 Fire Rate: {currBPS:F2} → {nextBPS:F2}";
-    }
-    else if (turret is TurretAreaDamage tAD)
-    {
-        currBPS = tAD.CalculateBPS(currentLevel);
-        nextBPS = tAD.CalculateBPS(nextLevel);
-        currRange = tAD.CalculateRange(currentLevel);
-        nextRange = tAD.CalculateRange(nextLevel);
-        currDamage = tAD.CalculateBulletDamage(currentLevel);
-        nextDamage = tAD.CalculateBulletDamage(nextLevel);
-        // Keep the break and use the base format
-    }
-    else if (turret is TurretArmourBreaker tAB)
-    {
-        currBPS = tAB.CalculateBPS(currentLevel);
-        nextBPS = tAB.CalculateBPS(nextLevel);
-        currRange = tAB.CalculateRange(currentLevel);
-        nextRange = tAB.CalculateRange(nextLevel);
-        currDamage = tAB.CalculateDamage(currentLevel);
-        nextDamage = tAB.CalculateDamage(nextLevel);
-        // Keep the break and use the base format
-    }
-    else if (turret is TurretSlow tS)
-    {
-        currBPS = tS.CalculateBPS(currentLevel);
-        nextBPS = tS.CalculateBPS(nextLevel);
-        currRange = tS.CalculateRange(currentLevel);
-        nextRange = tS.CalculateRange(nextLevel);
-        // No damage for slow turrets
-        return $"<b>Next Upgrade:</b>\n" +
-               $"\u2022 Slow Power: Increased\n" +
-               $"\u2022 Range: {currRange:F1} → {nextRange:F1}\n" +
-               $"\u2022 Fire Rate: {currBPS:F2} → {nextBPS:F2}";
-    }
-    else if (turret is Turret t)
-    {
-        currBPS = t.CalculateBPS(currentLevel);
-        nextBPS = t.CalculateBPS(nextLevel);
-        currRange = t.CalculateRange(currentLevel);
-        nextRange = t.CalculateRange(nextLevel);
-        currDamage = t.CalculateBulletDamage(currentLevel);
-        nextDamage = t.CalculateBulletDamage(nextLevel);
-    }
-
-    // Default format for turrets without special descriptions
-    return $"<b>Next Upgrade:</b>\n" +
-           $"\u2022 Damage: {currDamage} → {nextDamage}\n" +
-           $"\u2022 Range: {currRange:F1} → {nextRange:F1}\n" +
-           $"\u2022 Fire Rate: {currBPS:F2} → {nextBPS:F2}";
-}
 
     private int GetTurretOriginalCost()
     {
@@ -340,160 +309,242 @@ private string GenerateTurretStatPreview(int currentLevel, object turret)
         if (TurretPoisonInstance != null) return TurretPoisonInstance.BaseCost;
         if (TurretAreaDamageInstance != null) return TurretAreaDamageInstance.BaseCost;
         if (TurretArmourBreakerInstance != null) return TurretArmourBreakerInstance.BaseCost;
+
         return 0;
     }
-    
-    private void UpdatePerformanceStats()
+
+    private float GetTurretTargetingRange()
     {
-        float dps = 0f;
-        int kills = 0;
-
-        // INTEGRA TUTTI I TIPI DI TORRE
-        
-        Turret turret = null;
-    
-        if (turretInstance != null) turret = turretInstance;
-        else if (turretSlowInstance != null)
-        {
-            dps = turretSlowInstance.CalculateCurrentDPS();
-            kills = turretSlowInstance.KillCount;
-            
-        }
-        else if (TurretLongRangeInstance != null) turret = TurretLongRangeInstance;
-        else if (TurretPoisonInstance != null) turret = TurretPoisonInstance;
-        else if (TurretAreaDamageInstance != null) turret = TurretAreaDamageInstance;
-        else if (TurretArmourBreakerInstance != null) turret = TurretArmourBreakerInstance;
-
-        if (turret != null)
-        {
-            dps = turret.CalculateCurrentDPS();
-            kills = turret.KillCount;
-        }
-        
-
-        // Update UI elements
-        if (dpsUI != null) dpsUI.text = $"DPS: {dps:F1}";
-        if (killsUI != null) killsUI.text = $"Kills: {kills}";
+        if (turretInstance != null) return turretInstance.CalculateRange(turretInstance.GetLevel());
+        if (turretSlowInstance != null) return turretSlowInstance.CalculateRange(turretSlowInstance.GetLevel());
+        if (TurretLongRangeInstance != null) return TurretLongRangeInstance.CalculateRange(TurretLongRangeInstance.GetLevel());
+        if (TurretPoisonInstance != null) return TurretPoisonInstance.CalculateRange(TurretPoisonInstance.GetLevel());
+        if (TurretAreaDamageInstance != null) return TurretAreaDamageInstance.CalculateRange(TurretAreaDamageInstance.GetLevel());
+        if (TurretArmourBreakerInstance != null) return TurretArmourBreakerInstance.CalculateRange(TurretArmourBreakerInstance.GetLevel());
+        return 0f;
     }
 
     private void DrawCircle()
     {
-        float range = GetTurretTargetingRange();
-        if (range <= 0f)
-        {
-            Debug.LogWarning("Targeting range is 0 or negative");
-            return;
-        }
+        HideCircle();
 
-        ClearRings();
-        Vector3 center = GetTurretPosition();
-        center.z = -1f;
+        float maxRadius = GetTurretTargetingRange();
+        if (maxRadius <= 0) return;
 
-        int ringsDrawn = 0;
-
-        for (float radius = lineSpacing; radius < range; radius += lineSpacing)
-        {
-            DrawRing(radius, center, innerCircleColor);
-            ringsDrawn++;
-        }
-
-        DrawRing(range, center, outerCircleColor);
-        ringsDrawn++;
-
-        Debug.Log($"Drew {ringsDrawn} rings for range {range} at position {center}");
-    }
-
-    private void DrawRing(float radius, Vector3 center, Color color)
-    {
-        LineRenderer ring = GetAvailableLineRenderer();
-        activeRenderers.Add(ring);
-
-        ring.gameObject.SetActive(true);
-        ring.positionCount = circleSegments + 1;
-        ring.startColor = color;
-        ring.endColor = color;
-        ring.widthMultiplier = 0.07f;
-
-        ring.material = lineMaterial ? lineMaterial : CreateDefaultMaterial();
-        ring.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        ring.receiveShadows = false;
-        ring.loop = true;
-        ring.useWorldSpace = true;
-        ring.sortingOrder = 2;
-
+        Vector3 center = transform.position;
         float angleStep = 360f / circleSegments;
-        for (int j = 0; j <= circleSegments; j++)
+        int numberOfCircles = 20;  // More circles for finer spacing near center
+
+        for (int i = 1; i <= numberOfCircles; i++)
         {
-            float angle = j * angleStep * Mathf.Deg2Rad;
-            Vector3 pos = new Vector3(
-                Mathf.Cos(angle) * radius + center.x,
-                Mathf.Sin(angle) * radius + center.y,
-                center.z
-            );
-            ring.SetPosition(j, pos);
+            float normalizedIndex = (float)i / numberOfCircles;
+            // Quadratic spacing
+            float radius = maxRadius * Mathf.Pow(normalizedIndex, 2);
+
+            LineRenderer circleLine = GetLineRendererFromPool();
+            circleLine.loop = true;
+
+            float t = normalizedIndex;
+            Color circleColor = Color.Lerp(innerCircleColor, outerCircleColor, t);
+            circleLine.startColor = circleColor;
+            circleLine.endColor = circleColor;
+
+            circleLine.positionCount = circleSegments + 1;
+
+            for (int j = 0; j <= circleSegments; j++)
+            {
+                float angle = j * angleStep * Mathf.Deg2Rad;
+                float x = Mathf.Cos(angle) * radius;
+                float y = Mathf.Sin(angle) * radius;
+                circleLine.SetPosition(j, center + new Vector3(x, y, 0));
+            }
         }
     }
 
-    private LineRenderer GetAvailableLineRenderer()
+
+
+    private LineRenderer GetLineRendererFromPool()
     {
-        foreach (var lr in lineRendererPool)
+        LineRenderer lineRenderer;
+
+        if (lineRendererPool.Count > 0)
         {
-            if (!lr.gameObject.activeSelf)
-                return lr;
+            lineRenderer = lineRendererPool[0];
+            lineRendererPool.RemoveAt(0);
+        }
+        else
+        {
+            GameObject lineObj = new GameObject("RangeCircle");
+            lineObj.transform.parent = transform;
+            lineRenderer = lineObj.AddComponent<LineRenderer>();
+
+            lineRenderer.material = lineMaterial;
+            lineRenderer.widthMultiplier = 0.05f;
+            lineRenderer.loop = true;
+            lineRenderer.useWorldSpace = true;
+            lineRenderer.numCapVertices = 5;
+            lineRenderer.numCornerVertices = 5;
         }
 
-        GameObject go = new GameObject("RangeCircleRing");
-        go.transform.SetParent(transform);
-        LineRenderer newLR = go.AddComponent<LineRenderer>();
-        lineRendererPool.Add(newLR);
-        return newLR;
+        lineRenderer.enabled = true;
+        activeRenderers.Add(lineRenderer);
+        return lineRenderer;
     }
 
-    private Material CreateDefaultMaterial()
+    private void HideCircle()
     {
-        Shader shader = Shader.Find("Unlit/Color");
-        if (shader == null)
+        foreach (var line in activeRenderers)
         {
-            Debug.LogError("Unlit/Color shader not found!");
-            return null;
-        }
-
-        Material mat = new Material(shader);
-        mat.color = Color.white;
-        return mat;
-    }
-
-    private void ClearRings()
-    {
-        foreach (var ring in activeRenderers)
-        {
-            if (ring != null)
-                ring.gameObject.SetActive(false);
+            line.enabled = false;
+            lineRendererPool.Add(line);
         }
         activeRenderers.Clear();
     }
 
-    private void HideCircle() => ClearRings();
-
-    private float GetTurretTargetingRange()
+    private void ShowStatPreview()
     {
-        if (turretInstance != null) return turretInstance.targetingRange;
-        if (turretSlowInstance != null) return turretSlowInstance.targetingRange;
-        if (TurretLongRangeInstance != null) return TurretLongRangeInstance.targetingRange;
-        if (TurretPoisonInstance != null) return TurretPoisonInstance.targetingRange;
-        if (TurretAreaDamageInstance != null) return TurretAreaDamageInstance.targetingRange;
-        if (TurretArmourBreakerInstance != null) return TurretArmourBreakerInstance.targetingRange;
-        return 0f;
+        if (!isUpgradeButtonHovered || statPreviewUI == null) return;
+
+        statPreviewUI.gameObject.SetActive(true);
+
+        int currentLevel = 0;
+
+        if (turretInstance != null) currentLevel = turretInstance.GetLevel();
+        else if (turretSlowInstance != null) currentLevel = turretSlowInstance.GetLevel();
+        else if (TurretLongRangeInstance != null) currentLevel = TurretLongRangeInstance.GetLevel();
+        else if (TurretPoisonInstance != null) currentLevel = TurretPoisonInstance.GetLevel();
+        else if (TurretAreaDamageInstance != null) currentLevel = TurretAreaDamageInstance.GetLevel();
+        else if (TurretArmourBreakerInstance != null) currentLevel = TurretArmourBreakerInstance.GetLevel();
+
+        int nextLevel = currentLevel + 1;
+
+        float bpsCurrent = 0f, bpsNext = 0f;
+        float rangeCurrent = 0f, rangeNext = 0f;
+        int damageCurrent = 0, damageNext = 0;
+        int armourReductionCurrent = 0, armourReductionNext = 0;
+
+        if (turretInstance != null)
+        {
+            bpsCurrent = turretInstance.CalculateBPS(currentLevel);
+            bpsNext = turretInstance.CalculateBPS(nextLevel);
+            rangeCurrent = turretInstance.CalculateRange(currentLevel);
+            rangeNext = turretInstance.CalculateRange(nextLevel);
+            damageCurrent = turretInstance.CalculateBulletDamage(currentLevel);
+            damageNext = turretInstance.CalculateBulletDamage(nextLevel);
+        }
+        else if (turretSlowInstance != null)
+        {
+            bpsCurrent = turretSlowInstance.CalculateBPS(currentLevel);
+            bpsNext = turretSlowInstance.CalculateBPS(nextLevel);
+            rangeCurrent = turretSlowInstance.CalculateRange(currentLevel);
+            rangeNext = turretSlowInstance.CalculateRange(nextLevel);
+            damageCurrent = turretSlowInstance.CalculateBulletDamage(currentLevel);
+            damageNext = turretSlowInstance.CalculateBulletDamage(nextLevel);
+        }
+        else if (TurretLongRangeInstance != null)
+        {
+            bpsCurrent = TurretLongRangeInstance.CalculateBPS(currentLevel);
+            bpsNext = TurretLongRangeInstance.CalculateBPS(nextLevel);
+            rangeCurrent = TurretLongRangeInstance.CalculateRange(currentLevel);
+            rangeNext = TurretLongRangeInstance.CalculateRange(nextLevel);
+            damageCurrent = TurretLongRangeInstance.CalculateBulletDamage(currentLevel);
+            damageNext = TurretLongRangeInstance.CalculateBulletDamage(nextLevel);
+        }
+        else if (TurretPoisonInstance != null)
+        {
+            bpsCurrent = TurretPoisonInstance.CalculateBPS(currentLevel);
+            bpsNext = TurretPoisonInstance.CalculateBPS(nextLevel);
+            rangeCurrent = TurretPoisonInstance.CalculateRange(currentLevel);
+            rangeNext = TurretPoisonInstance.CalculateRange(nextLevel);
+            damageCurrent = TurretPoisonInstance.CalculateBulletDamage(currentLevel);
+            damageNext = TurretPoisonInstance.CalculateBulletDamage(nextLevel);
+        }
+        else if (TurretAreaDamageInstance != null)
+        {
+            bpsCurrent = TurretAreaDamageInstance.CalculateBPS(currentLevel);
+            bpsNext = TurretAreaDamageInstance.CalculateBPS(nextLevel);
+            rangeCurrent = TurretAreaDamageInstance.CalculateRange(currentLevel);
+            rangeNext = TurretAreaDamageInstance.CalculateRange(nextLevel);
+            damageCurrent = TurretAreaDamageInstance.CalculateBulletDamage(currentLevel);
+            damageNext = TurretAreaDamageInstance.CalculateBulletDamage(nextLevel);
+        }
+        else if (TurretArmourBreakerInstance != null)
+        {
+            bpsCurrent = TurretArmourBreakerInstance.CalculateBPS(currentLevel);
+            bpsNext = TurretArmourBreakerInstance.CalculateBPS(nextLevel);
+            rangeCurrent = TurretArmourBreakerInstance.CalculateRange(currentLevel);
+            rangeNext = TurretArmourBreakerInstance.CalculateRange(nextLevel);
+            damageCurrent = TurretArmourBreakerInstance.CalculateBulletDamage(currentLevel);
+            damageNext = TurretArmourBreakerInstance.CalculateBulletDamage(nextLevel);
+            armourReductionCurrent = TurretArmourBreakerInstance.CalculateArmourReduction(currentLevel);
+            armourReductionNext = TurretArmourBreakerInstance.CalculateArmourReduction(nextLevel);
+        }
+
+        // Format preview text
+        string previewText = $"BPS: {bpsCurrent:F2} -> {bpsNext:F2}\n" +
+                            $"Range: {rangeCurrent:F2} -> {rangeNext:F2}\n" +
+                            $"Damage: {damageCurrent} -> {damageNext}";
+
+        // Add armour reduction for armour breaker
+        if (TurretArmourBreakerInstance != null)
+        {
+            previewText += $"\nArmour Red: {armourReductionCurrent} -> {armourReductionNext}";
+        }
+
+        statPreviewUI.text = previewText;
     }
 
-    private Vector3 GetTurretPosition()
+    private void HideStatPreview()
     {
-        if (turretInstance != null) return turretInstance.transform.position;
-        if (turretSlowInstance != null) return turretSlowInstance.transform.position;
-        if (TurretLongRangeInstance != null) return TurretLongRangeInstance.transform.position;
-        if (TurretPoisonInstance != null) return TurretPoisonInstance.transform.position;
-        if (TurretAreaDamageInstance != null) return TurretAreaDamageInstance.transform.position;
-        if (TurretArmourBreakerInstance != null) return TurretArmourBreakerInstance.transform.position;
-        return Vector3.zero;
+        if (statPreviewUI != null) statPreviewUI.gameObject.SetActive(false);
+    }
+
+    private void UpdatePerformanceStats()
+    {
+        int kills = 0;
+        float dps = 0f;
+        string extraInfo = "";
+
+        if (turretInstance != null)
+        {
+            kills = turretInstance.KillCount;
+            dps = turretInstance.CalculateCurrentDPS();
+        }
+        else if (turretSlowInstance != null)
+        {
+            kills = turretSlowInstance.KillCount;
+            dps = turretSlowInstance.CalculateCurrentDPS();
+        }
+        else if (TurretLongRangeInstance != null)
+        {
+            kills = TurretLongRangeInstance.KillCount;
+            dps = TurretLongRangeInstance.CalculateCurrentDPS();
+        }
+        else if (TurretPoisonInstance != null)
+        {
+            kills = TurretPoisonInstance.KillCount;
+            dps = TurretPoisonInstance.CalculateCurrentDPS();
+        }
+        else if (TurretAreaDamageInstance != null)
+        {
+            kills = TurretAreaDamageInstance.KillCount;
+            dps = TurretAreaDamageInstance.CalculateCurrentDPS();
+        }
+        else if (TurretArmourBreakerInstance != null)
+        {
+            kills = TurretArmourBreakerInstance.KillCount;
+            dps = TurretArmourBreakerInstance.CalculateCurrentDPS();
+            extraInfo = TurretArmourBreakerInstance.DamageStats;
+        }
+
+        if (killsUI != null) killsUI.text = $"Kills: {kills}";
+        
+        if (dpsUI != null)
+        {
+            if (!string.IsNullOrEmpty(extraInfo))
+                dpsUI.text = $"DPS: {dps:F1}\n{extraInfo}";
+            else
+                dpsUI.text = $"DPS: {dps:F1}";
+        }
     }
 }

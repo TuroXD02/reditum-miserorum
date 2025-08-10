@@ -45,51 +45,38 @@ public class AbaddonEnemyHealth : EnemyHealth
         audioSource.outputAudioMixerGroup = audioMixerGroup;
     }
 
-    public override void TakeDamage(int dmg)
+    public override bool TakeDamage(int dmg, Turret damageSource = null)
     {
-        if (isDestroyed) return;
+        if (isDestroyed) return false;
 
-        // Play damage sound
         PlayDamageSound();
-
-        // Reduce speed
-        if (enemyMovement != null)
-        {
-            float oldSpeed = enemyMovement.moveSpeed;
-            float newSpeed = oldSpeed * (1f - speedReductionPercentage);
-            enemyMovement.UpdateSpeed(newSpeed);
-        }
-
-        // Handle sprite switching
+        ApplySpeedReduction();
         totalHitCount++;
         CheckAndSwitchSprite();
 
-        // Apply damage
-        base.TakeDamage(dmg);
+        return base.TakeDamage(dmg, damageSource);
     }
 
-    public override void TakeDamageDOT(int dmg)
+    public override void TakeDamageDOT(int dmg, Turret damageSource = null)
     {
         if (isDestroyed) return;
 
-        // Play damage sound
         PlayDamageSound();
+        ApplySpeedReduction();
+        totalHitCount++;
+        CheckAndSwitchSprite();
 
-        // Reduce speed
+        base.TakeDamageDOT(dmg, damageSource);
+    }
+
+    private void ApplySpeedReduction()
+    {
         if (enemyMovement != null)
         {
             float oldSpeed = enemyMovement.moveSpeed;
             float newSpeed = oldSpeed * (1f - speedReductionPercentage);
             enemyMovement.UpdateSpeed(newSpeed);
-            Debug.Log($"{gameObject.name} speed reduced from {oldSpeed} to {newSpeed} due to DOT damage.");
         }
-
-        // Handle sprite switching
-        totalHitCount++;
-        CheckAndSwitchSprite();
-
-        // Apply DOT damage
-        base.TakeDamageDOT(dmg);
     }
 
     private void CheckAndSwitchSprite()
@@ -100,7 +87,6 @@ public class AbaddonEnemyHealth : EnemyHealth
             if (spriteRenderer != null)
             {
                 spriteRenderer.sprite = hitSprites[spriteIndex];
-                Debug.Log($"{gameObject.name} switched sprite to index {spriteIndex} after {totalHitCount} hits.");
             }
         }
     }

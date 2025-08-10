@@ -27,7 +27,7 @@ public class EnemyHealth : MonoBehaviour
     private AudioSource audioSource;
 
     // Reference to turret that last dealt damage
-    private Turret lastDamageSource;
+    protected Turret lastDamageSource;
 
     public virtual int HitPoints => hitPoints;
     public bool IsDestroyed => isDestroyed;
@@ -72,8 +72,17 @@ public class EnemyHealth : MonoBehaviour
 
         hitPoints -= finalDamage;
 
-        lastDamageSource = damageSource;
-        damageSource?.RecordDamage(finalDamage);
+        // Only update lastDamageSource if a turret is provided.
+        if (damageSource != null)
+        {
+            lastDamageSource = damageSource;
+            damageSource.RecordDamage(finalDamage);
+            Debug.Log($"[EnemyHealth] {name} took {finalDamage} dmg from turret '{damageSource.name}'. Remaining HP={hitPoints}");
+        }
+        else
+        {
+            Debug.Log($"[EnemyHealth] {name} took {finalDamage} dmg from NON-TURRET source. Remaining HP={hitPoints}");
+        }
 
         CheckHealthSprite();
 
@@ -88,6 +97,7 @@ public class EnemyHealth : MonoBehaviour
 
     /// <summary>
     /// Base version of TakeDamage. Can be overridden by subclasses.
+    /// NOTE: this overload does NOT change lastDamageSource.
     /// </summary>
     public virtual void TakeDamage(int dmg)
     {
@@ -99,6 +109,8 @@ public class EnemyHealth : MonoBehaviour
         int finalDamage = Mathf.CeilToInt(dmg * damageMultiplier);
         hitPoints -= finalDamage;
 
+        Debug.Log($"[EnemyHealth] {name} took {finalDamage} dmg (no source). Remaining HP={hitPoints}");
+
         CheckHealthSprite();
 
         if (hitPoints <= 0)
@@ -107,13 +119,28 @@ public class EnemyHealth : MonoBehaviour
         }
     }
 
-    public virtual void TakeDamageDOT(int dmg)
+    /// <summary>
+    /// DOT overload now accepts optional Turret owner so we can credit damage/kills properly.
+    /// </summary>
+    public virtual void TakeDamageDOT(int dmg, Turret damageSource = null)
     {
         if (isDestroyed) return;
 
         PlayDamageSound();
 
         hitPoints -= dmg;
+
+        if (damageSource != null)
+        {
+            lastDamageSource = damageSource;
+            damageSource.RecordDamage(dmg);
+            Debug.Log($"[EnemyHealth DOT] {name} took {dmg} DOT from turret '{damageSource.name}'. Remaining HP={hitPoints}");
+        }
+        else
+        {
+            Debug.Log($"[EnemyHealth DOT] {name} took {dmg} DOT (no turret source). Remaining HP={hitPoints}");
+        }
+
         CheckHealthSprite();
 
         if (hitPoints <= 0)
@@ -135,9 +162,17 @@ public class EnemyHealth : MonoBehaviour
         isDestroyed = true;
 
         // Let the turret know it got a kill
-        lastDamageSource?.RecordKill();
+        if (lastDamageSource != null)
+        {
+            Debug.Log($"[EnemyHealth] {name} destroyed. Crediting kill to '{lastDamageSource.name}'.");
+            lastDamageSource.RecordKill();
+        }
+        else
+        {
+            Debug.LogWarning($"[EnemyHealth] {name} destroyed but lastDamageSource is null (killed by environment or non-turret).");
+        }
 
-        EnemySpawner.onEnemyDestroy.Invoke();
+        EnemySpawner.onEnemyDestroy?.Invoke();
         LevelManager.main?.IncreaseCurrency(currencyWorth);
 
         if (deathPrefab != null)

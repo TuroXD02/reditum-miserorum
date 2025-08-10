@@ -1,73 +1,58 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.Audio;
 
 public class TurretSlow : Turret
 {
-    [Header("References")]
-    [SerializeField] private LayerMask enemyMask;
-    [SerializeField] private GameObject upgradeUI;
-    [SerializeField] private Button upgradeButton;
-    [SerializeField] private SpriteRenderer turretSpriteRenderer;
-    [SerializeField] private Sprite[] upgradeSprites;
+    [Header("Slow turret specific")]
+    [SerializeField] private float aps = 1f; // pulses per second
+    [SerializeField] private float freezeTime = 2f;
 
-    [Header("Attributes")]
-    [SerializeField] public float targetingRange;
-    [SerializeField] private float aps;
-    [SerializeField] private float freezeTime;
-    [SerializeField] public int baseUpgradeCost;
-
-    [Header("Freeze Effect Animation")]
+    [Header("Visuals & FX")]
     [SerializeField] private GameObject freezeEffectPrefab;
     [SerializeField] private RuntimeAnimatorController freezeAnimatorController;
     [SerializeField] private float freezeEffectDuration = 2f;
-
-    [Header("Enemy Visual FX")]
     [SerializeField] private GameObject enemyVisualEffectPrefab;
     [SerializeField] private float enemyEffectDuration = 3f;
-
-    [Header("Enemy Tint Settings")]
     [SerializeField] private Color enemyBlueColor = new Color(0.7f, 0.7f, 1f, 1f);
     [SerializeField] private float tintLerpDuration = 0.5f;
 
     [Header("Audio")]
-    [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip freezeClip;
-    [SerializeField] private AudioClip upgradeClip;
     [SerializeField] private AudioClip placedClip;
-    [SerializeField] private float volumeMin = 0.9f;
-    [SerializeField] private float volumeMax = 1.1f;
+    [SerializeField] private AudioClip upgradeClip;
     [SerializeField] private AudioMixerGroup sfxMixerGroup;
 
-    // Internals
+    // Cached base values
     private float apsBase;
-    private float targetingRangeBase;
-    private int level = 1;
+
+    // Local firing timer
     private float timeUntilFire;
 
-    public int GetLevel() => level;
-    public int BaseCost => baseUpgradeCost;
-    public float CalculateBPS(int level) => 1f / CalculateAPS(level);
-
-    private static Dictionary<EnemyMovement, Coroutine> activeResetCoroutines = new();
-    private static Dictionary<EnemyMovement, float> lastSlowHitTime = new();
+    // --- Scaling methods ---
+    // Increased exponent for more noticeable upgrades
+    public float CalculateAPS(int lvl) => apsBase * Mathf.Pow(lvl, 0.4f);
+    public override float CalculateRange(int lvl) => targetingRangeBase * Mathf.Pow(lvl, 0.25f);
+    public override float CalculateBPS(int lvl) => CalculateAPS(lvl); // UI compatibility
 
     protected override void Start()
     {
-        base.Start(); // Call base implementation
+        // Cache before calling base
         apsBase = aps;
-        targetingRangeBase = targetingRange;
-        upgradeButton.onClick.AddListener(Upgrade);
+        base.Start();
+
+        // Ensure bps matches initial aps
+        bps = aps;
         PlaySound(placedClip);
     }
 
     protected override void Update()
     {
-        base.Update(); // Maintains activeTime tracking
+        // Increment timer
         timeUntilFire += Time.deltaTime;
-        if (timeUntilFire >= 1f / aps)
+
+        // Fire based on APS (via bps mapping)
+        if (timeUntilFire >= 1f / bps)
         {
             Freeze();
             timeUntilFire = 0f;
@@ -85,22 +70,22 @@ public class TurretSlow : Turret
             var em = hit.transform.GetComponent<EnemyMovement>();
             if (em == null) continue;
 
+            // Slow to 10% of normal speed
             em.UpdateSpeed(0.1f);
-            lastSlowHitTime[em] = Time.time;
 
-            if (!activeResetCoroutines.ContainsKey(em))
-                activeResetCoroutines[em] = StartCoroutine(ResetEnemySpeed(em, freezeTime));
-
+            // Enemy visual FX
             if (enemyVisualEffectPrefab != null)
             {
                 GameObject effect = Instantiate(enemyVisualEffectPrefab, hit.transform.position, Quaternion.identity, hit.transform);
                 Destroy(effect, enemyEffectDuration);
             }
 
+            // Tint + slow effect
             var slowEffect = em.GetComponent<EnemySlowEffect>() ?? em.gameObject.AddComponent<EnemySlowEffect>();
             slowEffect.ApplySlowEffect(enemyBlueColor, tintLerpDuration, freezeTime);
         }
 
+        // Turret visual FX
         if (freezeEffectPrefab != null)
         {
             GameObject effect = Instantiate(freezeEffectPrefab, transform.position, Quaternion.identity, transform);
@@ -114,63 +99,16 @@ public class TurretSlow : Turret
         PlaySound(freezeClip);
     }
 
-    private IEnumerator ResetEnemySpeed(EnemyMovement enemy, float duration)
+    protected override void OnUpgraded()
     {
-        while (lastSlowHitTime.ContainsKey(enemy) && Time.time < lastSlowHitTime[enemy] + duration)
-            yield return null;
-
-        if (enemy != null)
-            enemy.ResetSpeed();
-
-        lastSlowHitTime.Remove(enemy);
-        activeResetCoroutines.Remove(enemy);
-    }
-
-    public void OpenUpgradeUI() => upgradeUI.SetActive(true);
-
-    public void CloseUpgradeUI()
-    {
-        upgradeUI.SetActive(false);
-        if (UiManager.main) UiManager.main.SetHoveringState(false);
-    }
-
-    public void Upgrade()
-    {
-        if (CalculateCost() > LevelManager.main.currency) return;
-
-        LevelManager.main.SpendCurrency(CalculateCost());
-        level++;
-
+        // Update APS scaling
         aps = CalculateAPS(level);
-        targetingRange = CalculateRange(level);
+        bps = aps; // ensure turret timing matches new APS
 
-        UpdateSprite();
-        PlaySound(upgradeClip);
+        Debug.Log($"Upgraded Slow Turret (Lvl {level}): APS={aps:F2}, Range={targetingRange:F2}");
     }
 
-    public int CalculateCost() => Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 1.3f));
+    public int CalculateCostForThisTurret() => Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 1.3f));
 
-    public float CalculateAPS(int lvl) => apsBase * Mathf.Pow(lvl, 0.1f);
-    public float CalculateRange(int lvl) => targetingRangeBase * Mathf.Pow(lvl, 0.12f);
-
-    public float CalculateAPS() => CalculateAPS(level);
-    public float CalculateRange() => CalculateRange(level);
-
-    private void UpdateSprite()
-    {
-        if (turretSpriteRenderer != null && upgradeSprites != null && level - 1 < upgradeSprites.Length)
-            turretSpriteRenderer.sprite = upgradeSprites[level - 1];
-    }
-
-    private void PlaySound(AudioClip clip)
-    {
-        if (clip == null || audioSource == null) return;
-
-        float volume = Random.Range(volumeMin, volumeMax);
-        audioSource.outputAudioMixerGroup = sfxMixerGroup;
-        audioSource.PlayOneShot(clip, volume);
-    }
-    
-    // Add override keyword and move to the bottom of the class
-    public override float CalculateCurrentDPS() => 0f;
+    public override float CalculateCurrentDPS() => 0f; // DPS not applicable for slow turret
 }

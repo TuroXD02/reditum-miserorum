@@ -126,12 +126,12 @@ public class LevelManager : MonoBehaviour
         if (ghostRangeLR != null)
         {
             float range = 0f;
-            if (turretGhost.TryGetComponent<TurretSlow>(out var slow))              range = slow.targetingRange;
-            else if (turretGhost.TryGetComponent<TurretPoison>(out var poison))     range = poison.targetingRange;
-            else if (turretGhost.TryGetComponent<TurretLongRange>(out var lr))      range = lr.targetingRange;
-            else if (turretGhost.TryGetComponent<TurretAreaDamage>(out var area))   range = area.targetingRange;
-            else if (turretGhost.TryGetComponent<TurretArmourBreaker>(out var ab))  range = ab.targetingRange;
-            else if (turretGhost.TryGetComponent<Turret>(out var basic))            range = basic.targetingRange;
+            if (turretGhost.TryGetComponent<TurretSlow>(out var slow))              range = slow.TargetingRange;
+            else if (turretGhost.TryGetComponent<TurretPoison>(out var poison))     range = poison.TargetingRange;
+            else if (turretGhost.TryGetComponent<TurretLongRange>(out var lr))      range = lr.TargetingRange;
+            else if (turretGhost.TryGetComponent<TurretAreaDamage>(out var area))   range = area.TargetingRange;
+            else if (turretGhost.TryGetComponent<TurretArmourBreaker>(out var ab))  range = ab.TargetingRange;
+            else if (turretGhost.TryGetComponent<Turret>(out var basic))            range = basic.TargetingRange;
 
             float angleStep = 360f / circleSegments;
             for (int i = 0; i <= circleSegments; i++)

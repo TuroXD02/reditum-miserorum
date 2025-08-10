@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class LussuriaHealth : MonoBehaviour
@@ -33,6 +31,9 @@ public class LussuriaHealth : MonoBehaviour
     private SpriteRenderer sr;
     private Sprite originalSprite;
     private AudioSource audioSource;
+
+    // Track turret that last dealt damage
+    private Turret lastDamageSource;
 
     private void Start()
     {
@@ -100,30 +101,58 @@ public class LussuriaHealth : MonoBehaviour
         }
     }
 
-    public virtual void TakeDamage(int dmg)
+    /// <summary>
+    /// Now returns bool like EnemyHealth and accepts an optional Turret owner for DOT/crediting.
+    /// </summary>
+    public virtual bool TakeDamage(int dmg, Turret damageSource = null)
     {
-        if (isDestroyed) return;
+        if (isDestroyed) return false;
 
         PlayDamageSound();
 
         int finalDamage = Mathf.CeilToInt(dmg * (1f - armor / 100f));
         hitPoints -= finalDamage;
 
+        if (damageSource != null)
+        {
+            lastDamageSource = damageSource;
+            damageSource.RecordDamage(finalDamage);
+            Debug.Log($"[Lussuria] Took {finalDamage} dmg from turret '{damageSource.name}'. Remaining HP={hitPoints}");
+        }
+        else
+        {
+            Debug.Log($"[Lussuria] Took {finalDamage} dmg (no turret). Remaining HP={hitPoints}");
+        }
+
         CheckArmorSprite();
 
         if (hitPoints <= 0)
         {
             Kill();
+            return true;
         }
+
+        return false;
     }
 
-    public virtual void TakeDamageDOTLU(int dmg)
+    // DOT method now accepts an optional Turret owner so DOT crediting works.
+    public virtual void TakeDamageDOTLU(int dmg, Turret damageSource = null)
     {
         if (isDestroyed) return;
 
         PlayDamageSound();
-
         hitPoints -= dmg;
+
+        if (damageSource != null)
+        {
+            lastDamageSource = damageSource;
+            damageSource.RecordDamage(dmg);
+            Debug.Log($"[Lussuria DOT] Took {dmg} DOT from turret '{damageSource.name}'. Remaining HP={hitPoints}");
+        }
+        else
+        {
+            Debug.Log($"[Lussuria DOT] Took {dmg} DOT (no turret). Remaining HP={hitPoints}");
+        }
 
         CheckArmorSprite();
 
@@ -146,6 +175,17 @@ public class LussuriaHealth : MonoBehaviour
         if (isDestroyed) return;
 
         isDestroyed = true;
+
+        // Credit kill to last damage source
+        if (lastDamageSource != null)
+        {
+            Debug.Log($"[Lussuria] Killed. Crediting kill to '{lastDamageSource.name}'.");
+            lastDamageSource.RecordKill();
+        }
+        else
+        {
+            Debug.LogWarning($"[Lussuria] Killed but lastDamageSource is null for {name}.");
+        }
 
         EnemySpawner.onEnemyDestroy?.Invoke();
         LevelManager.main?.IncreaseCurrency(currencyWorth);

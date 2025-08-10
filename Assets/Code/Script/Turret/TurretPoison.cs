@@ -3,144 +3,134 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Audio;
 
-public class TurretPoison : MonoBehaviour
+public class TurretPoison : Turret
 {
-    [Header("References")]
-    [SerializeField] private Transform turretRotationPoint;
-    [SerializeField] private LayerMask enemyMask;
+    [Header("Poison - unique")]
     [SerializeField] private GameObject poisonBulletPrefab;
-    [SerializeField] private Transform firingPoint;
-    [SerializeField] private GameObject upgradeUI;
-    [SerializeField] private Button upgradeButton;
-    [SerializeField] private SpriteRenderer turretSpriteRenderer;
-    [SerializeField] private Sprite[] upgradeSprites;
+    [SerializeField] private Sprite[] upgradeSprites; // optional sprite per level
+    [SerializeField] private float rotationSpeed = 5f;
+    [SerializeField] private float rotationOffset = -90f;
 
-    [Header("Attributes")]
-    public float targetingRange;
-    [SerializeField] private float rotationSpeed;
-    [SerializeField] private float bps;
-    public int baseUpgradeCost;
-    [SerializeField] private int bulletDamage;
-
-    [Header("Audio")]
-    [SerializeField] private AudioSource audioSource;
-    [SerializeField] private AudioClip shootClip, placeClip, upgradeClip, sellClip;
+    [Header("Audio (optional override)")]
     [SerializeField] private AudioMixerGroup mixerGroup;
+    [SerializeField] private AudioClip sellClip;           // <--- added so PlaySellSound compiles
     [SerializeField] private float volumeMin = 0.9f, volumeMax = 1.1f;
 
-    private float bpsBase;
-    private float targetingRangeBase;
-    private int bulletDamageBase;
-    private float timeUntilFire;
-    private Transform target;
-    private int level = 1;
-
-    public int GetLevel() => level;
-    public int BaseCost => baseUpgradeCost; // Added property
+    // NOTE: do NOT re-declare bps/targetingRange/bulletDamage/etc. Use the protected fields from base Turret.
+    // base.Start() will cache bpsBase/targetingRangeBase/bulletDamageBase.
 
     private void Start()
     {
-        bpsBase = bps;
-        targetingRangeBase = targetingRange;
-        bulletDamageBase = bulletDamage;
+        // Base initialization caches base stats, sets up the upgrade button and plays placeClip.
+        base.Start();
 
-        upgradeButton.onClick.AddListener(Upgrade);
+        // Ensure audioSource exists and assign mixer if requested
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+            audioSource.spatialBlend = 0f;
+        }
+
+        if (mixerGroup != null)
+            audioSource.outputAudioMixerGroup = mixerGroup;
+
         UpdateSprite();
-        PlaySound(placeClip);
     }
 
     private void Update()
     {
-        if (target == null) { FindTarget(); return; }
+        // Use the same targeting / firing rhythm as base but with custom rotation.
+        activeTime += Time.deltaTime;
+
+        if (target == null)
+        {
+            FindTarget();
+            return;
+        }
 
         RotateTowardsTarget();
 
-        if (!IsTargetInRange()) { target = null; return; }
+        if (!CheckTargetIsInRange())
+        {
+            target = null;
+            return;
+        }
 
         timeUntilFire += Time.deltaTime;
-        if (timeUntilFire >= 1f / bps)
+        if (timeUntilFire >= 1f / bps) // uses protected bps from base class
         {
-            Shoot();
+            Shoot(); // overridden below
             timeUntilFire = 0f;
         }
     }
 
-    private void Shoot()
+    // override Shoot to spawn poison bullet prefab instead of base bulletPrefab
+    public override void Shoot()
     {
-        GameObject bulletObj = Instantiate(poisonBulletPrefab, firingPoint.position, Quaternion.identity);
-        PoisonBullet bullet = bulletObj.GetComponent<PoisonBullet>();
+        if (poisonBulletPrefab == null || firingPoint == null) return;
 
-        if (bullet != null)
+        Debug.Log($"Shooting bullet with damage: {bulletDamage}, DPS before shot: {CalculateCurrentDPS()}");
+
+        GameObject bulletObj = Instantiate(poisonBulletPrefab, firingPoint.position, Quaternion.identity);
+
+        if (bulletObj.TryGetComponent(out PoisonBullet pb))
         {
-            bullet.SetTarget(target);
-            bullet.SetDamage(bulletDamage);
+            pb.SetTarget(target);
+            pb.SetDamage(bulletDamage);
+            pb.SetOwner(this);
         }
 
-        Destroy(bulletObj, 8f);
+        RegisterShot();
         PlaySound(shootClip);
+
+        Debug.Log($"DPS after shot: {CalculateCurrentDPS()}");
     }
 
+    public override float CalculateCurrentDPS()
+    {
+        return bulletDamage * bps;
+    }
     private void RotateTowardsTarget()
     {
+        if (target == null || turretRotationPoint == null) return;
+
         Vector3 dir = target.position - transform.position;
         float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-        turretRotationPoint.rotation = Quaternion.Euler(0, 0, angle - 90);
+        Quaternion targetRotation = Quaternion.Euler(0f, 0f, angle + rotationOffset);
+        turretRotationPoint.rotation = Quaternion.Lerp(turretRotationPoint.rotation, targetRotation, Time.deltaTime * rotationSpeed);
     }
 
-    private void FindTarget()
+    // Update sprite using the subclass upgradeSprites (if provided)
+    protected void UpdateSprite()
     {
-        RaycastHit2D[] hits = Physics2D.CircleCastAll(transform.position, targetingRange, Vector2.zero, 0f, enemyMask);
-        if (hits.Length > 0) target = hits[0].transform;
+        if (turretSpriteRenderer != null && upgradeSprites != null && upgradeSprites.Length > 0)
+        {
+            int idx = Mathf.Clamp(level - 1, 0, upgradeSprites.Length - 1);
+            turretSpriteRenderer.sprite = upgradeSprites[idx];
+        }
+        else
+        {
+            base.UpdateSprite();
+        }
     }
 
-    private bool IsTargetInRange()
+    // Override Calculate* methods for Poison-specific scaling (base methods are virtual)
+    public override float CalculateBPS(int lvl) => bpsBase * Mathf.Pow(lvl, 1f);
+    public override float CalculateRange(int lvl) => targetingRangeBase * Mathf.Pow(lvl, 0.55f);
+    public override int CalculateBulletDamage(int lvl) => Mathf.RoundToInt(bulletDamageBase * Mathf.Pow(lvl, 1.5f));
+
+    // Provide a poison-specific cost formula — base.CalculateCost() is non-virtual, so we 'new' it here.
+    public new int CalculateCost() => Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 0.8f));
+
+    // Use base.Upgrade() so level++ and recalculation use your overridden Calculate* methods.
+    public override void Upgrade()
     {
-        return Vector2.Distance(transform.position, target.position) <= targetingRange;
-    }
-
-    public void Upgrade()
-    {
-        if (CalculateCost() > LevelManager.main.currency) return;
-
-        LevelManager.main.SpendCurrency(CalculateCost());
-        level++;
-
-        bps = CalculateBPS(level);
-        targetingRange = CalculateRange(level);
-        bulletDamage = CalculateBulletDamage(level);
-
+        base.Upgrade(); // this does currency check, level++ and sets bps/targetingRange/bulletDamage via Calculate* overrides
         UpdateSprite();
-        PlaySound(upgradeClip);
+        PlaySound(upgradeClip); // upgradeClip is protected in base Turret
+        Debug.Log($"Poison turret upgraded to level {level}: bps={bps}, range={targetingRange}, dmg={bulletDamage}");
     }
 
-    public int CalculateCost() => Mathf.RoundToInt(baseUpgradeCost * Mathf.Pow(level, 0.8f));
-    public float CalculateBPS() => CalculateBPS(level);
-    public float CalculateRange() => CalculateRange(level);
-    public int CalculateBulletDamage() => CalculateBulletDamage(level);
-
-    public float CalculateBPS(int lvl) => bpsBase * Mathf.Pow(lvl, 1f);
-    public float CalculateRange(int lvl) => targetingRangeBase * Mathf.Pow(lvl, 0.55f);
-    public int CalculateBulletDamage(int lvl) => Mathf.RoundToInt(bulletDamageBase * Mathf.Pow(lvl, 1.5f));
-
-    private void UpdateSprite()
-    {
-        if (turretSpriteRenderer != null && level - 1 < upgradeSprites.Length)
-            turretSpriteRenderer.sprite = upgradeSprites[level - 1];
-    }
-
-    public void OpenUpgradeUI() => upgradeUI.SetActive(true);
-    public void CloseUpgradeUI()
-    {
-        upgradeUI.SetActive(false);
-        if (UiManager.main) UiManager.main.SetHoveringState(false);
-    }
     public void PlaySellSound() => PlaySound(sellClip);
-
-    private void PlaySound(AudioClip clip)
-    {
-        if (clip == null || audioSource == null) return;
-        float vol = Random.Range(volumeMin, volumeMax);
-        audioSource.outputAudioMixerGroup = mixerGroup;
-        audioSource.PlayOneShot(clip, vol);
-    }
 }

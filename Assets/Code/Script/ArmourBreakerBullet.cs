@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Audio;
 
+[RequireComponent(typeof(Animator))]
 public class ArmourBreakerBullet : MonoBehaviour
 {
     [Header("Bullet Settings")]
@@ -18,37 +19,30 @@ public class ArmourBreakerBullet : MonoBehaviour
     [Header("Audio Settings")]
     [SerializeField] private AudioClip impactSound;
     [SerializeField] private float soundVolume = 1f;
-    [SerializeField] private AudioMixerGroup sfxMixerGroup; // 🔊 Route to SFX mixer
+    [SerializeField] private AudioMixerGroup sfxMixerGroup;
 
     private Animator anim;
     private SpriteRenderer sr;
-    private float spriteWidth;
+    private float spriteWidth = 1f;
 
     private float timer = 0f;
     private bool hasHit = false;
+
+    // Reference back to the turret so the enemy can credit the turret via TakeDamage(..., sourceTurret)
+    private TurretArmourBreaker sourceTurret;
+
     private AudioSource audioSource;
 
     private void Awake()
     {
         anim = GetComponent<Animator>();
         if (anim != null && swipeAnimatorController != null)
-        {
             anim.runtimeAnimatorController = swipeAnimatorController;
-        }
 
         sr = GetComponentInChildren<SpriteRenderer>();
-        if (sr != null)
-        {
-            spriteWidth = sr.sprite.bounds.size.x;
-            if (spriteWidth <= 0f)
-                Debug.LogWarning("ArmourBreakerBullet: Sprite width is invalid.");
-        }
-        else
-        {
-            Debug.LogWarning("ArmourBreakerBullet: No SpriteRenderer found.");
-        }
+        if (sr != null && sr.sprite != null)
+            spriteWidth = Mathf.Max(0.0001f, sr.sprite.bounds.size.x);
 
-        // Setup audio source
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
         audioSource.outputAudioMixerGroup = sfxMixerGroup;
@@ -90,7 +84,7 @@ public class ArmourBreakerBullet : MonoBehaviour
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
         transform.rotation = Quaternion.Euler(0, 0, angle + 180);
 
-        if (spriteWidth > 0)
+        if (spriteWidth > 0f)
         {
             Vector3 newScale = transform.localScale;
             newScale.x = (distance / spriteWidth) * baseBulletSize;
@@ -98,15 +92,14 @@ public class ArmourBreakerBullet : MonoBehaviour
             transform.localScale = newScale;
         }
 
-        transform.position = startPosition + direction * (distance / 2);
+        transform.position = startPosition + direction * (distance / 2f);
     }
 
-    // 👇 Call this from an Animation Event at the right frame
+    // Animation event friendly
     public void PlayImpactSound()
     {
-        if (impactSound == null || sfxMixerGroup == null) return;
+        if (impactSound == null) return;
 
-        // Create a temporary GameObject at the impact position
         GameObject tempAudio = new GameObject("TempImpactSound");
         tempAudio.transform.position = transform.position;
 
@@ -114,10 +107,10 @@ public class ArmourBreakerBullet : MonoBehaviour
         tempSource.clip = impactSound;
         tempSource.volume = soundVolume;
         tempSource.outputAudioMixerGroup = sfxMixerGroup;
-        tempSource.spatialBlend = 0f; // Set to 1f if 3D audio is needed
+        tempSource.spatialBlend = 0f;
 
         tempSource.Play();
-        Destroy(tempAudio, impactSound.length);
+        Destroy(tempAudio, impactSound.length + 0.1f);
     }
 
     private void HitTarget()
@@ -127,22 +120,24 @@ public class ArmourBreakerBullet : MonoBehaviour
 
         if (target != null)
         {
-            // Damage to regular enemies
+            // Use the turret-aware overload so EnemyHealth/LussuriaHealth credit the turret internally.
             if (target.TryGetComponent(out EnemyHealth enemyHealth))
             {
-                enemyHealth.TakeDamage(damage);
+                bool killed = enemyHealth.TakeDamage(damage, sourceTurret);
                 enemyHealth.ReduceArmour(armourReduction);
+
+                // Do NOT call sourceTurret.RegisterKill() here — enemy will call RecordKill internally.
+                // Do NOT call sourceTurret.RegisterDamage(...) here — EnemyHealth already calls RecordDamage(...)
             }
 
-            // Damage to bosses
             if (target.TryGetComponent(out LussuriaHealth bossHealth))
             {
-                bossHealth.TakeDamage(damage);
+                bool killedBoss = bossHealth.TakeDamage(damage, sourceTurret);
                 bossHealth.ReduceArmour(armourReduction);
             }
         }
 
-        // Allow time for animation and sound to finish
+        // allow tiny delay so animation/sound can play if needed
         Destroy(gameObject, 0.1f);
     }
 
@@ -150,4 +145,5 @@ public class ArmourBreakerBullet : MonoBehaviour
     public void SetDamage(int dmg) => damage = dmg;
     public void SetArmourReduction(int reduction) => armourReduction = reduction;
     public void SetTarget(Transform targetTransform) => target = targetTransform;
+    public void SetSourceTurret(TurretArmourBreaker turret) => sourceTurret = turret;
 }
