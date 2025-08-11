@@ -266,6 +266,7 @@ MonoBehaviour:
   shootClip: {fileID: 8300000, guid: afd186290bf5399489a962498ed6363e, type: 3}
   placeClip: {fileID: 8300000, guid: 48d38340dd096c843b06e0d69af12a6f, type: 3}
   upgradeClip: {fileID: 8300000, guid: 9c4cba27f8e944f4f99777e31dca6af4, type: 3}
+  cannotUpgradeClip: {fileID: 8300000, guid: f0c77759a17c7b9408cc414935b241a8, type: 3}
   sellClip: {fileID: 8300000, guid: 512bdaa93b09b2c4cb24afa099216067, type: 3}
   audioMixerGroup: {fileID: -6875069860267149466, guid: 0ecce08098d0f89428ede069e0e13620, type: 2}
   volumeMin: 0.9
@@ -278,12 +279,13 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 0d1d40ee96c1ea74b91c0aa69631fbfd, type: 3}
   - {fileID: 21300000, guid: 52a9f7d0a03d1a34ab66d03d6f8324e7, type: 3}
   - {fileID: 21300000, guid: 3068e76d6cfab5d4495c990b566b2140, type: 3}
-  rotationSpeed: 22
+  rotationSpeedLocal: 5
   rotationOffset: -90
+  upgradeConfirmButton: {fileID: 0}
   mixerGroup: {fileID: -6875069860267149466, guid: 0ecce08098d0f89428ede069e0e13620, type: 2}
-  sellClip: {fileID: 0}
-  volumeMin: 0.9
-  volumeMax: 1.1
+  sellClipOverride: {fileID: 0}
+  volumeMinLocal: 0.9
+  volumeMaxLocal: 1.1
 --- !u!82 &-444292677066296520
 AudioSource:
   m_ObjectHideFlags: 0

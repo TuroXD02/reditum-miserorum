@@ -1079,6 +1079,7 @@ MonoBehaviour:
   shootClip: {fileID: 8300000, guid: ffe18c13fdc5cf744888b12d98d779f7, type: 3}
   placeClip: {fileID: 8300000, guid: 48d38340dd096c843b06e0d69af12a6f, type: 3}
   upgradeClip: {fileID: 8300000, guid: 9c4cba27f8e944f4f99777e31dca6af4, type: 3}
+  cannotUpgradeClip: {fileID: 8300000, guid: f0c77759a17c7b9408cc414935b241a8, type: 3}
   sellClip: {fileID: 8300000, guid: 512bdaa93b09b2c4cb24afa099216067, type: 3}
   audioMixerGroup: {fileID: -6875069860267149466, guid: 0ecce08098d0f89428ede069e0e13620, type: 2}
   volumeMin: 0.9
@@ -1092,6 +1093,7 @@ MonoBehaviour:
   firingPoint: {fileID: 331473841153339061}
   upgradeUI: {fileID: 8337477246573558891}
   upgradeButton: {fileID: 4818884365336455620}
+  upgradeConfirmButton: {fileID: 0}
   turretSpriteRenderer: {fileID: 4120020767630820342}
   upgradeSprites:
   - {fileID: 21300000, guid: c3b922d2ecff5624e989fc0e6a1a4468, type: 3}
@@ -1105,21 +1107,6 @@ MonoBehaviour:
   bps: 0.33
   baseUpgradeCost: 200
   bulletDamage: 1
-  audioSource: {fileID: -5458740587483401118}
-  shootClip: {fileID: 8300000, guid: ffe18c13fdc5cf744888b12d98d779f7, type: 3}
-  placeClip: {fileID: 8300000, guid: 48d38340dd096c843b06e0d69af12a6f, type: 3}
-  upgradeClip: {fileID: 8300000, guid: 9c4cba27f8e944f4f99777e31dca6af4, type: 3}
-  sellClip: {fileID: 8300000, guid: 512bdaa93b09b2c4cb24afa099216067, type: 3}
-  audioMixerGroup: {fileID: -6875069860267149466, guid: 0ecce08098d0f89428ede069e0e13620, type: 2}
-  volumeMin: 0.9
-  volumeMax: 1.1
-  shootSoundDelay: 0.369
-  killsText_TMP: {fileID: 0}
-  dpsText_TMP: {fileID: 0}
-  killsText_UI: {fileID: 0}
-  dpsText_UI: {fileID: 0}
-  dpsMinMultiplier: 1
-  dpsMaxMultiplier: 350
 --- !u!82 &-5458740587483401118
 AudioSource:
   m_ObjectHideFlags: 0

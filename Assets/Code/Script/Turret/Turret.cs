@@ -33,6 +33,7 @@ public class Turret : MonoBehaviour
     [SerializeField] protected AudioClip shootClip;
     [SerializeField] protected AudioClip placeClip;
     [SerializeField] protected AudioClip upgradeClip;
+    [SerializeField] protected AudioClip cannotUpgradeClip; // NEW: sound for failed upgrade
     [SerializeField] protected AudioClip sellClip;
     [SerializeField] protected AudioMixerGroup audioMixerGroup;
 
@@ -249,7 +250,15 @@ public class Turret : MonoBehaviour
     {
         int cost = CalculateCost();
         if (LevelManager.main == null) return;
-        if (cost > LevelManager.main.currency) return;
+
+        // Not enough money → play fail sound + shake
+        if (cost > LevelManager.main.currency)
+        {
+            PlaySound(cannotUpgradeClip);
+            if (upgradeButton != null)
+                StartCoroutine(ShakeButton(upgradeButton));
+            return;
+        }
 
         LevelManager.main.SpendCurrency(cost);
         totalInvested += cost;
@@ -360,6 +369,27 @@ public class Turret : MonoBehaviour
     {
         upgradeUI?.SetActive(false);
         if (UiManager.main) UiManager.main.SetHoveringState(false);
+    }
+
+    private IEnumerator ShakeButton(Button btn)
+    {
+        RectTransform rt = btn.GetComponent<RectTransform>();
+        if (rt == null) yield break;
+
+        Vector3 originalPos = rt.localPosition;
+        float duration = 0.2f;
+        float elapsed = 0f;
+        float magnitude = 5f;
+
+        while (elapsed < duration)
+        {
+            float offsetX = UnityEngine.Random.Range(-magnitude, magnitude);
+            rt.localPosition = originalPos + new Vector3(offsetX, 0f, 0f);
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        rt.localPosition = originalPos;
     }
 
     #endregion

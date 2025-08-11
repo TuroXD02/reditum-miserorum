@@ -207,6 +207,7 @@ MonoBehaviour:
   shootClip: {fileID: 8300000, guid: 7e325c7618959fe40b11c701bde6047f, type: 3}
   placeClip: {fileID: 8300000, guid: 48d38340dd096c843b06e0d69af12a6f, type: 3}
   upgradeClip: {fileID: 8300000, guid: 9c4cba27f8e944f4f99777e31dca6af4, type: 3}
+  cannotUpgradeClip: {fileID: 8300000, guid: f0c77759a17c7b9408cc414935b241a8, type: 3}
   sellClip: {fileID: 8300000, guid: 512bdaa93b09b2c4cb24afa099216067, type: 3}
   audioMixerGroup: {fileID: -6875069860267149466, guid: 0ecce08098d0f89428ede069e0e13620, type: 2}
   volumeMin: 0.9
