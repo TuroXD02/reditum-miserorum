@@ -25,6 +25,11 @@ public class DisplaySettingsMenu : MonoBehaviour
     private Resolution[] availableResolutions;
     private int currentMonitorIndex = 0; // Track selected monitor
 
+    private void Awake()
+    {
+        DontDestroyOnLoad(gameObject);
+    }
+
     private void Start()
     {
         if (settingsPanel != null)
@@ -40,24 +45,43 @@ public class DisplaySettingsMenu : MonoBehaviour
         SetupResolutionDropdown();
         SetupDisplayModeDropdown();
 
-        if (displayModeDropdown != null)
+        // Restore saved settings if they exist
+        if (PlayerPrefs.HasKey("ResolutionIndex"))
         {
-            displayModeDropdown.onValueChanged.AddListener(OnDisplayModeChanged);
-            displayModeDropdown.onValueChanged.AddListener(_ => StartCoroutine(ResizeDropdownNextFrame(displayModeDropdown)));
+            int savedRes = PlayerPrefs.GetInt("ResolutionIndex");
+            int savedMode = PlayerPrefs.GetInt("DisplayMode");
+            int savedMonitor = PlayerPrefs.GetInt("MonitorIndex");
+
+            currentMonitorIndex = savedMonitor;
+            monitorDropdown.value = savedMonitor;
+
+            resolutionDropdown.value = savedRes;
+            displayModeDropdown.value = ModeToIndex((FullScreenMode)savedMode);
+
+            ApplyDisplaySettings(savedRes, (FullScreenMode)savedMode);
         }
 
-        if (resolutionDropdown != null)
-        {
-            resolutionDropdown.onValueChanged.AddListener(OnResolutionChanged);
-            resolutionDropdown.onValueChanged.AddListener(_ => StartCoroutine(ResizeDropdownNextFrame(resolutionDropdown)));
-        }
+        displayModeDropdown.onValueChanged.AddListener(OnDisplayModeChanged);
+        displayModeDropdown.onValueChanged.AddListener(_ => StartCoroutine(ResizeDropdownNextFrame(displayModeDropdown)));
 
-        if (monitorDropdown != null)
+        resolutionDropdown.onValueChanged.AddListener(OnResolutionChanged);
+        resolutionDropdown.onValueChanged.AddListener(_ => StartCoroutine(ResizeDropdownNextFrame(resolutionDropdown)));
+
+        monitorDropdown.onValueChanged.AddListener(OnMonitorChanged);
+        monitorDropdown.onValueChanged.AddListener(_ => StartCoroutine(ResizeDropdownNextFrame(monitorDropdown)));
+    }
+
+    private int ModeToIndex(FullScreenMode mode)
+    {
+        switch (mode)
         {
-            monitorDropdown.onValueChanged.AddListener(OnMonitorChanged);
-            monitorDropdown.onValueChanged.AddListener(_ => StartCoroutine(ResizeDropdownNextFrame(monitorDropdown)));
+            case FullScreenMode.Windowed: return 0;
+            case FullScreenMode.MaximizedWindow: return 1;
+            case FullScreenMode.FullScreenWindow: return 2;
+            default: return 0;
         }
     }
+
 
     private void Update()
     {
@@ -190,7 +214,6 @@ public class DisplaySettingsMenu : MonoBehaviour
         Resolution res = availableResolutions[resolutionIndex];
 
 #if UNITY_2022_1_OR_NEWER
-        // Get available display info
         List<DisplayInfo> displays = new List<DisplayInfo>();
         Screen.GetDisplayLayout(displays);
 
@@ -202,7 +225,14 @@ public class DisplaySettingsMenu : MonoBehaviour
 #endif
 
         Screen.SetResolution(res.width, res.height, mode);
+
+        // Save settings persistently
+        PlayerPrefs.SetInt("ResolutionIndex", resolutionIndex);
+        PlayerPrefs.SetInt("DisplayMode", (int)mode);
+        PlayerPrefs.SetInt("MonitorIndex", currentMonitorIndex);
+        PlayerPrefs.Save();
     }
+
 
     private IEnumerator ResizeDropdownNextFrame(TMP_Dropdown dropdown)
     {

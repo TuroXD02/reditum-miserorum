@@ -145,3 +145,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sr: {fileID: 912827196635194440}
   hoverColor: {r: 0.7132075, g: 0.7132075, b: 0.7132075, a: 0.85882354}
+  placementClip: {fileID: 8300000, guid: ef18164827eadd54dbcd44917eb75297, type: 3}
+  placementMixerGroup: {fileID: -6875069860267149466, guid: 0ecce08098d0f89428ede069e0e13620, type: 2}
+  placementVolume: 1

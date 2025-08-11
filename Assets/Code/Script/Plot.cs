@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class Plot : MonoBehaviour
 {
@@ -8,25 +9,33 @@ public class Plot : MonoBehaviour
     [SerializeField] private SpriteRenderer sr;
     [SerializeField] private Color hoverColor;
 
+    [Header("Placement SFX (optional)")]
+    [Tooltip("Sound to play when a turret is successfully placed on this plot.")]
+    [SerializeField] private AudioClip placementClip;
+    [Tooltip("Optional mixer group for the placement sound.")]
+    [SerializeField] private AudioMixerGroup placementMixerGroup;
+    [Range(0f, 1f)]
+    [SerializeField] private float placementVolume = 1f;
+
     private Color startColor;
     private GameObject towerObj;
 
     private void Start()
     {
         // Save the starting color of the sprite renderer
-        startColor = sr.color;
+        if (sr != null) startColor = sr.color;
     }
 
     private void OnMouseEnter()
     {
         // Change color to hover color when the mouse enters
-        sr.color = hoverColor;
+        if (sr != null) sr.color = hoverColor;
     }
 
     private void OnMouseExit()
     {
         // Revert to the starting color when the mouse exits
-        sr.color = startColor;
+        if (sr != null) sr.color = startColor;
     }
 
     private void OnMouseDown() // aka click mouse
@@ -36,8 +45,6 @@ public class Plot : MonoBehaviour
         // Check if there is already a tower on this plot
         if (towerObj != null)
         {
-            
-
             // Switch based on the component name to open the appropriate UI
             switch (towerObj.name)
             {
@@ -77,11 +84,56 @@ public class Plot : MonoBehaviour
             return;
         }
 
-        // Check if the player has enough currency
+        // Check if the player has enough currency and spend it
         if (LevelManager.main.SpendCurrency(towerToBuild.cost))
         {
             // Instantiate the new tower and set it to the towerObj reference
             towerObj = Instantiate(towerToBuild.prefab, transform.position, Quaternion.identity);
+
+            // Try to use the Turret API to ensure placement flows properly
+            var turret = towerObj.GetComponent<Turret>();
+            if (turret != null)
+            {
+                // Mark as preview BEFORE its Start runs (this call happens immediately after Instantiate),
+                // so Start() won't play the place sound. Then call OnPlaced(...) to finalize placement.
+                turret.SetPreview(true);                 // suppress preview start SFX
+                turret.OnPlaced(towerToBuild.cost);      // finalize placement (sets invested, clears preview)
+
+                // Play the plot-specific placement SFX (if assigned).
+                PlayPlacementClip();
+            }
+            else
+            {
+                // Fallback: still play placement sfx when prefab doesn't have a Turret component
+                Debug.LogWarning($"Placed prefab {towerObj.name} does not contain a Turret component; cannot call OnPlaced().");
+                PlayPlacementClip();
+            }
         }
+    }
+
+    /// <summary>
+    /// Plays the placement clip via a temporary AudioSource so it survives object destruction/scene changes.
+    /// </summary>
+    private void PlayPlacementClip()
+    {
+        if (placementClip == null) return;
+
+        float vol = Mathf.Clamp01(placementVolume);
+
+        GameObject tmp = new GameObject("PlacementSFX");
+        tmp.transform.position = transform.position;
+
+        AudioSource src = tmp.AddComponent<AudioSource>();
+        src.clip = placementClip;
+        src.playOnAwake = false;
+        src.spatialBlend = 0f; // 2D sound
+        src.volume = vol;
+
+        if (placementMixerGroup != null)
+            src.outputAudioMixerGroup = placementMixerGroup;
+
+        DontDestroyOnLoad(tmp);
+        src.Play();
+        Destroy(tmp, placementClip.length + 0.1f);
     }
 }

@@ -26,22 +26,28 @@ public class TurretArmourBreaker : Turret
     [SerializeField] private float volumeMin = 0.9f;
     [SerializeField] private float volumeMax = 1.1f;
 
-    // Stats & UI event
+    // Stats & UI
     public int KillCount { get; private set; } = 0;
     public float TotalDamageDealt { get; private set; } = 0f;
     public event System.Action OnStatsUpdated;
 
     protected override void Start()
     {
-        // Initialize base class fields properly
-        base.Start(); // Call base Start first
-        
-        // Cache base armour reduction value
+        base.Start();
+
         armourReductionBase = armourReduction;
-        
-        // Set initial armour reduction using base value
         armourReduction = CalculateArmourReduction(level);
+
+        // Ensure ONLY this turret's Upgrade is bound
+        if (upgradeButton != null)
+        {
+            upgradeButton.onClick.RemoveAllListeners(); // remove any old bindings (base or inspector)
+            upgradeButton.onClick.AddListener(() => Upgrade());
+        }
+
+        UpdateSprite();
     }
+
 
     private void OnDestroy()
     {
@@ -76,9 +82,8 @@ public class TurretArmourBreaker : Turret
         if (bulletPrefab == null || firingPoint == null || target == null) return;
 
         GameObject bulletObj = Instantiate(bulletPrefab, firingPoint.position, Quaternion.identity);
-        ArmourBreakerBullet bullet = bulletObj.GetComponent<ArmourBreakerBullet>();
 
-        if (bullet != null)
+        if (bulletObj.TryGetComponent(out ArmourBreakerBullet bullet))
         {
             bullet.SetTarget(target);
             bullet.SetDamage(bulletDamage);
@@ -93,50 +98,40 @@ public class TurretArmourBreaker : Turret
 
     public override void Upgrade()
     {
-        base.Upgrade(); // Use base upgrade functionality
-        armourReduction = CalculateArmourReduction(level); // Recalculate after upgrade
+        base.Upgrade(); // Handles currency check, level++, and stat recalculation
+        armourReduction = CalculateArmourReduction(level);
+        UpdateSprite();
+        PlaySound(upgradeClip);
         OnStatsUpdated?.Invoke();
+
+        Debug.Log($"ArmourBreaker upgraded to level {level}: bps={bps}, range={targetingRange}, dmg={bulletDamage}, armRed={armourReduction}");
     }
 
     private void UpdateSprite()
     {
-        if (turretSpriteRenderer != null && towerStates != null && level - 1 < towerStates.Length)
-            turretSpriteRenderer.sprite = towerStates[level - 1];
+        if (turretSpriteRenderer != null && towerStates != null && towerStates.Length > 0)
+        {
+            int idx = Mathf.Clamp(level - 1, 0, towerStates.Length - 1);
+            turretSpriteRenderer.sprite = towerStates[idx];
+        }
     }
 
-    public override float CalculateCurrentDPS()
-    {
-        // DPS = damage per bullet * bullets per second
-        return bulletDamage * bps;
-    }
+    public override float CalculateCurrentDPS() => bulletDamage * bps;
 
-    // Armour reduction scaling
-    public int CalculateArmourReduction(int lvl)
-    {
-        return Mathf.RoundToInt(armourReductionBase * Mathf.Pow(lvl, 0.3f));
-    }
+    public int CalculateArmourReduction(int lvl) =>
+        Mathf.RoundToInt(armourReductionBase * Mathf.Pow(lvl, 0.3f));
 
-    // Override the base class methods to calculate the correct stats with your scaling
-    public override float CalculateBPS(int lvl)
-    {
-        // Use your own scaling if needed or default
-        return bpsBase * Mathf.Pow(lvl, 1f);
-    }
+    public override float CalculateBPS(int lvl) =>
+        bpsBase * Mathf.Pow(lvl, 1f);
 
-    public override float CalculateRange(int lvl)
-    {
-        return targetingRangeBase * Mathf.Pow(lvl, 0.1f);
-    }
+    public override float CalculateRange(int lvl) =>
+        targetingRangeBase * Mathf.Pow(lvl, 0.1f);
 
-    public override int CalculateBulletDamage(int lvl)
-    {
-        return Mathf.RoundToInt(bulletDamageBase * Mathf.Pow(lvl, 0.4f));
-    }
+    public override int CalculateBulletDamage(int lvl) =>
+        Mathf.RoundToInt(bulletDamageBase * Mathf.Pow(lvl, 0.4f));
 
-    // For UI display
     public string DamageStats => $"DMG: {bulletDamage} | ARM: -{armourReduction}";
 
-    // Register damage & kills (can be called from bullet scripts)
     public void RegisterDamage(int damage)
     {
         TotalDamageDealt += damage;

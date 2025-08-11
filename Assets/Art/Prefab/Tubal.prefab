@@ -191,6 +191,7 @@ MonoBehaviour:
   firingPoint: {fileID: 4870833655330632803}
   upgradeUI: {fileID: 3166754333614112133}
   upgradeButton: {fileID: 6467758431879769754}
+  sellButton: {fileID: 6320843314250822127}
   turretSpriteRenderer: {fileID: 7546397872522275511}
   towerStates:
   - {fileID: 21300000, guid: fab4fa5d36dd5f24da8b0dfdd7ab1d8e, type: 3}
@@ -201,12 +202,16 @@ MonoBehaviour:
   bps: 0.5
   baseUpgradeCost: 150
   bulletDamage: 40
+  rotationAngleOffset: 0
   audioSource: {fileID: -2813971204738349120}
   shootClip: {fileID: 8300000, guid: 7e325c7618959fe40b11c701bde6047f, type: 3}
-  placeClip: {fileID: 0}
+  placeClip: {fileID: 8300000, guid: 48d38340dd096c843b06e0d69af12a6f, type: 3}
   upgradeClip: {fileID: 8300000, guid: 9c4cba27f8e944f4f99777e31dca6af4, type: 3}
+  sellClip: {fileID: 8300000, guid: 512bdaa93b09b2c4cb24afa099216067, type: 3}
+  audioMixerGroup: {fileID: -6875069860267149466, guid: 0ecce08098d0f89428ede069e0e13620, type: 2}
   volumeMin: 0.9
   volumeMax: 1.1
+  sellRefundMultiplier: 0.5
   turretRotationPoint: {fileID: 4870833655330632803}
   enemyMask:
     serializedVersion: 2
@@ -223,9 +228,9 @@ MonoBehaviour:
   armourReduction: 5
   audioSource: {fileID: -2813971204738349120}
   shootClip: {fileID: 8300000, guid: 7e325c7618959fe40b11c701bde6047f, type: 3}
-  placeClip: {fileID: 0}
+  placeClip: {fileID: 8300000, guid: 48d38340dd096c843b06e0d69af12a6f, type: 3}
   upgradeClip: {fileID: 8300000, guid: 9c4cba27f8e944f4f99777e31dca6af4, type: 3}
-  sellClip: {fileID: 0}
+  sellClip: {fileID: 8300000, guid: 512bdaa93b09b2c4cb24afa099216067, type: 3}
   volumeMin: 0.9
   volumeMax: 1.1
 --- !u!82 &-2813971204738349120
@@ -1624,7 +1629,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 23}
-  m_SizeDelta: {x: 200, y: 75}
+  m_SizeDelta: {x: 170, y: 75}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &9141834836946021512
 CanvasRenderer:
@@ -1656,7 +1661,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 2701830002e135d41a192546493785cf, type: 3}
   m_Type: 0
-  m_PreserveAspect: 1
+  m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -2098,7 +2103,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: -85}
-  m_SizeDelta: {x: 200, y: 60}
+  m_SizeDelta: {x: 100, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2619885848337349088
 CanvasRenderer:
@@ -2130,7 +2135,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 2701830002e135d41a192546493785cf, type: 3}
   m_Type: 0
-  m_PreserveAspect: 1
+  m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
