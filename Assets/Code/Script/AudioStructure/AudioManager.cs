@@ -10,8 +10,8 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioSource assignedAudioSource;  // ← Drag the actual AudioSource here
     public AudioClip backgroundMusic;
     public float fadeInDuration = 15f;
-    public float fadeOutDuration = 5f;
-    public float loseVolume = 0.2f;
+    public float fadeOutDuration = 5f;   // kept for inspector compatibility (unused)
+    public float loseVolume = 0.2f;      // kept for inspector compatibility (unused)
     public bool playOnAwake = true;
 
     [Header("Mixer Settings")]
@@ -112,28 +112,13 @@ public class AudioManager : MonoBehaviour
         SetVolumeLinear(targetVolume);
     }
 
-    private IEnumerator FadeOutMusic()
-    {
-        float startVolume = audioSource.volume;
-        float elapsed = 0f;
-
-        while (elapsed < fadeOutDuration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            float currentVolume = Mathf.Lerp(startVolume, loseVolume, elapsed / fadeOutDuration);
-            SetVolumeLinear(currentVolume);
-            yield return null;
-        }
-
-        SetVolumeLinear(loseVolume);
-    }
-
+    /// <summary>
+    /// No-op: kept for compatibility so external callers won't need changes.
+    /// Previously faded audio to a lower volume on "lose" — that behavior was removed.
+    /// </summary>
     public void FadeToLoseVolume()
     {
-        if (audioSource != null)
-        {
-            StopAllCoroutines();
-            StartCoroutine(FadeOutMusic());
-        }
+        // Intentionally does nothing now.
+        Debug.Log("[AudioManager] FadeToLoseVolume() was called but is now disabled.");
     }
 }

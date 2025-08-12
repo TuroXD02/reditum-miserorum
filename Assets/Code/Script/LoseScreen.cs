@@ -3,65 +3,91 @@ using UnityEngine.SceneManagement;
 
 public class LoseScreen : MonoBehaviour
 {
-    // Static flag to indicate scene unloading or resetting
     private static bool isSceneUnloading = false;
 
     private void OnEnable()
     {
-        // SceneManager does NOT have sceneUnloading event, so remove this or replace with sceneUnloaded if needed
-        SceneManager.sceneUnloaded += OnSceneUnloaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     private void OnDisable()
     {
-        SceneManager.sceneUnloaded -= OnSceneUnloaded;
+        SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-    // Called after a scene unloads
-    private void OnSceneUnloaded(Scene scene)
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        isSceneUnloading = true;
+        isSceneUnloading = false;
+        Debug.Log($"[LoseScreen] Scene '{scene.name}' loaded.");
     }
 
     public void Retry()
     {
-        // Mark unloading flag manually BEFORE loading new scene
         isSceneUnloading = true;
-
-        // Reset time scale
         Time.timeScale = 1f;
 
         if (AudioManager.instance != null)
-        {
             AudioManager.instance.ResetMusic();
-        }
 
-        CleanupPersistentObjects();
-
-        // Reload current scene
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        PersistentCleanup();
+        SceneManager.LoadScene("Game", LoadSceneMode.Single);
     }
 
     public void MainMenu()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene("MainMenu");
+        PersistentCleanup();
+        SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
     }
 
-    private void CleanupPersistentObjects()
+    // New quit button functionality
+    public void QuitGame()
     {
-        foreach (GameObject go in GameObject.FindObjectsOfType<GameObject>())
-        {
-            if (go.scene.name != "DontDestroyOnLoad") continue;
+        Debug.Log("Quitting game...");
+        
+        // For standalone builds
+        Application.Quit();
+        
+        // For editor testing
+        #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+        #endif
+    }
 
-            if (go.CompareTag("Enemy") || go.name == "EnemyPool")
+    /// <summary>
+    /// Cleans or resets all persistent managers so replay works without broken state.
+    /// </summary>
+    private void PersistentCleanup()
+    {
+        Scene dontDestroyScene = SceneManager.GetSceneByName("DontDestroyOnLoad");
+        if (!dontDestroyScene.IsValid()) return;
+
+        foreach (GameObject go in dontDestroyScene.GetRootGameObjects())
+        {
+            if (go == null) continue;
+
+            if (go == AudioManager.instance?.gameObject) continue;
+
+            if (go.TryGetComponent(out LevelManager levelManager))
+            {
+                levelManager.ResetState();
+                continue;
+            }
+
+            if (go.CompareTag("Enemy") || go.name.Contains("EnemyPool"))
             {
                 Destroy(go);
+                continue;
+            }
+
+            if (go.name.Contains("Popup") || go.name.Contains("UI"))
+            {
+                Destroy(go);
+                continue;
             }
         }
     }
 
-    // Static method other scripts can use to check unload status
     public static bool IsSceneUnloading()
     {
         return isSceneUnloading;

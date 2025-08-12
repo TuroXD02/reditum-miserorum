@@ -146,7 +146,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hitPoints: 188
   currencyWorth: 80
-  baseArmor: 98
+  baseArmor: 99
   armor: 100
   highEffectiveArmorSprite: {fileID: 21300000, guid: eace1d934c434cf4bbf228a873bfb89d, type: 3}
   lowEffectiveArmorSprite: {fileID: 21300000, guid: 1ec24681e7a18af45bc456afcf69c46a, type: 3}

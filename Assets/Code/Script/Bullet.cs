@@ -53,8 +53,9 @@ public class Bullet : MonoBehaviour
     {
         bool hitSomething = false;
 
-        // Enemy
-        if (collision.gameObject.TryGetComponent(out EnemyHealth enemy))
+        // 1. Check for normal enemies
+        var enemy = collision.gameObject.GetComponentInParent<EnemyHealth>();
+        if (enemy != null)
         {
             if (ownerTurret != null)
                 ownerTurret.RecordDamage(bulletDamage);
@@ -66,8 +67,23 @@ public class Bullet : MonoBehaviour
 
             hitSomething = true;
         }
+        else
+        {
+            // 2. Check for Lussuria enemy type
+            var lussuria = collision.gameObject.GetComponentInParent<LussuriaHealth>();
+            if (lussuria != null)
+            {
+                if (ownerTurret != null)
+                    ownerTurret.RecordDamage(bulletDamage);
 
-        // Future: Add more enemy types here
+                bool wasKilled = lussuria.TakeDamage(bulletDamage, ownerTurret);
+
+                if (wasKilled && ownerTurret != null)
+                    ownerTurret.RecordKill();
+
+                hitSomething = true;
+            }
+        }
 
         if (hitSomething)
         {
@@ -75,6 +91,7 @@ public class Bullet : MonoBehaviour
             Destroy(gameObject);
         }
     }
+
 
     private void PlayImpactEffect()
     {

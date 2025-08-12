@@ -5,14 +5,34 @@ public class MainMenu : MonoBehaviour
 {
     public void StartGame()
     {
-        // Loadgame scene
-        SceneManager.LoadScene("Game");
+        PersistentCleanup();
+        SceneManager.LoadScene("Game", LoadSceneMode.Single);
     }
 
     public void QuitGame()
     {
-        // Exit the application
         Application.Quit();
         Debug.Log("Game Quit");
+    }
+
+    private void PersistentCleanup()
+    {
+        Scene dontDestroyScene = SceneManager.GetSceneByName("DontDestroyOnLoad");
+        if (!dontDestroyScene.IsValid()) return;
+
+        foreach (GameObject go in dontDestroyScene.GetRootGameObjects())
+        {
+            if (go == null) continue;
+
+            if (go == AudioManager.instance?.gameObject) continue;
+
+            if (go.TryGetComponent(out LevelManager levelManager))
+            {
+                levelManager.ResetState();
+                continue;
+            }
+
+            Destroy(go);
+        }
     }
 }

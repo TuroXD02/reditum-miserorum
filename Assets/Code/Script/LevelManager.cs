@@ -58,10 +58,11 @@ public class LevelManager : MonoBehaviour
 
     private void Start()
     {
-        currency = 1000;
+        currency = 120;
         GetComponent<PlayerHealthSystem>().Init();
         ClearSelectedTurret();
     }
+
 
     private void Update()
     {
@@ -80,6 +81,8 @@ public class LevelManager : MonoBehaviour
         return false;
     }
 
+    
+    
     public void AddCurrency(int amount) => IncreaseCurrency(amount);
 
     // Ghost turret preview
@@ -221,4 +224,31 @@ public class LevelManager : MonoBehaviour
     {
         OnArmorChanged?.Invoke(target, armorUp, isArmorZero);
     }
+    
+    public void ResetState()
+    {
+        Debug.Log("[LevelManager] Resetting state for new game...");
+
+        currency = 1000; // reset money
+
+        // Reset waves or progression if you track them
+        // waveNumber = 0;
+
+        // Reset game speed
+        Time.timeScale = 1f;
+
+        // Reset health
+        var health = GetComponent<PlayerHealthSystem>();
+        if (health != null)
+            health.Init();
+
+        // Close turret ghost previews
+        ClearSelectedTurret();
+
+        // TODO: Close any open UI popups
+        // e.g., UiManager.main?.CloseAllPopups();
+
+        // Reset other systems if needed
+    }
+    
 }

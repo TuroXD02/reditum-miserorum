@@ -62,7 +62,7 @@ public class TurretAreaDamage : Turret
         // --- Forward references to base BEFORE base.Start() ---
         base.turretRotationPoint = this.turretRotationPoint;
         base.enemyMask = this.enemyMask;
-        base.bulletPrefab = null; // this turret uses areaBulletPrefab in Shoot(), keep base.bulletPrefab null to avoid confusion
+        base.bulletPrefab = null; // this turret uses areaBulletPrefab in Shoot()
         base.firingPoint = this.firingPoint;
         base.upgradeUI = this.upgradeUI;
         base.upgradeButton = this.upgradeButton;
@@ -113,8 +113,12 @@ public class TurretAreaDamage : Turret
         // cleanup listeners
         if (upgradeConfirmButton != null)
             upgradeConfirmButton.onClick.RemoveListener(OnUpgradeConfirmClicked);
+
+        // base.SetupUpgradeButton wired upgradeButton to OpenUpgradeUI; remove just-in-case
         if (upgradeButton != null)
-            upgradeButton.onClick.RemoveListener(OpenUpgradeUI); // base wired it, make sure it's removed too
+        {
+            upgradeButton.onClick.RemoveListener(OpenUpgradeUI);
+        }
 
         OnStatsUpdated -= UpdateStatsUI;
         StopAllCoroutines();
@@ -220,7 +224,7 @@ public class TurretAreaDamage : Turret
 
     #region Upgrades & scaling
 
-    // Small guard to avoid accidental double-upgrades (keeps your previous guard)
+    // Small guard to avoid accidental double-upgrades
     public override void Upgrade()
     {
         if (Time.time - lastUpgradeTime < upgradeGuardSeconds) return;
@@ -229,16 +233,27 @@ public class TurretAreaDamage : Turret
         if (LevelManager.main == null) return;
 
         int cost = CalculateCost();
-        if (cost > LevelManager.main.currency) 
+
+        // Not enough money: play cannot-upgrade sound and shake the relevant button
+        if (cost > LevelManager.main.currency)
         {
             Debug.Log($"[TurretAreaDamage] Upgrade blocked: cost {cost} > currency {LevelManager.main.currency}");
+
+            // Play fail sound (uses base.cannotUpgradeClip if assigned in inspector)
+            PlaySound(cannotUpgradeClip);
+
+            // Choose which button to shake: prefer the confirm button (if present)
+            Button btnToShake = (upgradeConfirmButton != null) ? upgradeConfirmButton : upgradeButton;
+            if (btnToShake != null)
+                StartCoroutine(ShakeButtonLocal(btnToShake));
+
             return;
         }
 
+        // Proceed with upgrade
         LevelManager.main.SpendCurrency(cost);
         totalInvested += cost;
 
-        // increment base level (protected in Turret)
         level++;
 
         // Recalculate using base cached base-values (bpsBase/targetingRangeBase/bulletDamageBase)
@@ -299,6 +314,30 @@ public class TurretAreaDamage : Turret
     public void PlaySellSound() => PlaySound(sellClip);
 
     #endregion
+
+    // Local copy of the button-shake coroutine (mirrors the private one in Turret)
+    private IEnumerator ShakeButtonLocal(Button btn)
+    {
+        if (btn == null) yield break;
+
+        RectTransform rt = btn.GetComponent<RectTransform>();
+        if (rt == null) yield break;
+
+        Vector3 originalPos = rt.localPosition;
+        float duration = 0.2f;
+        float elapsed = 0f;
+        float magnitude = 5f;
+
+        while (elapsed < duration)
+        {
+            float offsetX = UnityEngine.Random.Range(-magnitude, magnitude);
+            rt.localPosition = originalPos + new Vector3(offsetX, 0f, 0f);
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        rt.localPosition = originalPos;
+    }
 
     private void OnDrawGizmosSelected()
     {

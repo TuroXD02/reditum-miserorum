@@ -203,8 +203,21 @@ public class EnemySpawner : MonoBehaviour
 
     private float CalculateWaveWeight()
     {
-        return baseWaveWeight * Mathf.Pow(currentWave, difficultyScalingFactor);
+        float baseScaling = baseWaveWeight * Mathf.Pow(currentWave, difficultyScalingFactor);
+
+        // After wave 50, apply an additional exponential multiplier
+        if (currentWave > 50)
+        {
+            // Example: double difficultyScalingFactor effect after wave 50
+            float extraExponent = 1.05f; // tweak for how sharp the rise is
+            int extraWaves = currentWave - 50;
+
+            baseScaling *= Mathf.Pow(extraExponent, extraWaves);
+        }
+
+        return baseScaling;
     }
+
 
     private float CalculateEnemiesPerSecond()
     {
