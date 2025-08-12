@@ -28,7 +28,7 @@ public class TurretLongRange : Turret
     // ... your other fields (audio, UI TMPs etc.) kept as needed ...
 
     // local state
-    private Transform target;
+    
     private float timeSinceLastShot;
     private bool isShooting;
 
@@ -92,22 +92,32 @@ public class TurretLongRange : Turret
 // In Update(), use base.target instead
     private void Update()
     {
+        // track active time (base also does this, but harmless)
         activeTime += Time.deltaTime;
 
+        // Ask base to find a target if none
         if (target == null)
+        {
             FindTarget();
+            Debug.Log($"[TurretLongRange] After FindTarget -> target = {(target==null ? "null" : target.name)}");
+        }
+
+        // still no target: bail
         if (target == null) return;
 
+        // rotate & check range
         RotateTowardsTarget();
 
         if (!CheckTargetIsInRange())
         {
+            Debug.Log($"[TurretLongRange] Target out of range. Clearing target.");
             target = null;
             return;
         }
 
+        // shooting cadence
         timeSinceLastShot += Time.deltaTime;
-        float rate = Mathf.Max(0.0001f, bps);
+        float rate = Mathf.Max(0.0001f, bps); // bps is your serialized inspector value
         if (!isShooting && timeSinceLastShot >= 1f / rate)
         {
             StartCoroutine(ShootWithDelay(0.1f));
@@ -116,23 +126,45 @@ public class TurretLongRange : Turret
     }
 
 
+
     private IEnumerator ShootWithDelay(float delay)
     {
         isShooting = true;
         PlaySound(shootClip);
         yield return new WaitForSeconds(delay);
 
+        // debug: inspector values
+        Debug.Log($"[TurretLongRange] Attempting to shoot. target={(target==null? "null" : target.name)}, bulletPrefab={(bulletPrefab==null? "null" : bulletPrefab.name)}, firingPoint={(firingPoint==null? "null" : firingPoint.name)}");
+
         if (target != null && bulletPrefab != null && firingPoint != null)
         {
             GameObject bulletObj = Instantiate(bulletPrefab, firingPoint.position, Quaternion.identity);
-            var lrb = bulletObj.GetComponent<LongRangeBullet>();
-            if (lrb != null)
+
+            // Try both bullet types
+            if (bulletObj.TryGetComponent(out LongRangeBullet lrb))
             {
                 lrb.SetTarget(target);
                 lrb.SetDamage(bulletDamage);
                 lrb.SetOwner(this);
-                Debug.Log($"[{name}] Shooting bullet (damage={bulletDamage}) at {target.name}");
+                Debug.Log($"[{name}] Shooting LongRangeBullet (damage={bulletDamage}) at {target.name}");
             }
+            else if (bulletObj.TryGetComponent(out Bullet b))
+            {
+                b.SetTarget(target);
+                b.SetDamage(bulletDamage);
+                b.SetOwner(this);
+                Debug.Log($"[{name}] Shooting Bullet (damage={bulletDamage}) at {target.name}");
+            }
+            else
+            {
+                Debug.LogWarning($"[TurretLongRange] Bullet prefab '{bulletPrefab.name}' has no Bullet or LongRangeBullet component.");
+            }
+
+            RegisterShot();
+        }
+        else
+        {
+            Debug.LogWarning("[TurretLongRange] Can't shoot: missing target or bulletPrefab or firingPoint.");
         }
 
         isShooting = false;

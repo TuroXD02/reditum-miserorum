@@ -1073,8 +1073,8 @@ MonoBehaviour:
   rotationSpeed: 50
   bps: 0.33
   baseUpgradeCost: 200
-  bulletDamage: 1
-  rotationAngleOffset: 0
+  bulletDamage: 2
+  rotationAngleOffset: -90
   audioSource: {fileID: -5458740587483401118}
   shootClip: {fileID: 8300000, guid: ffe18c13fdc5cf744888b12d98d779f7, type: 3}
   placeClip: {fileID: 8300000, guid: 48d38340dd096c843b06e0d69af12a6f, type: 3}
@@ -1524,7 +1524,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &3200588876147707365
 RectTransform:
   m_ObjectHideFlags: 0

@@ -31,6 +31,10 @@ public class TurretArmourBreaker : Turret
     public float TotalDamageDealt { get; private set; } = 0f;
     public event System.Action OnStatsUpdated;
 
+    // Debounce for duplicate Upgrade() calls
+    private float lastUpgradeTime = -10f;
+    private const float upgradeDebounceSeconds = 0.1f; // adjust as needed
+
     protected override void Start()
     {
         base.Start();
@@ -41,13 +45,13 @@ public class TurretArmourBreaker : Turret
         // Ensure ONLY this turret's Upgrade is bound
         if (upgradeButton != null)
         {
-            upgradeButton.onClick.RemoveAllListeners(); // remove any old bindings (base or inspector)
-            upgradeButton.onClick.AddListener(() => Upgrade());
+            upgradeButton.onClick.RemoveAllListeners(); // clear previous bindings
+            upgradeButton.onClick.AddListener(Upgrade); // use method group so RemoveListener(Upgrade) works
+            Debug.Log($"[TurretArmourBreaker] Bound Upgrade listener for '{name}'");
         }
 
         UpdateSprite();
     }
-
 
     private void OnDestroy()
     {
@@ -98,7 +102,18 @@ public class TurretArmourBreaker : Turret
 
     public override void Upgrade()
     {
+        // Debounce to prevent multiple quick calls (e.g. duplicate button events)
+        if (Time.time - lastUpgradeTime < upgradeDebounceSeconds)
+        {
+            Debug.Log($"[TurretArmourBreaker] Ignored duplicate Upgrade() on '{name}' (debounced).");
+            return;
+        }
+        lastUpgradeTime = Time.time;
+
         base.Upgrade(); // Handles currency check, level++, and stat recalculation
+
+        // If base.Upgrade returns early (not enough money) we still leave the debounce for a short moment —
+        // this prevents accidental double-spend calls from simultaneous events.
         armourReduction = CalculateArmourReduction(level);
         UpdateSprite();
         PlaySound(upgradeClip);

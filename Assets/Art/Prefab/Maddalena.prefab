@@ -300,7 +300,7 @@ MonoBehaviour:
   volumeMax: 1.1
   sellRefundMultiplier: 0.5
   aps: 0.15
-  freezeTime: 3
+  freezeTime: 1.5
   freezeEffectPrefab: {fileID: 346091996500417233, guid: e230902dd586159409ff2b56a6f32cd5, type: 3}
   freezeAnimatorController: {fileID: 9100000, guid: a02d9aee30ed0cb4aa4c895433d08ec4, type: 2}
   freezeEffectDuration: 0.9
