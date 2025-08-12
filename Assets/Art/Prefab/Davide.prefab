@@ -1024,7 +1024,7 @@ GameObject:
   - component: {fileID: -5458740587483401118}
   m_Layer: 10
   m_Name: Davide
-  m_TagString: LongRangeTurret
+  m_TagString: Turret
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

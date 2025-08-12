@@ -86,10 +86,14 @@ public class TurretLongRange : Turret
     }
 
     // Keep your shooting implementation — but make sure you DO NOT declare a separate `level` here.
+// REMOVE this line from TurretLongRange
+// private Transform target;
+
+// In Update(), use base.target instead
     private void Update()
     {
         activeTime += Time.deltaTime;
-        // ... your targeting/rotate/shoot timing logic (use base.CheckTargetIsInRange etc. if desired)
+
         if (target == null)
             FindTarget();
         if (target == null) return;
@@ -110,6 +114,7 @@ public class TurretLongRange : Turret
             timeSinceLastShot = 0f;
         }
     }
+
 
     private IEnumerator ShootWithDelay(float delay)
     {
